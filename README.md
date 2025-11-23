@@ -1,4 +1,4 @@
-### This Fork aims to add more tiers to the current iteration
+### This Fork adds 3 more tiers for a total of 6 reforge tiers, effectively allowing you to gate entire tiers behind specific items.
 
 # Tierify
 
