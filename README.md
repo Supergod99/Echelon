@@ -1,3 +1,5 @@
+### This Fork aims to add more tiers to the current iteration
+
 # Tierify
 
 **Tierify** is a flavor of **Tiered** made with the purpose of fitting my own personal vision, and to fix some issues it had. It is a fork of **TieredZ** by **Globox_Z**, which is an MIT licensed **Tiered** fork.
