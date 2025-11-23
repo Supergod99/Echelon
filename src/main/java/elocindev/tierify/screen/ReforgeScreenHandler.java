@@ -214,7 +214,7 @@ public class ReforgeScreenHandler extends ScreenHandler {
     }
 
     public static boolean isValidAddition(ItemStack stack) {
-        return stack.isIn(TieredItemTags.TIER_1_ITEM) || stack.isIn(TieredItemTags.TIER_2_ITEM) || stack.isIn(TieredItemTags.TIER_3_ITEM);
+        return stack.isIn(TieredItemTags.TIER_1_ITEM) || stack.isIn(TieredItemTags.TIER_2_ITEM) || stack.isIn(TieredItemTags.TIER_3_ITEM) || stack.isIn(TieredItemTags.TIER_4_ITEM);
     }
 
     public static Identifier getReforgeSound(Identifier identifier) {
