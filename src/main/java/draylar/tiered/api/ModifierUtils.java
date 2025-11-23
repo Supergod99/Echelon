@@ -219,6 +219,8 @@ public class ModifierUtils {
                 qualities = Tierify.CONFIG.tier_2_qualities;
             } else if (reforgeMaterial.isIn(TieredItemTags.TIER_3_ITEM)) {
                 qualities = Tierify.CONFIG.tier_3_qualities;
+            } else if (reforgeMaterial.isIn(TieredItemTags.TIER_4_ITEM)) {
+                qualities = Tierify.CONFIG.tier_4_qualities;
             }
 
             if (qualities != null) {
