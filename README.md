@@ -2,6 +2,8 @@
 
 The current config has each tier in its own, meaning you will never recieve a higher or lower tier than whats listed in config from that specific item(limestone only rolls commons, etc). In the future, may add a way to add or remove as many tiers as you like. 
 
+### You must rename either the common or uncommon attributes via datapacks if you want to have commons in their own separate tier w/reforge item! or else you will roll commons and uncommons for tier 1
+
 # Tierify
 
 **Tierify** is a flavor of **Tiered** made with the purpose of fitting my own personal vision, and to fix some issues it had. It is a fork of **TieredZ** by **Globox_Z**, which is an MIT licensed **Tiered** fork.
