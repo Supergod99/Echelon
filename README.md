@@ -1,5 +1,6 @@
 ### This Fork does two things currently:
 **1. Adds 3 more tiers for a total of 6 reforge tiers, effectively allowing you to gate entire tiers behind specific items**
+
 **2. Allows custom reforge names to have spaces or formatting codes in lang (previously would throw error within sound method, which caused other problems during reforging)**
 
 The current config has each tier in its own, meaning you will never recieve a higher or lower tier than whats listed in config from that specific item(limestone only rolls commons, etc).
