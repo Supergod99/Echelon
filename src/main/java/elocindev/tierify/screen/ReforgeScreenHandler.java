@@ -221,12 +221,17 @@ public class ReforgeScreenHandler extends ScreenHandler {
         // plays the corresponding upgrade sound effect for the item tier
         String tier = Tierify.ATTRIBUTE_DATA_LOADER.getItemAttributes().get(identifier).getID();
         if (tier == null) return null;
-        String soundId = null;
-
-        String tierName = Text.translatable(tier + ".label").getString().toLowerCase();
-        soundId = "reforge_sound_"+tierName;
-
-        return new Identifier("tiered",soundId);
+    
+        // get the display name from the lang file
+        String tierName = Text.translatable(tier + ".label")
+                .getString()
+                .toLowerCase()
+                .replace(" ", "_")              // Replace spaces with underscores
+                .replaceAll("[^a-z0-9_]", "");  // Remove illegal characters
+    
+        String soundId = "reforge_sound_" + tierName;
+    
+        return new Identifier("tiered", soundId);
     }
 
 
