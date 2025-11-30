@@ -5,7 +5,7 @@
 
 **3. Adds a "perfect roll" mechanic with a 1% chance, in which a reforge will roll with no downside. It will prepend "perfect" to the item, and have a custom tooltip border**
 
-The current config has each tier in its own, meaning you will never recieve a higher or lower tier than whats listed in config from that specific item(limestone only rolls commons, etc).
+The current config gates each tier behind an item, meaning you will only roll that specific tier. For example, limestone will only ever roll common.
 
 # Tierify
 
