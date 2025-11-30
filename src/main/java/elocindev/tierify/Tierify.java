@@ -142,7 +142,17 @@ public class Tierify implements ModInitializer {
                 if (!itemStack.hasNbt() || !itemStack.getNbt().contains("AttributeModifiers", 9)) {
                     PotentialAttribute potentialAttribute = Tierify.ATTRIBUTE_DATA_LOADER.getItemAttributes().get(tier);
                     if (potentialAttribute != null) {
-                        potentialAttribute.getAttributes().forEach(template -> {
+                        // 🔍 Read perfect flag from NBT
+                        NbtCompound tierTag = itemStack.getSubNbt(Tierify.NBT_SUBTAG_KEY);
+                        boolean isPerfect = tierTag != null && tierTag.getBoolean("Perfect");
+                    
+                        for (AttributeTemplate template : potentialAttribute.getAttributes()) {
+                            double amount = template.getEntityAttributeModifier().getValue();
+                    
+                            // downside = negative amount ⇒ skip it on perfect rolls
+                            if (isPerfect && amount < 0.0D) {
+                                continue;
+                            }
                             // get required equipment slots
                             if (template.getRequiredEquipmentSlots() != null) {
                                 List<EquipmentSlot> requiredEquipmentSlots = new ArrayList<>(Arrays.asList(template.getRequiredEquipmentSlots()));
@@ -160,7 +170,7 @@ public class Tierify implements ModInitializer {
                                     template.realize(modifiers, slot);
                                 }
                             }
-                        });
+                        }
                     }
                 }
             }
