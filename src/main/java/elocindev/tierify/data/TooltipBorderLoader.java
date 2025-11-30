@@ -41,6 +41,15 @@ public class TooltipBorderLoader implements SimpleSynchronousResourceReloadListe
 
                     for (int i = 0; i < data2.getAsJsonArray("decider").size(); i++)
                         decider.add("{Tier:\"" + data2.getAsJsonArray("decider").get(i).getAsString() + "\"}");
+                    
+                    // Perfect tier override support
+                    if (data2.getAsJsonArray("decider").size() == 1 &&
+                        data2.getAsJsonArray("decider").get(0).getAsString().equals("tiered:perfect_border")) {
+                        
+                        // Decider predicate for Perfect items
+                        decider.clear();
+                        decider.add("{Perfect:\"true\"}");
+                    }
 
                     TierifyClient.BORDER_TEMPLATES.add(new BorderTemplate(data2.get("index").getAsInt(), data2.get("texture").getAsString(),
                             new BigInteger(data2.get("start_border_gradient").getAsString(), 16).intValue(), new BigInteger(data2.get("end_border_gradient").getAsString(), 16).intValue(),
