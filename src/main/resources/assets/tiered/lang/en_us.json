@@ -4,6 +4,8 @@
   "generic.durable": "Durability",
   "generic.range_attack_damage": "Range Attack Damage",
 
+  "tiered.perfect.label": "§d§l✦§6§lPERFECT§d§l✦§r",
+
   "tiered:common_armor_1.label": "Common",
   "tiered:common_armor_2.label": "Common",
   "tiered:common_armor_3.label": "Common",
