@@ -48,7 +48,7 @@ public class TooltipBorderLoader implements SimpleSynchronousResourceReloadListe
                         
                         // Decider predicate for Perfect items
                         decider.clear();
-                        decider.add("{Perfect:\"true\"}");
+                        decider.add("{Tier:\"tiered:perfect\"}");
                     }
 
                     TierifyClient.BORDER_TEMPLATES.add(new BorderTemplate(data2.get("index").getAsInt(), data2.get("texture").getAsString(),
