@@ -31,13 +31,7 @@ import elocindev.tierify.screen.client.widget.ReforgeTab;
 
 @Environment(EnvType.CLIENT)
 public class TierifyClient implements ClientModInitializer {
-
-    //Cycling labels every few ticks while hovering item
-    ClientTickEvents.END_CLIENT_TICK.register(client -> {
-        PerfectLabelAnimator.clientTick();
-    });
-
-
+    
     // map for storing attributes before logging into a server
     public static final Map<Identifier, PotentialAttribute> CACHED_ATTRIBUTES = new HashMap<>();
 
@@ -48,6 +42,12 @@ public class TierifyClient implements ClientModInitializer {
     
     @Override
     public void onInitializeClient() {
+        
+        // register perfect animation label
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            PerfectLabelAnimator.clientTick();
+        });
+
         registerAttributeSyncHandler();
         registerReforgeItemSyncHandler();
         HandledScreens.<ReforgeScreenHandler, ReforgeScreen>register(Tierify.REFORGE_SCREEN_HANDLER_TYPE, ReforgeScreen::new);
