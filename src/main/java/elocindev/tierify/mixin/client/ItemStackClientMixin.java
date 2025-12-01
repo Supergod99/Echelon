@@ -199,8 +199,10 @@ public abstract class ItemStackClientMixin {
                 MutableText text = Text.translatable(potentialAttribute.getID() + ".label");
 
                 NbtCompound tierTag = this.getSubNbt(Tierify.NBT_SUBTAG_KEY);
+                //replaces label with perfect animated one
                 if (tierTag != null && tierTag.getBoolean("Perfect")) {
-                    text = Text.translatable("tiered.perfect.label").append(" ").append(text);
+                    String animated = elocindev.tierify.screen.client.PerfectLabelAnimator.getPerfectLabel();
+                    text = Text.literal(animated).append(" ").append(text);
                 }
 
                 if (Tierify.CLIENT_CONFIG.showPlatesOnName) {
