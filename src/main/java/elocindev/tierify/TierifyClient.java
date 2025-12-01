@@ -29,6 +29,7 @@ import elocindev.tierify.screen.ReforgeScreenHandler;
 import elocindev.tierify.screen.client.ReforgeScreen;
 import elocindev.tierify.screen.client.widget.AnvilTab;
 import elocindev.tierify.screen.client.widget.ReforgeTab;
+import elocindev.tierify.screen.client.PerfectLabelAnimator;
 
 @Environment(EnvType.CLIENT)
 public class TierifyClient implements ClientModInitializer {
