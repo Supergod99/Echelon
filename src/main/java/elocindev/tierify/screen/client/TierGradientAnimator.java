@@ -7,14 +7,13 @@ import net.minecraft.text.TextColor;
 
 public class TierGradientAnimator {
 
-    // We keep this so you can tick it from your client init if you want,
-    // but the animation here uses System.currentTimeMillis().
+    // animation here uses System.currentTimeMillis().
     private static int tick = 0;
     private static final int INTERVAL = 2;
 
-    // ---- Gradient anchor colors per tier (RGB) ----
+    // Gradient anchor colors per tier
 
-    // Common: steel/gunmetal greys
+    // Common: steel greys
     private static final int[][] COMMON_COLORS = new int[][]{
             {140, 140, 140},
             {90, 90, 90},
@@ -57,14 +56,14 @@ public class TierGradientAnimator {
     };
 
     public static void clientTick() {
-        // Kept for API compatibility if you’re ticking this from elsewhere.
+
         tick++;
         if (tick >= INTERVAL) {
             tick = 0;
         }
     }
 
-    // Infer tier from the attribute id string (same as before conceptually)
+    // Infer tier from the attribute id string 
     public static String getTierFromId(String id) {
         if (id == null) return "common";
         String lower = id.toLowerCase();
@@ -76,10 +75,7 @@ public class TierGradientAnimator {
         return "common";
     }
 
-    // MAIN ENTRY:
-    // base  = original label text component (e.g. "Brutal")
-    // tier  = "common", "rare", "mythic", etc.
-    // RETURNS a new MutableText with per-letter RGB styles applied.
+
     public static MutableText animate(MutableText base, String tier) {
         if (base == null) {
             return Text.empty();
@@ -87,7 +83,6 @@ public class TierGradientAnimator {
 
         String raw = base.getString();
         if (raw.isEmpty()) {
-            // Nothing to color, just return a copy.
             return base.copy();
         }
 
@@ -98,7 +93,6 @@ public class TierGradientAnimator {
 
         // Time-based offset so gradient flows over the word
         long now = System.currentTimeMillis();
-        // 75ms per “step” ~13.3 FPS feel
         double timeOffset = (now / 75L) % 100;  // 0..99
 
         // For each character in the label, compute a gradient position + color
@@ -111,8 +105,7 @@ public class TierGradientAnimator {
                 continue;
             }
 
-            // Position of this character along the 0..100 gradient,
-            // then offset by time to make it flow horizontally.
+            // offset by time to make it flow horizontally.
             double basePos = (length == 1) ? 50.0 : (i * (100.0 / (length - 1)));
             double animatedPos = (basePos + timeOffset) % 100.0;
 
@@ -152,9 +145,6 @@ public class TierGradientAnimator {
         }
     }
 
-    // Lethality-style multi-stop gradient lerp:
-    // percentage: 0..100
-    // colors:     list of RGB anchors
     private static int getColorFromGradient(int percentage, int[][] colors) {
         if (colors == null || colors.length == 0) {
             return rgb(255, 255, 255);
