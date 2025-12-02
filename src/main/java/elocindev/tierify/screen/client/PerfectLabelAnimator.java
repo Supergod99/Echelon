@@ -28,14 +28,9 @@ public class PerfectLabelAnimator {
         // no-op; animation uses System.currentTimeMillis()
     }
 
-    /**
-     * Lethality-style animated PERFECT label:
-     * - per-letter RGB gradient
-     * - slow shimmer + brightness pulse
-     * - slight hue warp in aqua range
-     * - subtle flash once per cycle
-     * - bold via Style
-     */
+    
+     // per-letter RGB gradient
+
     public static MutableText getPerfectLabel() {
         String word = WORD;
         if (word == null || word.isEmpty()) {
@@ -64,7 +59,7 @@ public class PerfectLabelAnimator {
             // Per-letter offset to create a ripple
             float localPhase = (phase + i * WAVE_SPACING) % 1.0f;
 
-            // Smooth brightness pulse (0..1)
+            // Smooth brightness pulse 
             float pulse = 0.5f - 0.5f * (float) Math.cos(2.0 * Math.PI * localPhase);
             float value = MIN_VALUE + (MAX_VALUE - MIN_VALUE) * pulse;
 
@@ -91,7 +86,6 @@ public class PerfectLabelAnimator {
         return result;
     }
 
-    // ---- helpers ----
 
     private static int hsvToRgb(float h, float s, float v) {
         h = wrap01(h);
