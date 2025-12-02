@@ -243,7 +243,7 @@ public abstract class ItemStackClientMixin {
     private void getTooltipMixin(PlayerEntity player, TooltipContext context, CallbackInfoReturnable<List<Text>> info, List list, MutableText mutableText, int i, EquipmentSlot var6[], int var7,
             int var8, EquipmentSlot equipmentSlot, Multimap multimap) {
 
-                // --- Perfect Border Tier Override ---
+                // Perfect Border Tier Override 
         if (this.hasNbt()) {
             NbtCompound tierTag = this.getSubNbt(Tierify.NBT_SUBTAG_KEY);
             if (tierTag != null && tierTag.getBoolean("Perfect")) {
