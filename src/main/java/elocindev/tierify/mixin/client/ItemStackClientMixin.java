@@ -222,8 +222,8 @@ public abstract class ItemStackClientMixin {
     
                 // Strip Tiered color — keep only bold for legendary/mythic
                 vanilla.styled(style -> 
-                    style.withColor(null)                     // color removed
-                         .withBold(style.isBold())            // keep bold
+                    style.withColor((net.minecraft.text.TextColor) null) // color removed
+                         .withBold(style.isBold())                       // keep bold
                 );
     
                 // Bold only if attribute is legendary/mythic
