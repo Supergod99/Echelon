@@ -197,6 +197,11 @@ public abstract class ItemStackClientMixin {
 
             if (potentialAttribute != null) {
                 MutableText text = Text.translatable(potentialAttribute.getID() + ".label");
+                // animate modifier according to tier
+                String tierKey = TierGradientAnimator.getTierFromId(potentialAttribute.getID());
+                String animatedModifier = TierGradientAnimator.animate(text.getString(), tierKey);
+                text = Text.literal(animatedModifier);
+                
 
                 NbtCompound tierTag = this.getSubNbt(Tierify.NBT_SUBTAG_KEY);
                 //replaces label with perfect animated one
@@ -208,8 +213,12 @@ public abstract class ItemStackClientMixin {
                 if (Tierify.CLIENT_CONFIG.showPlatesOnName) {
                     text = Text.literal(TieredTooltip.getPlateForModifier(text.getString()));
                 }
-
-                info.setReturnValue(text.append(" ").append(info.getReturnValue()).setStyle(potentialAttribute.getStyle()));
+                // vanilla name styled normally, without touching gradients
+                MutableText vanilla = info.getReturnValue().copy();
+                vanilla.setStyle(potentialAttribute.getStyle());
+                
+                // modifier + perfect (gradient safe)
+                info.setReturnValue(text.append(" ").append(vanilla));
             }
         }
     }
