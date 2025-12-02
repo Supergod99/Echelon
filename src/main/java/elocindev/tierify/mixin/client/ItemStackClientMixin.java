@@ -210,9 +210,9 @@ public abstract class ItemStackClientMixin {
                     text = Text.literal(animated).append(" ").append(text);
                 }
 
-                if (Tierify.CLIENT_CONFIG.showPlatesOnName) {
-                    text = Text.literal(TieredTooltip.getPlateForModifier(text.getString()));
-                }
+               // if (Tierify.CLIENT_CONFIG.showPlatesOnName) {
+                   // text = Text.literal(TieredTooltip.getPlateForModifier(text.getString()));
+               // }
                 // vanilla name styled normally, without touching gradients
                 MutableText vanilla = info.getReturnValue().copy();
                 vanilla.setStyle(potentialAttribute.getStyle());
