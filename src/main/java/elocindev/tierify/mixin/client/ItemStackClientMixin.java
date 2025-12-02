@@ -214,39 +214,25 @@ public abstract class ItemStackClientMixin {
                     Tierify.ATTRIBUTE_DATA_LOADER.getItemAttributes().get(tier);
     
             if (potentialAttribute != null) {
-    
-                // 
-                // Base modifier label
+                // Base modifier label from lang
                 MutableText text = Text.translatable(potentialAttribute.getID() + ".label");
-    
-                // Per-tier gradient
-                String tierKey = TierGradientAnimator.getTierFromId(potentialAttribute.getID());
-                String animatedModifier = TierGradientAnimator.animate(text.getString(), tierKey);
-                text = Text.literal(animatedModifier);
-    
-
-                //PERFECT prefix
-
+            
+                // Resolve tier key & apply Lethality-style gradient to the label itself
+                String tierKey = elocindev.tierify.screen.client.TierGradientAnimator.getTierFromId(potentialAttribute.getID());
+                text = elocindev.tierify.screen.client.TierGradientAnimator.animate(text, tierKey);
+            
+                // PERFECT prefix (still using your existing PerfectLabelAnimator)
                 NbtCompound tag = this.getSubNbt(Tierify.NBT_SUBTAG_KEY);
                 if (tag != null && tag.getBoolean("Perfect")) {
                     String animated = elocindev.tierify.screen.client.PerfectLabelAnimator.getPerfectLabel();
                     text = Text.literal(animated).append(" ").append(text);
                 }
-    
+            
+                // Vanilla / modded item name EXACTLY as defined by the game / other mods
                 MutableText vanilla = info.getReturnValue().copy();
-    
-                // Strip Tiered color — keep only bold for legendary/mythic
-                vanilla.styled(style -> 
-                    style.withColor((net.minecraft.text.TextColor) null) // color removed
-                         .withBold(style.isBold())                       // keep bold
-                );
-    
-                // Bold only if attribute is legendary/mythic
-                if (tierKey.equals("legendary") || tierKey.equals("mythic")) {
-                    vanilla = vanilla.styled(style -> style.withBold(true));
-                }
-
-                // combined name
+            
+                // Final combined display name:
+                //   [PERFECT?] [gradient tier label] [space] [vanilla item name]
                 info.setReturnValue(text.append(" ").append(vanilla));
             }
         }
