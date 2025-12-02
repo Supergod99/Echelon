@@ -160,15 +160,30 @@ public abstract class ItemStackClientMixin {
 
     }
 
-    @Redirect(method = "getTooltip", at = @At(value = "INVOKE", target = "Lnet/minecraft/text/MutableText;formatted(Lnet/minecraft/util/Formatting;)Lnet/minecraft/text/MutableText;", ordinal = 2))
+    @Redirect(method = "getTooltip",
+        at = @At(value = "INVOKE",
+        target = "Lnet/minecraft/text/MutableText;formatted(Lnet/minecraft/util/Formatting;)Lnet/minecraft/text/MutableText;",
+        ordinal = 2))
     private MutableText getFormatting(MutableText text, Formatting formatting) {
-        if (this.hasNbt() && this.getSubNbt(Tierify.NBT_SUBTAG_KEY) != null && isTiered) {
-            Identifier tier = new Identifier(this.getOrCreateSubNbt(Tierify.NBT_SUBTAG_KEY).getString(Tierify.NBT_SUBTAG_DATA_KEY));
-            PotentialAttribute attribute = Tierify.ATTRIBUTE_DATA_LOADER.getItemAttributes().get(tier);
-            return text.setStyle(attribute.getStyle());
-        } else {
+    
+        String raw = text.getString();
+    
+        // prevent overriding any animated gradient 
+        if (raw.contains("§x")) {
+            return text;
+        }
+    
+        // no override for modded item names
+        if (!isTiered) {
             return text.formatted(formatting);
         }
+    
+        // Apply Tiered style ONLY to Tiered attribute lines
+        Identifier tier = new Identifier(this.getOrCreateSubNbt(Tierify.NBT_SUBTAG_KEY)
+                .getString(Tierify.NBT_SUBTAG_DATA_KEY));
+        PotentialAttribute attribute = Tierify.ATTRIBUTE_DATA_LOADER.getItemAttributes().get(tier);
+    
+        return text.setStyle(attribute.getStyle());
     }
 
     @ModifyVariable(method = "getTooltip", at = @At(value = "INVOKE", target = "Lcom/google/common/collect/Multimap;isEmpty()Z"), index = 10)
