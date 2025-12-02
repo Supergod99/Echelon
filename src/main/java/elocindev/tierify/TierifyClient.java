@@ -48,6 +48,7 @@ public class TierifyClient implements ClientModInitializer {
         // register perfect animation label
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             PerfectLabelAnimator.clientTick();
+            TierGradientAnimator.clientTick();
         });
 
         registerAttributeSyncHandler();
