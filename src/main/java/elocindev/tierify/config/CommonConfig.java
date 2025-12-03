@@ -16,19 +16,19 @@ public class CommonConfig {
     }
 
     @Comment("Items in for example mineshaft chests get modifiers")
-    public boolean lootContainerModifier = true;
+    public boolean lootContainerModifier = false;
     @Comment("Equipped items on entities get modifiers")
     public boolean entityItemModifier = true;
     @Comment("Crafted items get modifiers")
-    public boolean craftingModifier = true;
+    public boolean craftingModifier = false;
     @Comment("Merchant items get modifiers")
-    public boolean merchantModifier = true;
+    public boolean merchantModifier = false;
     @Comment("Decreases the biggest weights by this modifier")
-    public float reforgeModifier = 0.9F;
+    public float reforgeModifier = 0.0F;
     @Comment("Modify the biggest weights by this modifier per smithing level")
-    public float levelzReforgeModifier = 0.01F;
+    public float levelzReforgeModifier = 0.0F;
     @Comment("Modify the biggest weights by this modifier per luck")
-    public float luckReforgeModifier = 0.02F;
+    public float luckReforgeModifier = 0.0F;
 
     @Comment("Tier 1 of Reforging (Limestone)")
     @Comment("Qualities here will be able to be reforged onto items while using the Tier 1 reforge material, Limestone by default. Can be changed via the item tag tiered:reforge_tier_1")
@@ -42,7 +42,7 @@ public class CommonConfig {
     @Comment("Qualities here will be able to be reforged onto items while using the Tier 2 reforge material, Pyrite by default. Can be changed via the item tag tiered:reforge_tier_2")
     public ArrayList<String> tier_2_qualities = new ArrayList<>(
         List.of(
-            "Uncommon"
+            "Uncomon"
         )
     );
 
@@ -54,24 +54,24 @@ public class CommonConfig {
         )
     );
     
-    @Comment("Tier 4 of Reforging (Nether Star)")
-    @Comment("Qualities here will be able to be reforged onto items while using the Tier 4 reforge material, Nether Star by default. Can be changed via the item tag tiered:reforge_tier_4")
+    @Comment("Tier 4 of Reforging (Eclipsium Alloy)")
+    @Comment("Qualities here will be able to be reforged onto items while using the Tier 4 reforge material, Eclipsium Alloy by default. Can be changed via the item tag tiered:reforge_tier_4")
     public ArrayList<String> tier_4_qualities = new ArrayList<>(
         List.of(
             "Epic"
         )
     );
 
-        @Comment("Tier 5 of Reforging (End Crystal)")
-    @Comment("Qualities here will be able to be reforged onto items while using the Tier 5 reforge material, Nether Star by default. Can be changed via the item tag tiered:reforge_tier_5")
+        @Comment("Tier 5 of Reforging (Hemalith Catalyst)")
+    @Comment("Qualities here will be able to be reforged onto items while using the Tier 5 reforge material, Hemalith Catalyst by default. Can be changed via the item tag tiered:reforge_tier_5")
     public ArrayList<String> tier_5_qualities = new ArrayList<>(
         List.of(
             "Legendary"
         )
     );
 
-        @Comment("Tier 6 of Reforging (Dragon Head)")
-    @Comment("Qualities here will be able to be reforged onto items while using the Tier 6 reforge material, Nether Star by default. Can be changed via the item tag tiered:reforge_tier_6")
+        @Comment("Tier 6 of Reforging (Cosmos Shard)")
+    @Comment("Qualities here will be able to be reforged onto items while using the Tier 6 reforge material, Cosmos Shard by default. Can be changed via the item tag tiered:reforge_tier_6")
     public ArrayList<String> tier_6_qualities = new ArrayList<>(
         List.of(
             "Mythic"
