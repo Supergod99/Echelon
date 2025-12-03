@@ -7,7 +7,7 @@ import net.minecraft.text.TextColor;
 
 public class PerfectLabelAnimator {
 
-    // New label text: cosmic symmetrical brackets
+    // Label text: transcendent above all tiers
     private static final String WORD = "✯Perfect✯";
 
     // Global breathing / hue cycle (~4 seconds)
@@ -40,17 +40,47 @@ public class PerfectLabelAnimator {
     private static final float MIN_VALUE = 0.75f;
     private static final float MAX_VALUE = 1.00f;
 
-    // *** NEW: Deeper artifact-tier cosmic palette ***
+    // Tier cycle speed: Rare -> Epic -> Legendary -> Mythic -> Perfect -> loop
+    private static final float TIER_CYCLE_PERIOD_MS = 1800.0f;
+
+    // *** Deeper artifact-tier cosmic palette for Perfect ***
     private static final int GOLD_COLOR = 0xE0A414;       // deep cosmic gold
     private static final int GOLD_PEAK_COLOR = 0xFFD36B;  // gold bloom (bright, warm)
     private static final int CYAN_COLOR = 0x00B7FF;       // deep starfall cyan
     private static final int WHITE_COLOR = 0xFFFFFF;      // white flame
 
+    // Upper-tier gradients (from your code) as RGB triplets
+    // Rare deep blue → cyan pulse
+    private static final int[][] RARE_COLORS = new int[][]{
+            {80, 150, 255},
+            {0, 60, 160},
+            {120, 220, 255}
+    };
+
+    // Epic purple / magenta wave
+    private static final int[][] EPIC_COLORS = new int[][]{
+            {180, 70, 255},
+            {100, 0, 180},
+            {230, 150, 255}
+    };
+
+    // Legendary hot gold → amber
+    private static final int[][] LEGENDARY_COLORS = new int[][]{
+            {255, 180, 0},
+            {255, 220, 80},
+            {255, 140, 0}
+    };
+
+    // Mythic crimson → eldritch magenta
+    private static final int[][] MYTHIC_COLORS = new int[][]{
+            {255, 60, 60},
+            {180, 0, 80},
+            {255, 120, 180}
+    };
 
     public static void clientTick() {
         // animation uses System.currentTimeMillis()
     }
-
 
     public static MutableText getPerfectLabel() {
         String word = WORD;
@@ -72,6 +102,9 @@ public class PerfectLabelAnimator {
 
         // Global 0..1 synchronized starburst phase
         float starburstPhase = (STARBURST_PERIOD_MS <= 0) ? 0f : (now % (long) STARBURST_PERIOD_MS) / STARBURST_PERIOD_MS;
+
+        // Global 0..1 tier cycle phase (Rare -> Epic -> Legendary -> Mythic -> Perfect)
+        float tierPhase = (TIER_CYCLE_PERIOD_MS <= 0) ? 0f : (now % (long) TIER_CYCLE_PERIOD_MS) / TIER_CYCLE_PERIOD_MS;
 
         // Smooth starburst curve (peaks sharply)
         float starburstPulse = 0.5f - 0.5f * (float) Math.cos(2.0 * Math.PI * starburstPhase);
@@ -97,16 +130,17 @@ public class PerfectLabelAnimator {
                 continue;
             }
 
-            // Local 0..1 wave offset
-            float localPhase = (phase + i * WAVE_SPACING) % 1.0f;
-            if (localPhase < 0)
-                localPhase += 1.0f;
+            // Local 0..1 tier-cycle phase with a subtle per-letter wave
+            float localTierPhase = (tierPhase + i * WAVE_SPACING) % 1.0f;
+            if (localTierPhase < 0f)
+                localTierPhase += 1.0f;
 
-            // Tri-color cosmic gradient (deep gold → white flame → deep cyan)
-            int triColor = getTriGradientColor(localPhase);
+            // Tier-based multi-gradient color:
+            // Rare -> Epic -> Legendary -> Mythic -> Perfect
+            int tierColor = getTierCycleColor(localTierPhase);
 
-            // Blend tri-gradient with the golden HSV drift base
-            int rgb = mixColor(triColor, globalBaseRgb, 0.35f);
+            // Blend tier-color with the golden HSV drift base
+            int rgb = mixColor(tierColor, globalBaseRgb, 0.35f);
 
             // Bloom breathing (push toward white)
             rgb = mixColor(rgb, WHITE_COLOR, BLOOM_INTENSITY * breathe);
@@ -131,12 +165,12 @@ public class PerfectLabelAnimator {
                 float streakT = 1f - (dist / STREAK_WIDTH);
                 float streakAmt = streakT * STREAK_INTENSITY;
 
-                int streakColor = getTriGradientColor(streakPhase);
+                int streakColor = getTierCycleColor(streakPhase);
                 rgb = mixColor(rgb, streakColor, streakAmt);
                 rgb = mixColor(rgb, WHITE_COLOR, streakAmt * 0.35f);
             }
 
-            // *** Starburst + halo: deeper gold + white flare ***
+            // Starburst + halo: deeper gold + white flare for stars
             if (isStar) {
                 float halo = STAR_HALO_BASE + STAR_HALO_EXTRA_FROM_PULSE * starburstPulse;
                 halo = clamp01(halo);
@@ -149,7 +183,7 @@ public class PerfectLabelAnimator {
                 rgb = mixColor(rgb, WHITE_COLOR, halo * 0.25f);
             }
 
-            // *** Only change: stars NOT bold, letters bold ***
+            // Stars NOT bold, letters bold
             Style style = Style.EMPTY
                     .withColor(TextColor.fromRgb(rgb))
                     .withBold(!isStar);
@@ -160,25 +194,79 @@ public class PerfectLabelAnimator {
         return result;
     }
 
-
-    // *** Tri-phase deeper cosmic gradient ***
-    private static int getTriGradientColor(float t) {
+    /**
+     * Returns the color for the current tier-cycle phase:
+     * Rare -> Epic -> Legendary -> Mythic -> Perfect.
+     * Each tier uses a 3-stop gradient: c0 -> c1 -> c2.
+     */
+    private static int getTierCycleColor(float t) {
         t = wrap01(t);
 
-        if (t < (1f / 3f)) {
-            float local = t * 3f;
-            return mixColor(GOLD_COLOR, WHITE_COLOR, local);
+        final int tierCount = 5; // Rare, Epic, Legendary, Mythic, Perfect
+        float segment = 1.0f / tierCount;
+
+        int tierIndex = (int) (t / segment);
+        if (tierIndex < 0) tierIndex = 0;
+        if (tierIndex >= tierCount) tierIndex = tierCount - 1;
+
+        float tierStart = tierIndex * segment;
+        float intra = (t - tierStart) / segment;
+        intra = clamp01(intra);
+
+        int c0, c1, c2;
+
+        switch (tierIndex) {
+            case 0: // Rare
+                c0 = rgbFromArray(RARE_COLORS[0]);
+                c1 = rgbFromArray(RARE_COLORS[1]);
+                c2 = rgbFromArray(RARE_COLORS[2]);
+                break;
+            case 1: // Epic
+                c0 = rgbFromArray(EPIC_COLORS[0]);
+                c1 = rgbFromArray(EPIC_COLORS[1]);
+                c2 = rgbFromArray(EPIC_COLORS[2]);
+                break;
+            case 2: // Legendary
+                c0 = rgbFromArray(LEGENDARY_COLORS[0]);
+                c1 = rgbFromArray(LEGENDARY_COLORS[1]);
+                c2 = rgbFromArray(LEGENDARY_COLORS[2]);
+                break;
+            case 3: // Mythic
+                c0 = rgbFromArray(MYTHIC_COLORS[0]);
+                c1 = rgbFromArray(MYTHIC_COLORS[1]);
+                c2 = rgbFromArray(MYTHIC_COLORS[2]);
+                break;
+            case 4: // Perfect (our custom gold -> white -> cyan)
+            default:
+                c0 = GOLD_COLOR;
+                c1 = WHITE_COLOR;
+                c2 = CYAN_COLOR;
+                break;
         }
-        else if (t < (2f / 3f)) {
-            float local = (t - 1f / 3f) * 3f;
-            return mixColor(WHITE_COLOR, CYAN_COLOR, local);
-        }
-        else {
-            float local = (t - 2f / 3f) * 3f;
-            return mixColor(CYAN_COLOR, GOLD_COLOR, local);
+
+        // 3-stop gradient: c0 -> c1 -> c2
+        if (intra < 0.5f) {
+            float local = intra * 2.0f;
+            return mixColor(c0, c1, local);
+        } else {
+            float local = (intra - 0.5f) * 2.0f;
+            return mixColor(c1, c2, local);
         }
     }
 
+    private static int rgbFromArray(int[] arr) {
+        if (arr == null || arr.length < 3) {
+            return 0xFFFFFF;
+        }
+        return rgb(arr[0], arr[1], arr[2]);
+    }
+
+    private static int rgb(int r, int g, int b) {
+        r &= 0xFF;
+        g &= 0xFF;
+        b &= 0xFF;
+        return (r << 16) | (g << 8) | b;
+    }
 
     private static int mixColor(int base, int add, float t) {
         t = clamp01(t);
@@ -198,12 +286,10 @@ public class PerfectLabelAnimator {
         return ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF);
     }
 
-
     private static float circularDistance(float a, float b) {
         float d = Math.abs(a - b);
         return Math.min(d, 1f - d);
     }
-
 
     private static int hsvToRgb(float h, float s, float v) {
         h = wrap01(h);
@@ -230,7 +316,6 @@ public class PerfectLabelAnimator {
         return ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF);
     }
 
-
     private static float clamp01(float v) {
         return Math.max(0f, Math.min(1f, v));
     }
@@ -241,6 +326,3 @@ public class PerfectLabelAnimator {
         return v;
     }
 }
-
-
-
