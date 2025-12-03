@@ -24,7 +24,7 @@ public class ClientConfig implements ConfigData {
 
     @Comment("Swaps the text with a plate displayed on the item's name.")
     @ConfigEntry.Category("client_settings")
-    public boolean showPlatesOnName = true;
+    public boolean showPlatesOnName = false;
 
     @ConfigEntry.Category("client_settings")
     public boolean centerName = true;
