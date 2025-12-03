@@ -1,5 +1,5 @@
 {
-    "id": "tiered:rare_ranged_2",
+    "id": "tiered:uncomon_ranged_2",
     "verifiers": [
         {
             "tag": "c:bows"
@@ -13,15 +13,15 @@
     ],
     "weight": 1,
     "style": {
-        "color": "blue"
+        "color": "dark_green"
     },
     "attributes": [
         {
             "type": "attributeslib:arrow_velocity",
             "modifier": {
-                "name": "tiered:rare_ranged_2",
+                "name": "tiered:uncomon_ranged_2",
                 "operation": "MULTIPLY_BASE",
-                "amount": 0.15
+                "amount": 0.1
             },
             "optional_equipment_slots": [
                 "MAINHAND",
@@ -31,9 +31,9 @@
         {
             "type": "generic.movement_speed",
             "modifier": {
-                "name": "tiered:rare_ranged_2",
+                "name": "tiered:uncomon_ranged_2",
                 "operation": "MULTIPLY_BASE",
-                "amount": -0.075
+                "amount": -0.05
             },
             "optional_equipment_slots": [
                 "MAINHAND",

@@ -6,31 +6,22 @@
         },
         {
             "tag": "c:crossbows"
+        },
+        {
+            "tag": "too_many_bows:bows"
         }
     ],
-    "weight": 8,
+    "weight": 1,
     "style": {
         "color": "dark_purple"
     },
     "attributes": [
         {
-            "type": "tiered:generic.range_attack_damage",
+            "type": "attributeslib:arrow_velocity",
             "modifier": {
                 "name": "tiered:epic_ranged_2",
                 "operation": "MULTIPLY_BASE",
-                "amount": 0.15
-            },
-            "optional_equipment_slots": [
-                "MAINHAND",
-                "OFFHAND"
-            ]
-        },
-        {
-            "type": "tiered:generic.crit_chance",
-            "modifier": {
-                "name": "tiered:epic_ranged_2",
-                "operation": "MULTIPLY_BASE",
-                "amount": 0.1
+                "amount": 0.2
             },
             "optional_equipment_slots": [
                 "MAINHAND",
@@ -42,7 +33,7 @@
             "modifier": {
                 "name": "tiered:epic_ranged_2",
                 "operation": "MULTIPLY_BASE",
-                "amount": 0.05
+                "amount": -0.1
             },
             "optional_equipment_slots": [
                 "MAINHAND",

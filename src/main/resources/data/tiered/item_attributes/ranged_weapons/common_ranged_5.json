@@ -1,5 +1,5 @@
 {
-    "id": "tiered:rare_ranged_2",
+    "id": "tiered:common_ranged_5",
     "verifiers": [
         {
             "tag": "c:bows"
@@ -7,37 +7,37 @@
         {
             "tag": "c:crossbows"
         },
-        {
+		{
             "tag": "too_many_bows:bows"
         }
     ],
     "weight": 1,
     "style": {
-        "color": "blue"
+        "color": "gray"
     },
     "attributes": [
         {
-            "type": "attributeslib:arrow_velocity",
+            "type": "attributeslib:draw_speed",
             "modifier": {
-                "name": "tiered:rare_ranged_2",
+                "name": "tiered:common_ranged_5",
                 "operation": "MULTIPLY_BASE",
-                "amount": 0.15
+                "amount": 0.05
             },
             "optional_equipment_slots": [
                 "MAINHAND",
-                "OFFHAND"
+				"OFFHAND"
             ]
         },
         {
-            "type": "generic.movement_speed",
+            "type": "attributeslib:arrow_damage",
             "modifier": {
-                "name": "tiered:rare_ranged_2",
+                "name": "tiered:common_ranged_5",
                 "operation": "MULTIPLY_BASE",
-                "amount": -0.075
+                "amount": -0.025
             },
             "optional_equipment_slots": [
                 "MAINHAND",
-                "OFFHAND"
+				"OFFHAND"
             ]
         }
     ]

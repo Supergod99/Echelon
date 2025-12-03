@@ -1,5 +1,5 @@
 {
-    "id": "tiered:rare_ranged_2",
+    "id": "tiered:rare_ranged_6",
     "verifiers": [
         {
             "tag": "c:bows"
@@ -17,27 +17,25 @@
     },
     "attributes": [
         {
-            "type": "attributeslib:arrow_velocity",
+            "type": "attributeslib:crit_chance",
             "modifier": {
-                "name": "tiered:rare_ranged_2",
+                "name": "tiered:rare_ranged_6",
                 "operation": "MULTIPLY_BASE",
                 "amount": 0.15
             },
             "optional_equipment_slots": [
-                "MAINHAND",
-                "OFFHAND"
+                "MAINHAND"
             ]
         },
         {
-            "type": "generic.movement_speed",
+            "type": "generic.armor",
             "modifier": {
-                "name": "tiered:rare_ranged_2",
-                "operation": "MULTIPLY_BASE",
-                "amount": -0.075
+                "name": "tiered:rare_ranged_6",
+                "operation": "ADDITION",
+                "amount": -3.0
             },
             "optional_equipment_slots": [
-                "MAINHAND",
-                "OFFHAND"
+                "MAINHAND"
             ]
         }
     ]
