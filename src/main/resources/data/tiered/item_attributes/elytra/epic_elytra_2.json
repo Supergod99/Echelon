@@ -1,9 +1,6 @@
 {
     "id": "tiered:epic_elytra_2",
     "verifiers": [
-        {
-            "id": "minecraft:elytra"
-        }
     ],
     "weight": 8,
     "style": {
