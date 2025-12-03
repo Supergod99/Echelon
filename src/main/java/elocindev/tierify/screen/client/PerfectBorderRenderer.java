@@ -35,6 +35,9 @@ public class PerfectBorderRenderer {
                                                   BorderTemplate borderTemplate,
                                                   int x, int y,
                                                   int width, int height) {
+        // force correct shader
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
         // Only apply to the Perfect border 
         if (borderTemplate.getIndex() != 6) {
             return;
@@ -89,6 +92,8 @@ public class PerfectBorderRenderer {
 
         // Reset color again
         RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
+
+        RenderSystem.disableBlend();
     }
 
     // Draws the 6 border pieces 
