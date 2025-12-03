@@ -208,6 +208,9 @@ public abstract class ItemStackClientMixin {
 
     @Inject(method = "getName", at = @At("RETURN"), cancellable = true)
     private void getNameMixin(CallbackInfoReturnable<Text> info) {
+        // Always reset first so it never leaks between items
+        ItemStackClientInternal.SCALED_LABEL = null;
+
         if (this.hasNbt() && this.getSubNbt("display") == null && this.getSubNbt(Tierify.NBT_SUBTAG_KEY) != null) {
     
             Identifier tier = new Identifier(getOrCreateSubNbt(Tierify.NBT_SUBTAG_KEY)
