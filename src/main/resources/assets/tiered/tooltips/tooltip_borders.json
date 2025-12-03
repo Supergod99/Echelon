@@ -50,7 +50,15 @@
                 "tiered:common_shield_3",
                 "tiered:common_shield_4",
                 "tiered:common_staffwand_1",
-                "tiered:common_staffwand_2"
+                "tiered:common_staffwand_2",
+				"tiered:common_ranged_1",
+				"tiered:common_ranged_2",
+				"tiered:common_ranged_3",
+				"tiered:common_ranged_4",
+				"tiered:common_ranged_5",
+				"tiered:common_ranged_6",
+				"tiered:common_ranged_7",
+				"tiered:common_ranged_8"
             ]
         },
         {
@@ -111,7 +119,16 @@
                 "tiered:uncommon_shield_3",
                 "tiered:uncommon_shield_4",
                 "tiered:uncommon_staffwand_1",
-                "tiered:uncommon_staffwand_2"
+                "tiered:uncommon_staffwand_2",
+				"tiered:uncomon_ranged_1",
+				"tiered:uncomon_ranged_2",
+				"tiered:uncomon_ranged_3",
+				"tiered:uncomon_ranged_4",
+				"tiered:uncomon_ranged_5",
+				"tiered:uncomon_ranged_6",
+				"tiered:uncomon_ranged_7",
+				"tiered:uncomon_ranged_8"
+
             ]
         },
         {
@@ -164,7 +181,15 @@
                 "tiered:rare_shield_3",
                 "tiered:rare_shield_4",
                 "tiered:rare_staffwand_1",
-                "tiered:rare_staffwand_2"
+                "tiered:rare_staffwand_2",
+				"tiered:rare_ranged_1",
+				"tiered:rare_ranged_2",
+				"tiered:rare_ranged_3",
+				"tiered:rare_ranged_4",
+				"tiered:rare_ranged_5",
+				"tiered:rare_ranged_6",
+				"tiered:rare_ranged_7",
+				"tiered:rare_ranged_8"
             ]
         },
         {
@@ -217,7 +242,15 @@
                 "tiered:epic_shield_3",
                 "tiered:epic_shield_4",
                 "tiered:epic_staffwand_1",
-                "tiered:epic_staffwand_2"
+                "tiered:epic_staffwand_2",
+				"tiered:epic_ranged_1",
+				"tiered:epic_ranged_2",
+				"tiered:epic_ranged_3",
+				"tiered:epic_ranged_4",
+				"tiered:epic_ranged_5",
+				"tiered:epic_ranged_6",
+				"tiered:epic_ranged_7",
+				"tiered:epic_ranged_8"
             ]
         },
         {
@@ -270,7 +303,15 @@
                 "tiered:legendary_shield_3",
                 "tiered:legendary_shield_4",
                 "tiered:legendary_staffwand_1",
-                "tiered:legendary_staffwand_2"
+                "tiered:legendary_staffwand_2",
+				"tiered:legendary_ranged_1",
+				"tiered:legendary_ranged_2",
+				"tiered:legendary_ranged_3",
+				"tiered:legendary_ranged_4",
+				"tiered:legendary_ranged_5",
+				"tiered:legendary_ranged_6",
+				"tiered:legendary_ranged_7",
+				"tiered:legendary_ranged_8"
             ]
         },
         {
@@ -323,7 +364,15 @@
                 "tiered:mythic_shield_3",
                 "tiered:mythic_shield_4",
                 "tiered:mythic_staffwand_1",
-                "tiered:mythic_staffwand_2"
+                "tiered:mythic_staffwand_2",
+				"tiered:mythic_ranged_1",
+				"tiered:mythic_ranged_2",
+				"tiered:mythic_ranged_3",
+				"tiered:mythic_ranged_4",
+				"tiered:mythic_ranged_5",
+				"tiered:mythic_ranged_6",
+				"tiered:mythic_ranged_7",
+				"tiered:mythic_ranged_8"
             ]
         },
 		{
