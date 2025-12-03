@@ -2,29 +2,68 @@
     "id": "tiered:mythic_armor_2",
     "verifiers": [
         {
+            "tag": "c:armors"
+        },
+        {
+            "tag": "forge:armor/helmets"
+        },
+        {
+            "tag": "forge:armor/chestplates"
+        },
+        {
+            "tag": "forge:armor/leggings"
+        },
+        {
+            "tag": "forge:armor/boots"
+        },
+        {
+            "tag": "forge:armors"
+        },
+        {
+            "tag": "forge:armor"
+        },
+        {
+            "tag": "minecraft:freeze_immune_wearables"
+        },
+        {
+            "tag": "minecraft:head_armor"
+        },
+        {
             "tag": "c:helmets"
+        },
+        {
+            "tag": "minecraft:chest_armor"
         },
         {
             "tag": "c:chestplates"
         },
         {
+            "tag": "minecraft:leg_armor"
+        },
+        {
             "tag": "c:leggings"
         },
         {
+            "tag": "minecraft:foot_armor"
+        },
+        {
             "tag": "c:boots"
+        },
+        {
+            "tag": "minecraft:trimmable_armor"
         }
     ],
-    "weight": 0,
+    "weight": 1,
     "style": {
         "color": "red"
     },
     "attributes": [
         {
-            "type": "generic.armor",
+            "type": "generic.max_health",
             "modifier": {
                 "name": "tiered:mythic_armor_2",
                 "operation": "ADDITION",
-                "amount": 4
+                "amount": 5.0
             },
             "optional_equipment_slots": [
                 "FEET",
@@ -37,8 +76,8 @@
             "type": "generic.movement_speed",
             "modifier": {
                 "name": "tiered:mythic_armor_2",
-                "operation": "MULTIPLY_BASE",
-                "amount": 0.05
+                "operation": "ADDITION",
+                "amount": -0.008
             },
             "optional_equipment_slots": [
                 "FEET",

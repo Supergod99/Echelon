@@ -1,0 +1,90 @@
+{
+    "id": "tiered:mythic_armor_17",
+    "verifiers": [
+        {
+            "tag": "c:armors"
+        },
+        {
+            "tag": "forge:armor/helmets"
+        },
+        {
+            "tag": "forge:armor/chestplates"
+        },
+        {
+            "tag": "forge:armor/leggings"
+        },
+        {
+            "tag": "forge:armor/boots"
+        },
+        {
+            "tag": "forge:armors"
+        },
+        {
+            "tag": "forge:armor"
+        },
+        {
+            "tag": "minecraft:freeze_immune_wearables"
+        },
+        {
+            "tag": "minecraft:head_armor"
+        },
+        {
+            "tag": "c:helmets"
+        },
+        {
+            "tag": "minecraft:chest_armor"
+        },
+        {
+            "tag": "c:chestplates"
+        },
+        {
+            "tag": "minecraft:leg_armor"
+        },
+        {
+            "tag": "c:leggings"
+        },
+        {
+            "tag": "minecraft:foot_armor"
+        },
+        {
+            "tag": "c:boots"
+        },
+        {
+            "tag": "minecraft:trimmable_armor"
+        }
+    ],
+    "weight": 1,
+    "style": {
+        "color": "red"
+    },
+    "attributes": [
+        {
+            "type": "ars_nouveau:ars_nouveau.perk.spell_damage",
+            "modifier": {
+                "name": "tiered:mythic_armor_17",
+                "operation": "ADDITION",
+                "amount": 3.0
+            },
+            "optional_equipment_slots": [
+                "FEET",
+                "LEGS",
+                "CHEST",
+                "HEAD"
+            ]
+        },
+        {
+            "type": "ars_nouveau:ars_nouveau.perk.max_mana",
+            "modifier": {
+                "name": "tiered:mythic_armor_17",
+                "operation": "ADDITION",
+                "amount": -60.0
+            },
+            "optional_equipment_slots": [
+                "FEET",
+                "LEGS",
+                "CHEST",
+                "HEAD"
+            ]
+        }
+    ]
+}
