@@ -5,6 +5,7 @@ import com.google.common.collect.Multimap;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 
 import draylar.tiered.api.PotentialAttribute;
+import elocindev.tierify.screen.client.ScaledText;
 import elocindev.tierify.screen.client.TierGradientAnimator;
 import elocindev.tierify.Tierify;
 import elocindev.tierify.util.TieredTooltip;
@@ -225,6 +226,9 @@ public abstract class ItemStackClientMixin {
                 if (tag != null && tag.getBoolean("Perfect")) {
                     net.minecraft.text.MutableText perfect =
                             elocindev.tierify.screen.client.PerfectLabelAnimator.getPerfectLabel();
+                    // Shrink ONLY the Perfect label (scale 0.65)
+                    elocindev.tierify.screen.client.ScaledText smallPerfect =
+                        new elocindev.tierify.screen.client.ScaledText(perfect, 0.65f);
                 
                     // PERFECT (gradient, bold) + space + existing tier label
                     text = perfect.append(" ").append(text);
@@ -234,7 +238,7 @@ public abstract class ItemStackClientMixin {
                 // vanilla / modded item name stays the same
                 MutableText vanilla = info.getReturnValue().copy();
             
-                // final combined display name:
+                // final combined display name
                 info.setReturnValue(text.append(" ").append(vanilla));
             }
         }
@@ -252,7 +256,7 @@ public abstract class ItemStackClientMixin {
                 tierTag.putString("BorderTier", "tiered:perfect");
             }
         }
-        // ------------------------------------
+
         if (this.isTiered && !multimap.isEmpty() && equipmentSlot == EquipmentSlot.OFFHAND && this.getAttributeModifiers(EquipmentSlot.MAINHAND) != null
                 && !this.getAttributeModifiers(EquipmentSlot.MAINHAND).isEmpty()) {
             try {
