@@ -5,7 +5,9 @@ import com.google.common.collect.Multimap;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 
 import draylar.tiered.api.PotentialAttribute;
+import elocindev.tierify.screen.client.PerfectLabelAnimator;
 import elocindev.tierify.screen.client.ScaledPerfectLabel;
+import elocindev.tierify.screen.client.ItemStackClientInternal;
 import elocindev.tierify.screen.client.TierGradientAnimator;
 import elocindev.tierify.Tierify;
 import elocindev.tierify.util.TieredTooltip;
