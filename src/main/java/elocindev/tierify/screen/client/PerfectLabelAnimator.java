@@ -21,10 +21,8 @@ public class PerfectLabelAnimator {
     private static final float CROSSFADE_MS = 250.0f;
     private static final float CROSSFADE_FRACTION = CROSSFADE_MS / TIER_DURATION_MS; // ~0.15625
 
-    // How much the gradient shifts per character (spatial wave)
+    // How much the gradient shifts per character 
     private static final float CHAR_WAVE_SPACING = 0.12f;
-
-    // --- Tier color definitions (from your code) as 3-point RGB gradients ---
 
     // Rare deep blue → cyan pulse
     private static final int[] RARE_COLORS = new int[]{
@@ -193,7 +191,7 @@ public class PerfectLabelAnimator {
         }
     }
 
-    // --- Helpers ---
+    // helpers
 
     private static int rgb(int r, int g, int b) {
         r &= 0xFF;
