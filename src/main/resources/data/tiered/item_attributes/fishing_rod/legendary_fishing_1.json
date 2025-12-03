@@ -1,9 +1,6 @@
 {
     "id": "tiered:legendary_fishing_1",
     "verifiers": [
-        {
-            "id": "minecraft:fishing_rod"
-        }
     ],
     "weight": 3,
     "style": {

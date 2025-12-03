@@ -1,9 +1,6 @@
 {
     "id": "tiered:uncommon_fishing_1",
     "verifiers": [
-        {
-            "id": "minecraft:fishing_rod"
-        }
     ],
     "weight": 35,
     "style": {

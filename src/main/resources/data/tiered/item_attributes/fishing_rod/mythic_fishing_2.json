@@ -1,9 +1,6 @@
 {
     "id": "tiered:mythic_fishing_2",
     "verifiers": [
-        {
-            "id": "minecraft:fishing_rod"
-        }
     ],
     "weight": 0,
     "style": {
