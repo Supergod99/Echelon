@@ -79,24 +79,27 @@ public abstract class ItemStackClientMixin {
         return sb.toString();
     }
 
-    private Text wrapText(MutableText text) {
+    private List<Text> wrapText(MutableText text) {
         int maxWidth = 240;
         TextRenderer renderer = MinecraftClient.getInstance().textRenderer;
     
+        List<Text> result = new ArrayList<>();
+    
+        // no need to wrap if already short enough
         if (renderer.getWidth(text) <= maxWidth) {
-            return text;
+            result.add(text);
+            return result;
         }
     
+        // wrap into OrderedText lines
         List<OrderedText> wrapped = renderer.wrapLines(text, maxWidth);
-        MutableText out = Text.literal("");
     
         for (OrderedText ln : wrapped) {
             String s = orderedTextToString(ln);
-            out.append(Text.literal(s));
-            out.append("\n");
+            result.add(Text.literal(s));
         }
     
-        return out;
+        return result;
     }
 
 
