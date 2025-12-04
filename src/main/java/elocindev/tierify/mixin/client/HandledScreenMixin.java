@@ -36,11 +36,17 @@ public abstract class HandledScreenMixin extends Screen {
     private List<Text> tiered_screenList;
     @Unique
     private Optional<TooltipData> tiered_screenData;
+    @Unique
+    private ItemStack tiered_screenStack;
 
     public HandledScreenMixin(Text title) {
         super(title);
     }
 
+    // --- CAPTURE VARIABLES ---
+    // This is safe here because HandledScreen creates a local variable for the list
+    // This ensures we keep "Right-click to equip" and other mod additions
+    
     @ModifyVariable(method = "drawMouseoverTooltip", at = @At("STORE"), ordinal = 0)
     private List<Text> captureList(List<Text> list) {
         this.tiered_screenList = list;
@@ -52,16 +58,6 @@ public abstract class HandledScreenMixin extends Screen {
         this.tiered_screenData = data;
         return data;
     }
-
-    @Inject(method = "drawMouseoverTooltip", 
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/DrawContext;drawTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;Ljava/util/Optional;II)V"), 
-            cancellable = true)
-    protected void drawMouseoverTooltipMixin(DrawContext context, int x, int y, CallbackInfo info) {
-    }
-    
-    // Additional capture for ItemStack to be safe
-    @Unique
-    private ItemStack tiered_screenStack;
     
     @ModifyVariable(method = "drawMouseoverTooltip", at = @At("STORE"), ordinal = 0)
     private ItemStack captureStack(ItemStack stack) {
@@ -72,7 +68,8 @@ public abstract class HandledScreenMixin extends Screen {
     @Inject(method = "drawMouseoverTooltip", 
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/DrawContext;drawTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;Ljava/util/Optional;II)V"), 
             cancellable = true)
-    protected void injectRender(DrawContext context, int x, int y, CallbackInfo info) {
+    protected void drawMouseoverTooltipMixin(DrawContext context, int x, int y, CallbackInfo info) {
+        
         if (this.tiered_screenStack == null || this.tiered_screenList == null) return;
         ItemStack stack = this.tiered_screenStack;
 
@@ -90,6 +87,7 @@ public abstract class HandledScreenMixin extends Screen {
                             template.addStack(stack);
                         }
 
+                        // Use captured list (contains "Right-click to equip")
                         List<TooltipComponent> list = new ArrayList<>();
                         int wrapWidth = 350;
 
