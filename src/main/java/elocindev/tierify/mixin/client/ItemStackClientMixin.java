@@ -67,6 +67,13 @@ public abstract class ItemStackClientMixin {
     private Map<String, ArrayList> map = new HashMap<>();
     private boolean toughnessZero = false;
 
+    private void addWrapped(List<Text> list, Text text) {
+        TextRenderer renderer = MinecraftClient.getInstance().textRenderer;
+        for (OrderedText line : renderer.wrapLines(text, 240)) {
+            list.add(Text.literal("").append(line));
+        }
+    }
+
     @Inject(method = "getTooltip", at = @At(value = "INVOKE", target = "Ljava/util/List;add(Ljava/lang/Object;)Z", ordinal = 6), locals = LocalCapture.CAPTURE_FAILHARD)
     private void storeTooltipInformation(PlayerEntity player, TooltipContext context, CallbackInfoReturnable<List> info, List list, MutableText mutableText, int i, EquipmentSlot var6[], int var7,
             int var8, EquipmentSlot equipmentSlot, Multimap<EntityAttribute, EntityAttributeModifier> multimap) {
@@ -99,6 +106,9 @@ public abstract class ItemStackClientMixin {
                 list.add(Text.translatable("tiered.attribute.modifier.plus." + (int) collected.get(0), "§9+" + this.armorModifierFormat,
                         ((boolean) collected.get(2) ? "§9(+" : "§c(") + (String) collected.get(1) + ((int) collected.get(0) > 0 ? "%)" : ")"),
                         Text.translatable(translationKey).formatted(Formatting.BLUE)));
+
+                addWrapped(list, wrapped);
+                return true;
             }
         } else {
             list.add((Text) text);
@@ -122,6 +132,10 @@ public abstract class ItemStackClientMixin {
             list.add(Text.translatable("tiered.attribute.modifier.equals." + (int) collected.get(0), "§2 " + this.armorModifierFormat,
                     ((boolean) collected.get(2) ? "§2(+" : "§c(") + (String) collected.get(1) + ((int) collected.get(0) > 0 ? "%)" : ")"),
                     Text.translatable(translationKey).formatted(Formatting.DARK_GREEN)));
+            
+            addWrapped(list, wrapped);
+            return true;
+            
         } else {
             list.add((Text) text);
         }
