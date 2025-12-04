@@ -92,41 +92,34 @@ public static void renderTieredTooltipFromComponents(DrawContext context, TextRe
             nameCentering = i / 2 - tooltipComponent2.getWidth(textRenderer) / 2;
         }
     
-        boolean isPerfectMarker = false;
-        
-        if (tooltipComponent2 != null) {
-            // ordered text form
-            var ordered = tooltipComponent2.getText();
-        
-            if (ordered != null) {
-                // Extract characters
-                String raw = ordered.getString();
-        
-                // Our marker is exactly "\uE000"
-                if (raw.length() == 1 && raw.charAt(0) == '\uE000') {
-                    isPerfectMarker = true;
-                }
-            }
-        }
-        
-        if (isPerfectMarker) {
-        
+        if (r == 0 && isPerfectTooltip) {
+            tooltipComponent2.drawText(
+                    textRenderer,
+                    n + nameCentering,
+                    q,
+                    context.getMatrices().peek().getPositionMatrix(),
+                    context.getVertexConsumers()
+            );
+    
+            q += tooltipComponent2.getHeight() + 2;
+    
             MutableText perfectText = PerfectLabelAnimator.getPerfectLabel();
             float scale = 0.65f;
-        
+    
             int textWidth = textRenderer.getWidth(perfectText);
             float scaledWidth = textWidth * scale;
-        
+    
+
             float xPos = n + (l - scaledWidth) / 2f;
-        
-            float baseHeight = 9f;
+    
+            float baseHeight = 9f;           // vanilla line height
             float scaledHeight = baseHeight * scale;
-            float yOffset = -(baseHeight - scaledHeight) / 2f;
-        
+            float yOffset = -(baseHeight - scaledHeight) / 2f;  // vertical recenter
+    
             context.getMatrices().push();
             context.getMatrices().translate(xPos, q + yOffset, 400f);
             context.getMatrices().scale(scale, scale, 1f);
-        
+    
             textRenderer.draw(
                     perfectText,
                     0,
@@ -139,24 +132,28 @@ public static void renderTieredTooltipFromComponents(DrawContext context, TextRe
                     0,
                     0xF000F0
             );
-        
+    
             context.getMatrices().pop();
-        
-            q += 10;  // advance line
+    
+
+            q += baseHeight + 3;
+    
+
             continue;
         }
     
-        // Default draw for non-PERFECT lines
+
         tooltipComponent2.drawText(
-            textRenderer,
-            n + nameCentering,
-            q,
-            context.getMatrices().peek().getPositionMatrix(),
-            context.getVertexConsumers()
+                textRenderer,
+                n + nameCentering,
+                q,
+                context.getMatrices().peek().getPositionMatrix(),
+                context.getVertexConsumers()
         );
     
-        q += tooltipComponent2.getHeight() + (r == 0 ? 2 : 0);
+        q += tooltipComponent2.getHeight() + (r == 0 && isPerfectTooltip ? 12 : (r == 0 ? 2 : 0));
     }
+
     q = o;
 
     for (r = 0; r < components.size(); ++r) {
@@ -171,6 +168,8 @@ public static void renderTieredTooltipFromComponents(DrawContext context, TextRe
     if (border > 7) {
         border -= 8;
     }
+
+    boolean isPerfectTooltip = (border == 6);
 
     context.getMatrices().push();
     context.getMatrices().translate(0.0f, 0.0f, 400.0f);
