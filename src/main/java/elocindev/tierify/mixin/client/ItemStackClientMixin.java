@@ -266,7 +266,7 @@ public abstract class ItemStackClientMixin {
                     insertPos = 0;
                 }
         
-                list.add(insertPos, elocindev.tierify.screen.client.PerfectMarkerComponent.INSTANCE);
+                list.add(insertPos, Text.literal("__TIERIFY_PERFECT_LABEL__"));
             }
         }
     }
