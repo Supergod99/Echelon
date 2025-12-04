@@ -252,22 +252,6 @@ public abstract class ItemStackClientMixin {
             } catch (UnsupportedOperationException exception) {
             }
         }
-        if (this.hasNbt()) {
-            NbtCompound tierTag = this.getSubNbt(Tierify.NBT_SUBTAG_KEY);
-            if (tierTag != null && tierTag.getBoolean("Perfect")) {
-        
-        
-                // PERFECT should ALWAYS appear directly under the item name
-                int insertPos = 1;
-        
-                // Safety fallback 
-                if (list.size() == 0) {
-                    insertPos = 0;
-                }
-        
-                list.add(insertPos, Text.literal("\uE000"));
-            }
-        }
     }
 
     @ModifyExpressionValue(method = "getTooltip", at = @At(value = "INVOKE", target = "Lnet/minecraft/text/Text;translatable(Ljava/lang/String;)Lnet/minecraft/text/MutableText;", ordinal = 1))
