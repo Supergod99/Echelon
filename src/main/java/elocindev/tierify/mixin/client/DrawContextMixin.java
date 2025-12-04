@@ -43,7 +43,6 @@ public class DrawContextMixin {
             String nbtString = stack.getNbt().getCompound("Tiered").asString();
             
             for (int i = 0; i < TierifyClient.BORDER_TEMPLATES.size(); i++) {
-                // Check if we need to render a custom border (either specifically for this stack or via decider)
                 boolean matchesDecider = !TierifyClient.BORDER_TEMPLATES.get(i).containsStack(stack) 
                                          && TierifyClient.BORDER_TEMPLATES.get(i).containsDecider(nbtString);
                 boolean matchesStack = TierifyClient.BORDER_TEMPLATES.get(i).containsStack(stack);
@@ -52,27 +51,29 @@ public class DrawContextMixin {
                     TierifyClient.BORDER_TEMPLATES.get(i).addStack(stack);
                 } 
                 else if (matchesStack) {
-                    // 1. Get the raw text lines (Lore, Attributes, Name, etc.)
                     List<Text> text = Screen.getTooltipFromItem(client, stack);
                     List<TooltipComponent> list = new ArrayList<>();
 
-                    // 2. THE FIX: Iterate and Wrap
-                    // Instead of blindly converting to OrderedText, we check the width.
-                    // 200 is a safe max width for tooltips (Vanilla is usually ~170-200).
-                    int maxWidth = 200; 
+                    int wrapWidth = 300; 
 
-                    for (Text t : text) {
-                        // wrapLines returns List<OrderedText>. 
-                        // If the line is short, it returns a list of size 1.
-                        // If long, it splits it while PRESERVING styles/colors perfectly.
-                        List<OrderedText> wrapped = textRenderer.wrapLines(t, maxWidth);
+                    for (int k = 0; k < text.size(); k++) {
+                        Text t = text.get(k);
                         
-                        for (OrderedText line : wrapped) {
-                            list.add(TooltipComponent.of(line));
+                        // Check width
+                        int width = textRenderer.getWidth(t);
+
+                        // If it's the title (0) or the line is short enough, keep it valid.
+                        if (k == 0 || width <= wrapWidth) {
+                            list.add(TooltipComponent.of(t.asOrderedText()));
+                        } else {
+                            // Only wrap long descriptions
+                            List<OrderedText> wrapped = textRenderer.wrapLines(t, wrapWidth);
+                            for (OrderedText line : wrapped) {
+                                list.add(TooltipComponent.of(line));
+                            }
                         }
                     }
 
-                    // 3. Re-inject TooltipData (like Bundles) at index 1 if it exists
                     stack.getTooltipData().ifPresent(data -> {
                         if (list.size() > 1) {
                             list.add(1, TooltipComponent.of(data));
@@ -81,7 +82,6 @@ public class DrawContextMixin {
                         }
                     });
 
-                    // 4. Render using your custom system
                     TieredTooltip.renderTieredTooltipFromComponents(
                         (DrawContext) (Object) this, 
                         textRenderer, 
