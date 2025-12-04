@@ -222,9 +222,7 @@ public abstract class ItemStackClientMixin {
                 String tierKey = elocindev.tierify.screen.client.TierGradientAnimator.getTierFromId(potentialAttribute.getID());
                 text = elocindev.tierify.screen.client.TierGradientAnimator.animate(text, tierKey);
                 
-                }
 
-            
                 // vanilla / modded item name stays the same
                 MutableText vanilla = info.getReturnValue().copy();
             
