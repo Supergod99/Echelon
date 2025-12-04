@@ -60,9 +60,6 @@ public static void renderTieredTooltipFromComponents(DrawContext context, TextRe
         }
         j += tooltipComponent.getHeight();
     }
-
-    int MAX_WIDTH = 240;
-    if (i > MAX_WIDTH) i = MAX_WIDTH;
     
     if (borderTemplate.getIndex() == 6) {    
         j += 12;
