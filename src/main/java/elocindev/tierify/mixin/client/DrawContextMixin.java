@@ -8,10 +8,11 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import elocindev.tierify.TierifyClient;
 import elocindev.tierify.Tierify;
@@ -21,7 +22,6 @@ import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.tooltip.HoveredTooltipPositioner;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.client.item.TooltipData;
@@ -38,13 +38,32 @@ public class DrawContextMixin {
     @Final
     private MinecraftClient client;
 
+    @Unique
+    private List<Text> tiered_capturedList;
+
+    @Unique
+    private Optional<TooltipData> tiered_capturedData;
+
+    // Capture the List<Text> (tooltip lines) safely
+    @ModifyVariable(method = "drawItemTooltip", at = @At("STORE"), ordinal = 0)
+    private List<Text> captureTooltipList(List<Text> list) {
+        this.tiered_capturedList = list;
+        return list;
+    }
+
+    // Capture the Optional<TooltipData> (icons/bundles) safely
+    @ModifyVariable(method = "drawItemTooltip", at = @At("STORE"), ordinal = 0)
+    private Optional<TooltipData> captureTooltipData(Optional<TooltipData> data) {
+        this.tiered_capturedData = data;
+        return data;
+    }
+
     @Inject(method = "drawItemTooltip", 
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/DrawContext;drawTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;Ljava/util/Optional;II)V"), 
-            cancellable = true, 
-            locals = LocalCapture.CAPTURE_FAILSOFT)
-    private void drawItemTooltipMixin(TextRenderer textRenderer, ItemStack stack, int x, int y, CallbackInfo info, List<Text> text, Optional<TooltipData> data) {
+            cancellable = true)
+    private void drawItemTooltipMixin(TextRenderer textRenderer, ItemStack stack, int x, int y, CallbackInfo info) {
 
-        if (Tierify.CLIENT_CONFIG.tieredTooltip && stack.hasNbt() && stack.getNbt().contains("Tiered")) {
+        if (Tierify.CLIENT_CONFIG.tieredTooltip && stack.hasNbt() && stack.getNbt().contains("Tiered") && tiered_capturedList != null) {
             String nbtString = stack.getNbt().getCompound("Tiered").asString();
             
             for (int i = 0; i < TierifyClient.BORDER_TEMPLATES.size(); i++) {
@@ -61,8 +80,8 @@ public class DrawContextMixin {
                     // --- SMART WRAP (Width 350) ---
                     int wrapWidth = 350; 
 
-                    for (int k = 0; k < text.size(); k++) {
-                        Text t = text.get(k);
+                    for (int k = 0; k < tiered_capturedList.size(); k++) {
+                        Text t = tiered_capturedList.get(k);
                         int width = textRenderer.getWidth(t);
 
                         // Don't wrap title (k=0) or short lines.
@@ -76,13 +95,15 @@ public class DrawContextMixin {
                         }
                     }
 
-                    data.ifPresent(d -> {
-                        if (list.size() > 1) {
-                            list.add(1, TooltipComponent.of(d));
-                        } else {
-                            list.add(TooltipComponent.of(d));
-                        }
-                    });
+                    if (tiered_capturedData != null) {
+                        tiered_capturedData.ifPresent(d -> {
+                            if (list.size() > 1) {
+                                list.add(1, TooltipComponent.of(d));
+                            } else {
+                                list.add(TooltipComponent.of(d));
+                            }
+                        });
+                    }
 
                     TieredTooltip.renderTieredTooltipFromComponents(
                         (DrawContext) (Object) this, 
