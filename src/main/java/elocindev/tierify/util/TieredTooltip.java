@@ -93,13 +93,11 @@ public static void renderTieredTooltipFromComponents(DrawContext context, TextRe
         }
     
         // Detect our PERFECT marker line
-        var maybeText = tooltipComponent2.getText();
-        
+
         boolean isPerfectMarker = false;
         
-        if (maybeText != null) {
-            // Convert OrderedText → String
-            String raw = maybeText.getString();
+        if (tooltipComponent2 instanceof net.minecraft.client.gui.tooltip.TextTooltipComponent textComp) {
+            String raw = textComp.text().getString(); // OrderedText → String
             if (raw.equals("__TIERIFY_PERFECT_LABEL__")) {
                 isPerfectMarker = true;
             }
