@@ -72,9 +72,8 @@ public abstract class ItemStackClientMixin {
 
 
     private void addWrapped(List<Text> list, List<OrderedText> wrapped) {
-        TextRenderer renderer = MinecraftClient.getInstance().textRenderer;
         for (OrderedText line : wrapped) {
-            list.add(Text.literal(renderer.getStringVisually(line)));
+            list.add(Text.literal(line.asString()));
         }
     }
 
