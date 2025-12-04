@@ -70,12 +70,6 @@ public abstract class ItemStackClientMixin {
     private Map<String, ArrayList> map = new HashMap<>();
     private boolean toughnessZero = false;
 
-    private void addWrapped(List<Text> list, Text text) {
-        TextRenderer renderer = MinecraftClient.getInstance().textRenderer;
-        for (OrderedText line : renderer.wrapLines(text, 240)) {
-            list.add(Text.literal("").append(line));
-        }
-    }
 
     private void addWrapped(List<Text> list, List<OrderedText> wrappedLines) {
         for (OrderedText line : wrappedLines) {
@@ -122,7 +116,7 @@ public abstract class ItemStackClientMixin {
                         ((boolean) collected.get(2) ? "§9(+" : "§c(") + (String) collected.get(1) + ((int) collected.get(0) > 0 ? "%)" : ")"),
                         Text.translatable(translationKey).formatted(Formatting.BLUE)));
 
-                addWrapped(list, wrapped);
+                addWrapped(list, wrapTooltipLine((MutableText) text));
                 return true;
             }
         } else {
@@ -148,7 +142,7 @@ public abstract class ItemStackClientMixin {
                     ((boolean) collected.get(2) ? "§2(+" : "§c(") + (String) collected.get(1) + ((int) collected.get(0) > 0 ? "%)" : ")"),
                     Text.translatable(translationKey).formatted(Formatting.DARK_GREEN)));
             
-            addWrapped(list, wrapped);
+            addWrapped(list, wrapTooltipLine((MutableText) text));
             return true;
             
         } else {
