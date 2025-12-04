@@ -35,7 +35,8 @@ public abstract class HandledScreenMixin extends Screen {
 
     @Shadow @Nullable protected Slot focusedSlot;
 
-    public HandledScreenMixin(Text title) {
+    // We extend Screen, so we need a constructor matching super
+    protected HandledScreenMixin(Text title) {
         super(title);
     }
 
@@ -43,16 +44,19 @@ public abstract class HandledScreenMixin extends Screen {
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/DrawContext;drawTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;Ljava/util/Optional;II)V"), 
             cancellable = true)
     protected void drawMouseoverTooltipMixin(DrawContext context, int x, int y, CallbackInfo info) {
-        // --- MANUAL DATA RETRIEVAL (Fixes InjectionError) ---
+        
+        // Safety check
         if (this.focusedSlot == null || !this.focusedSlot.hasStack()) return;
         
         ItemStack stack = this.focusedSlot.getStack();
 
         if (Tierify.CLIENT_CONFIG.tieredTooltip && stack.hasNbt() && stack.getNbt().contains("Tiered")) {
             
-            // Re-generate Tooltip List/Data locally
-            // This includes "Right-click to equip" and other modded text
-            List<Text> text = this.getTooltipFromItem(stack);
+            // --- FIX: Pass 'this.client' to the static method ---
+            // This generates the list of text lines (Lore, Name, Attributes)
+            List<Text> text = Screen.getTooltipFromItem(this.client, stack);
+            
+            // Get the bundle/icon data
             Optional<TooltipData> data = stack.getTooltipData();
 
             // --- 1. PERFECT BORDER OVERRIDE ---
@@ -70,10 +74,12 @@ public abstract class HandledScreenMixin extends Screen {
                         List<TooltipComponent> list = new ArrayList<>();
                         int wrapWidth = 350;
 
+                        // Wrap text logic
                         for (int k = 0; k < text.size(); k++) {
                             Text t = text.get(k);
                             int width = this.textRenderer.getWidth(t);
 
+                            // Don't wrap title (k=0) or short lines
                             if (k == 0 || width <= wrapWidth) {
                                 list.add(TooltipComponent.of(t.asOrderedText()));
                             } else {
@@ -84,6 +90,7 @@ public abstract class HandledScreenMixin extends Screen {
                             }
                         }
 
+                        // Insert Icon/Bundle data if present
                         data.ifPresent(d -> {
                             if (list.size() > 1) {
                                 list.add(1, TooltipComponent.of(d));
@@ -92,6 +99,7 @@ public abstract class HandledScreenMixin extends Screen {
                             }
                         });
 
+                        // Render with Custom Border
                         TieredTooltip.renderTieredTooltipFromComponents(
                                 context,
                                 this.textRenderer,
