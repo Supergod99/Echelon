@@ -2,7 +2,7 @@ package elocindev.tierify.mixin.client;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -22,6 +22,7 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.gui.tooltip.HoveredTooltipPositioner;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
+import net.minecraft.client.item.TooltipData;
 import net.minecraft.item.ItemStack;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
@@ -34,8 +35,11 @@ public abstract class HandledScreenMixin extends Screen {
         super(title);
     }
 
-    @Inject(method = "drawMouseoverTooltip", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/DrawContext;drawTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;Ljava/util/Optional;II)V"), cancellable = true, locals = LocalCapture.CAPTURE_FAILSOFT)
-    protected void drawMouseoverTooltipMixin(DrawContext context, int x, int y, CallbackInfo info, ItemStack stack) {
+    @Inject(method = "drawMouseoverTooltip", 
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/DrawContext;drawTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;Ljava/util/Optional;II)V"), 
+            cancellable = true, 
+            locals = LocalCapture.CAPTURE_FAILSOFT)
+    protected void drawMouseoverTooltipMixin(DrawContext context, int x, int y, CallbackInfo info, ItemStack stack, List<Text> text, Optional<TooltipData> data) {
         if (Tierify.CLIENT_CONFIG.tieredTooltip && stack.hasNbt() && stack.getNbt().contains("Tiered")) {
             
             // --- 1. PERFECT BORDER OVERRIDE LOGIC ---
@@ -45,18 +49,12 @@ public abstract class HandledScreenMixin extends Screen {
                 for (int p = 0; p < TierifyClient.BORDER_TEMPLATES.size(); p++) {
                     BorderTemplate template = TierifyClient.BORDER_TEMPLATES.get(p);
 
-                    // Matches the perfect decider defined in TooltipBorderLoader
                     if (template.containsDecider("{BorderTier:\"tiered:perfect\"}")) {
-
-                        // Register this stack to this template
                         if (!template.containsStack(stack)) {
                             template.addStack(stack);
                         }
 
-                        // Render directly with perfect border
-                        List<Text> text = Screen.getTooltipFromItem(client, stack);
-                        
-                        // FIX: SMART WRAP LINES MANUALLY
+                        // Use the captured 'text' list
                         List<TooltipComponent> list = new ArrayList<>();
                         int wrapWidth = 350;
 
@@ -73,13 +71,13 @@ public abstract class HandledScreenMixin extends Screen {
                                 }
                             }
                         }
-                        // END FIX
 
-                        stack.getTooltipData().ifPresent(data -> {
+                        // Use the captured 'data' optional
+                        data.ifPresent(d -> {
                             if (list.size() > 1) {
-                                list.add(1, TooltipComponent.of(data));
+                                list.add(1, TooltipComponent.of(d));
                             } else {
-                                list.add(TooltipComponent.of(data));
+                                list.add(TooltipComponent.of(d));
                             }
                         });
 
@@ -101,15 +99,13 @@ public abstract class HandledScreenMixin extends Screen {
             // --- END PERFECT OVERRIDE ---
 
 
-            // --- 2. STANDARD TIER BORDER LOGIC ---
             String nbtString = stack.getNbt().getCompound("Tiered").asString();
             for (int i = 0; i < TierifyClient.BORDER_TEMPLATES.size(); i++) {
                 if (!TierifyClient.BORDER_TEMPLATES.get(i).containsStack(stack) && TierifyClient.BORDER_TEMPLATES.get(i).containsDecider(nbtString)) {
                     TierifyClient.BORDER_TEMPLATES.get(i).addStack(stack);
                 } else if (TierifyClient.BORDER_TEMPLATES.get(i).containsStack(stack)) {
-                    List<Text> text = Screen.getTooltipFromItem(client, stack);
-
-                    // FIX: SMART WRAP LINES MANUALLY (Repeated for standard logic)
+                    
+                    // Use captured 'text'
                     List<TooltipComponent> list = new ArrayList<>();
                     int wrapWidth = 350;
 
@@ -126,13 +122,13 @@ public abstract class HandledScreenMixin extends Screen {
                             }
                         }
                     }
-                    // END FIX
 
-                    stack.getTooltipData().ifPresent(data -> {
+                    // Use captured 'data'
+                    data.ifPresent(d -> {
                         if (list.size() > 1) {
-                            list.add(1, TooltipComponent.of(data));
+                            list.add(1, TooltipComponent.of(d));
                         } else {
-                            list.add(TooltipComponent.of(data));
+                            list.add(TooltipComponent.of(d));
                         }
                     });
 
