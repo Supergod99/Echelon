@@ -162,7 +162,7 @@ public static void renderTieredTooltipFromComponents(DrawContext context, TextRe
                 context.getVertexConsumers()
         );
     
-        q += tooltipComponent2.getHeight();
+        q += tooltipComponent2.getHeight() + 1;
     }
 
     q = o;
