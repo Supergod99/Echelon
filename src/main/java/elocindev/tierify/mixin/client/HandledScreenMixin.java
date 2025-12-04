@@ -108,16 +108,25 @@ public abstract class HandledScreenMixin extends Screen {
                     List<Text> text = Screen.getTooltipFromItem(client, stack);
 
 
-                    List<TooltipComponent> list = new ArrayList<>();
-                    int maxWidth = 200;
+                    int wrapWidth = 300; // Wider width for icons/titles
 
-                    for (Text t : text) {
-                        List<OrderedText> wrapped = this.textRenderer.wrapLines(t, maxWidth);
-                        for (OrderedText line : wrapped) {
-                            list.add(TooltipComponent.of(line));
+                    for (int k = 0; k < text.size(); k++) {
+                        Text t = text.get(k);
+                        int width = this.textRenderer.getWidth(t);
+
+                        // 1. Don't wrap Titles (Index 0).
+                        // 2. Only wrap lines that are excessively long (> 300px).
+                        if (k == 0 || width <= wrapWidth) {
+                            list.add(TooltipComponent.of(t.asOrderedText()));
+                        } else {
+                            // Only wrap long descriptions
+                            List<OrderedText> wrapped = this.textRenderer.wrapLines(t, wrapWidth);
+                            for (OrderedText line : wrapped) {
+                                list.add(TooltipComponent.of(line));
+                            }
                         }
                     }
-
+                    // ---------------------------------------
 
                     stack.getTooltipData().ifPresent(data -> {
                         if (list.size() > 1) {
