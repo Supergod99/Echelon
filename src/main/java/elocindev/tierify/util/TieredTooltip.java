@@ -38,7 +38,7 @@ public class TieredTooltip {
         }
     }
 
-public static void renderTieredTooltipFromComponents(DrawContext context, TextRenderer textRenderer, List<TooltipComponent> components, int x, int y, TooltipPositioner positioner,
+    public static void renderTieredTooltipFromComponents(DrawContext context, TextRenderer textRenderer, List<TooltipComponent> components, int x, int y, TooltipPositioner positioner,
             BorderTemplate borderTemplate) {
         TooltipComponent tooltipComponent2;
         int r;
@@ -48,6 +48,7 @@ public static void renderTieredTooltipFromComponents(DrawContext context, TextRe
         }
         int i = 0;
         int j = components.size() == 1 ? -2 : 0;
+        
         for (TooltipComponent tooltipComponent : components) {
             if (tooltipComponent == null) {
                 continue;
@@ -59,13 +60,19 @@ public static void renderTieredTooltipFromComponents(DrawContext context, TextRe
             j += tooltipComponent.getHeight();
         }
         
-        // --- FIX 1: ADD PADDING TO WIDTH ---
-        i += 8; 
-        // -----------------------------------
-
+        // --- VISUAL FIXES ---
+        i += 8; // Horizontal Padding
+        
+        int topPadding = 4;
+        int bottomPadding = 4;
+        
+        j += topPadding + bottomPadding; 
+        
+        // Extra height for Perfect label
         if (borderTemplate.getIndex() == 6) {    
             j += 12;
         }
+        
         if (i < 64) {
             i = 64;
         }
@@ -95,7 +102,9 @@ public static void renderTieredTooltipFromComponents(DrawContext context, TextRe
 
         renderTooltipBackground(context, n, o, l, m, 400, backgroundColor, colorStart, colorEnd);
         context.getMatrices().translate(0.0f, 0.0f, 400.0f);
-        int q = o;
+        
+        // Apply Top Padding to text start position
+        int q = o + topPadding;
 
         for (r = 0; r < components.size(); ++r) {
             int nameCentering = 0;
@@ -152,9 +161,7 @@ public static void renderTieredTooltipFromComponents(DrawContext context, TextRe
                 continue;
             }
         
-            // --- FIX 2: SHIFT TEXT X-POS FOR PADDING ---
-            // We add +4 to 'n' so the text isn't stuck to the left border.
-            // If we are centering the name, we don't add the padding to it (it calculates its own center).
+            // Shift X by +4 for left padding (unless centered)
             int xPos = (r == 0 && Tierify.CLIENT_CONFIG.centerName) ? (n + nameCentering) : (n + 4);
 
             tooltipComponent2.drawText(
@@ -164,16 +171,15 @@ public static void renderTieredTooltipFromComponents(DrawContext context, TextRe
                     context.getMatrices().peek().getPositionMatrix(),
                     context.getVertexConsumers()
             );
-            // ------------------------------------------
         
             q += tooltipComponent2.getHeight() + (r == 0 ? 2 : 0);
         }
 
-        q = o;
+        // Reset Q for item rendering loop
+        q = o + topPadding;
 
         for (r = 0; r < components.size(); ++r) {
             tooltipComponent2 = components.get(r);
-            // Also shift Items (like bundles) by +4
             tooltipComponent2.drawItems(textRenderer, n + 4, q, context);
             q += tooltipComponent2.getHeight() + (r == 0 ? 2 : 0);
         }
@@ -182,18 +188,16 @@ public static void renderTieredTooltipFromComponents(DrawContext context, TextRe
         context.getMatrices().push();
         context.getMatrices().translate(0.0f, 0.0f, 400.0f);
 
-        // left top corner
-        context.drawTexture(borderTemplate.getIdentifier(), n - 6, o - 6, 0 + secondHalf * 64, 0 + border * 16, 8, 8, 128, 128);
-        // right top corner
-        context.drawTexture(borderTemplate.getIdentifier(), n + l - 2, o - 6, 56 + secondHalf * 64, 0 + border * 16, 8, 8, 128, 128);
-        // left bottom corner
-        context.drawTexture(borderTemplate.getIdentifier(), n - 6, o + m - 2, 0 + secondHalf * 64, 8 + border * 16, 8, 8, 128, 128);
-        // right bottom corner
-        context.drawTexture(borderTemplate.getIdentifier(), n + l - 2, o + m - 2, 56 + secondHalf * 64, 8 + border * 16, 8, 8, 128, 128);
-        // middle header
-        context.drawTexture(borderTemplate.getIdentifier(), (n - 6 + n + l + 6) / 2 - 24, o - 9, 8 + secondHalf * 64, 0 + border * 16, 48, 8, 128, 128);
-        // bottom footer
-        context.drawTexture(borderTemplate.getIdentifier(), (n - 6 + n + l + 6) / 2 - 24, o + m + 1, 8 + secondHalf * 64, 8 + border * 16, 48, 8, 128, 128);
+        // Standard Border Drawing
+        int texW = 128;
+        int texH = 128;
+        
+        context.drawTexture(borderTemplate.getIdentifier(), n - 6, o - 6, 0 + secondHalf * 64, 0 + border * 16, 8, 8, texW, texH);
+        context.drawTexture(borderTemplate.getIdentifier(), n + l - 2, o - 6, 56 + secondHalf * 64, 0 + border * 16, 8, 8, texW, texH);
+        context.drawTexture(borderTemplate.getIdentifier(), n - 6, o + m - 2, 0 + secondHalf * 64, 8 + border * 16, 8, 8, texW, texH);
+        context.drawTexture(borderTemplate.getIdentifier(), n + l - 2, o + m - 2, 56 + secondHalf * 64, 8 + border * 16, 8, 8, texW, texH);
+        context.drawTexture(borderTemplate.getIdentifier(), (n - 6 + n + l + 6) / 2 - 24, o - 9, 8 + secondHalf * 64, 0 + border * 16, 48, 8, texW, texH);
+        context.drawTexture(borderTemplate.getIdentifier(), (n - 6 + n + l + 6) / 2 - 24, o + m + 1, 8 + secondHalf * 64, 8 + border * 16, 48, 8, texW, texH);
         
         context.getMatrices().push();
         context.getMatrices().translate(0.0f, 0.0f, 1000.0f);
