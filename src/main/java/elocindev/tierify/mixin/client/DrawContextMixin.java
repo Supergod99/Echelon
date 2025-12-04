@@ -2,7 +2,7 @@ package elocindev.tierify.mixin.client;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import elocindev.tierify.TierifyClient;
 import elocindev.tierify.Tierify;
@@ -23,6 +24,7 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.tooltip.HoveredTooltipPositioner;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
+import net.minecraft.client.item.TooltipData;
 import net.minecraft.item.ItemStack;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
@@ -36,8 +38,11 @@ public class DrawContextMixin {
     @Final
     private MinecraftClient client;
 
-    @Inject(method = "drawItemTooltip", at = @At("HEAD"), cancellable = true)
-    private void drawItemTooltipMixin(TextRenderer textRenderer, ItemStack stack, int x, int y, CallbackInfo info) {
+    @Inject(method = "drawItemTooltip", 
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/DrawContext;drawTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;Ljava/util/Optional;II)V"), 
+            cancellable = true, 
+            locals = LocalCapture.CAPTURE_FAILSOFT)
+    private void drawItemTooltipMixin(TextRenderer textRenderer, ItemStack stack, int x, int y, CallbackInfo info, List<Text> text, Optional<TooltipData> data) {
 
         if (Tierify.CLIENT_CONFIG.tieredTooltip && stack.hasNbt() && stack.getNbt().contains("Tiered")) {
             String nbtString = stack.getNbt().getCompound("Tiered").asString();
@@ -51,11 +56,9 @@ public class DrawContextMixin {
                     TierifyClient.BORDER_TEMPLATES.get(i).addStack(stack);
                 } 
                 else if (matchesStack) {
-                    List<Text> text = Screen.getTooltipFromItem(client, stack);
                     List<TooltipComponent> list = new ArrayList<>();
 
                     // --- SMART WRAP (Width 350) ---
-                    // This width allows normal items to fit, but wraps crazy long descriptions.
                     int wrapWidth = 350; 
 
                     for (int k = 0; k < text.size(); k++) {
@@ -63,11 +66,9 @@ public class DrawContextMixin {
                         int width = textRenderer.getWidth(t);
 
                         // Don't wrap title (k=0) or short lines.
-                        // This preserves icons that are embedded in the title text.
                         if (k == 0 || width <= wrapWidth) {
                             list.add(TooltipComponent.of(t.asOrderedText()));
                         } else {
-                            // Only wrap overly long description lines
                             List<OrderedText> wrapped = textRenderer.wrapLines(t, wrapWidth);
                             for (OrderedText line : wrapped) {
                                 list.add(TooltipComponent.of(line));
@@ -75,11 +76,11 @@ public class DrawContextMixin {
                         }
                     }
 
-                    stack.getTooltipData().ifPresent(data -> {
+                    data.ifPresent(d -> {
                         if (list.size() > 1) {
-                            list.add(1, TooltipComponent.of(data));
+                            list.add(1, TooltipComponent.of(d));
                         } else {
-                            list.add(TooltipComponent.of(data));
+                            list.add(TooltipComponent.of(d));
                         }
                     });
 
