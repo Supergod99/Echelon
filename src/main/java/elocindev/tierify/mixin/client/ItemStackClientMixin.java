@@ -71,18 +71,28 @@ public abstract class ItemStackClientMixin {
     private boolean toughnessZero = false;
 
 
-    private void addWrapped(List<Text> list, List<OrderedText> wrapped) {
-        for (OrderedText line : wrapped) {
-            list.add(Text.literal(line.asString()));
+    private Text wrapText(MutableText text) {
+        int maxWidth = 240;
+        TextRenderer renderer = MinecraftClient.getInstance().textRenderer;
+    
+        if (renderer.getWidth(text) <= maxWidth) {
+            return text;
         }
+    
+        List<OrderedText> wrapped = renderer.wrapLines(text, maxWidth);
+        MutableText out = Text.literal("");
+    
+        for (OrderedText ln : wrapped) {
+            String s = OrderedText.styledString(ln); // <-- THE FIX
+            out.append(Text.literal(s));
+            out.append("\n");
+        }
+    
+        return out;
     }
+
 
     
-
-    private List<OrderedText> wrapTooltipLine(MutableText text) {
-        TextRenderer renderer = MinecraftClient.getInstance().textRenderer;
-        return renderer.wrapLines(text, 240); // Vanilla max width
-    }
 
     @Inject(method = "getTooltip", at = @At(value = "INVOKE", target = "Ljava/util/List;add(Ljava/lang/Object;)Z", ordinal = 6), locals = LocalCapture.CAPTURE_FAILHARD)
     private void storeTooltipInformation(PlayerEntity player, TooltipContext context, CallbackInfoReturnable<List> info, List list, MutableText mutableText, int i, EquipmentSlot var6[], int var7,
@@ -117,8 +127,6 @@ public abstract class ItemStackClientMixin {
                         ((boolean) collected.get(2) ? "§9(+" : "§c(") + (String) collected.get(1) + ((int) collected.get(0) > 0 ? "%)" : ")"),
                         Text.translatable(translationKey).formatted(Formatting.BLUE)));
 
-                addWrapped(list, wrapTooltipLine((MutableText) text));
-                return true;
             }
         } else {
             list.add((Text) text);
@@ -142,9 +150,6 @@ public abstract class ItemStackClientMixin {
             list.add(Text.translatable("tiered.attribute.modifier.equals." + (int) collected.get(0), "§2 " + this.armorModifierFormat,
                     ((boolean) collected.get(2) ? "§2(+" : "§c(") + (String) collected.get(1) + ((int) collected.get(0) > 0 ? "%)" : ")"),
                     Text.translatable(translationKey).formatted(Formatting.DARK_GREEN)));
-            
-            addWrapped(list, wrapTooltipLine((MutableText) text));
-            return true;
             
         } else {
             list.add((Text) text);
