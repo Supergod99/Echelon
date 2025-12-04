@@ -60,12 +60,8 @@ public static void renderTieredTooltipFromComponents(DrawContext context, TextRe
         }
         j += tooltipComponent.getHeight();
     }
-    if (borderTemplate.getIndex() == 6) {
-        float baseHeight = 9f;
-        float scale = 0.65f;
-        float scaledHeight = baseHeight * scale;
-    
-        j += (int)(scaledHeight + 2); // add Perfect label height
+    if (borderTemplate.getIndex() == 6) {    
+        j += 9;
     }
     if (i < 64) {
         i = 64;
@@ -166,7 +162,7 @@ public static void renderTieredTooltipFromComponents(DrawContext context, TextRe
                 context.getVertexConsumers()
         );
     
-        q += tooltipComponent2.getHeight() + (r == 0 && isPerfectTooltip ? 12 : (r == 0 ? 2 : 0));
+        q += tooltipComponent2.getHeight();
     }
 
     q = o;
