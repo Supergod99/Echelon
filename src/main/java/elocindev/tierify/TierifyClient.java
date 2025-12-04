@@ -10,6 +10,7 @@ import net.libz.registry.TabRegistry;
 import net.minecraft.client.gui.screen.ingame.AnvilScreen;
 import net.minecraft.client.gui.screen.ingame.HandledScreens;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
 import net.minecraft.resource.ResourceType;
 import net.minecraft.text.Text;
@@ -39,6 +40,10 @@ public class TierifyClient implements ClientModInitializer {
     public static final Map<Identifier, PotentialAttribute> CACHED_ATTRIBUTES = new HashMap<>();
 
     public static final List<BorderTemplate> BORDER_TEMPLATES = new ArrayList<BorderTemplate>();
+
+
+    // Used to pass the ItemStack from DrawContext/HandledScreen to the low-level renderTooltip method
+    public static ItemStack CURRENT_TOOLTIP_STACK = ItemStack.EMPTY;
 
     private static final Identifier ANVIL_TAB_ICON = new Identifier("tiered:textures/gui/anvil_tab_icon.png");
     private static final Identifier REFORGE_TAB_ICON = new Identifier("tiered:textures/gui/reforge_tab_icon.png");
