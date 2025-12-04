@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.joml.Vector2ic;
 
-import elocindev.tierify.screen.client.PerfectMarkerComponent;
 import elocindev.tierify.screen.client.PerfectLabelAnimator;
 import elocindev.tierify.screen.client.PerfectBorderRenderer;
 import net.minecraft.text.MutableText;
@@ -93,9 +92,14 @@ public static void renderTieredTooltipFromComponents(DrawContext context, TextRe
             nameCentering = i / 2 - tooltipComponent2.getWidth(textRenderer) / 2;
         }
     
-        // Detect our unique PERFECT marker component
-        if (tooltipComponent2 instanceof elocindev.tierify.screen.client.PerfectMarkerComponent) {
+        boolean isPerfectMarker = false;
         
+        if (tooltipComponent2 instanceof TextTooltipComponent textComp) {
+            if (textComp.text().getString().equals("__TIERIFY_PERFECT_LABEL__")) {
+                isPerfectMarker = true;
+            }
+        }
+
             MutableText perfectText = PerfectLabelAnimator.getPerfectLabel();
             float scale = 0.65f;
         
