@@ -23,6 +23,9 @@ import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.font.TextRenderer;
+import net.minecraft.text.OrderedText;
 
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -72,6 +75,18 @@ public abstract class ItemStackClientMixin {
         for (OrderedText line : renderer.wrapLines(text, 240)) {
             list.add(Text.literal("").append(line));
         }
+    }
+
+    private void addWrapped(List<Text> list, List<OrderedText> wrappedLines) {
+        for (OrderedText line : wrappedLines) {
+            list.add(Text.literal("").append(line));
+        }
+    }
+    
+
+    private List<OrderedText> wrapTooltipLine(MutableText text) {
+        TextRenderer renderer = MinecraftClient.getInstance().textRenderer;
+        return renderer.wrapLines(text, 240); // Vanilla max width
     }
 
     @Inject(method = "getTooltip", at = @At(value = "INVOKE", target = "Ljava/util/List;add(Ljava/lang/Object;)Z", ordinal = 6), locals = LocalCapture.CAPTURE_FAILHARD)
