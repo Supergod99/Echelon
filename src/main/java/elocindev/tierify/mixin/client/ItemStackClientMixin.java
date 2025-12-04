@@ -6,8 +6,6 @@ import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 
 import draylar.tiered.api.PotentialAttribute;
 import elocindev.tierify.screen.client.PerfectLabelAnimator;
-import elocindev.tierify.screen.client.ScaledPerfectLabel;
-import elocindev.tierify.screen.client.ItemStackClientInternal;
 import elocindev.tierify.screen.client.TierGradientAnimator;
 import elocindev.tierify.Tierify;
 import elocindev.tierify.util.TieredTooltip;
@@ -208,8 +206,6 @@ public abstract class ItemStackClientMixin {
 
     @Inject(method = "getName", at = @At("RETURN"), cancellable = true)
     private void getNameMixin(CallbackInfoReturnable<Text> info) {
-        // Always reset first so it never leaks between items
-        ItemStackClientInternal.SCALED_LABEL = null;
 
         if (this.hasNbt() && this.getSubNbt("display") == null && this.getSubNbt(Tierify.NBT_SUBTAG_KEY) != null) {
     
@@ -230,23 +226,9 @@ public abstract class ItemStackClientMixin {
                 NbtCompound tag = this.getSubNbt(Tierify.NBT_SUBTAG_KEY);
                 if (tag != null && tag.getBoolean("Perfect")) {
                 
-
-                    MutableText perfect = elocindev.tierify.screen.client.PerfectLabelAnimator.getPerfectLabel();
+                    // Generate animated Perfect label
+                    MutableText perfect = PerfectLabelAnimator.getPerfectLabel();
                 
-
-                    elocindev.tierify.screen.client.ScaledPerfectLabel scaled =
-                            new elocindev.tierify.screen.client.ScaledPerfectLabel(perfect, 0.65f);
-                
-
-                    elocindev.tierify.screen.client.ItemStackClientInternal.SCALED_LABEL = scaled;
-                
-
-                    MutableText full = Text.literal("");
-                    full.getSiblings().add(perfect);          // animated perfect label
-                    full.getSiblings().add(Text.literal(" ")); // space before tier label
-                    full.getSiblings().add(text);              // animated tier label
-                
-                    text = full;
                 }
 
             
@@ -277,6 +259,24 @@ public abstract class ItemStackClientMixin {
             try {
                 multimap.clear();
             } catch (UnsupportedOperationException exception) {
+            }
+        }
+        if (this.hasNbt()) {
+            NbtCompound tierTag = this.getSubNbt(Tierify.NBT_SUBTAG_KEY);
+            if (tierTag != null && tierTag.getBoolean("Perfect")) {
+        
+                MutableText perfect = PerfectLabelAnimator.getPerfectLabel();
+        
+                // Find the item name line (index 0)
+                int insertPos = 1;
+        
+                // Some mods add extra lines above attributes, so we make sure
+                // we insert JUST after the name, no matter what.
+                if (!list.isEmpty()) {
+                    insertPos = 1; // always after the first line
+                }
+        
+                list.add(insertPos, perfect);
             }
         }
     }
