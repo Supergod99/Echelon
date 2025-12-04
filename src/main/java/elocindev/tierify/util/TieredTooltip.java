@@ -96,9 +96,11 @@ public static void renderTieredTooltipFromComponents(DrawContext context, TextRe
 
         boolean isPerfectMarker = false;
         
-        String componentString = tooltipComponent2.toString();
-        if (componentString.contains("__TIERIFY_PERFECT_LABEL__")) {
-            isPerfectMarker = true;
+        if (tooltipComponent2 instanceof net.minecraft.client.gui.tooltip.TextTooltipComponent textComp) {
+            String raw = textComp.text().getString();
+            if (raw.equals("__TIERIFY_PERFECT_LABEL__")) {
+                isPerfectMarker = true;
+            }
         }
         
         if (isPerfectMarker) {
