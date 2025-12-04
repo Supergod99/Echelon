@@ -5,7 +5,10 @@ import com.google.common.collect.Multimap;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 
 import draylar.tiered.api.PotentialAttribute;
+import elocindev.tierify.screen.client.PerfectLabelAnimator;
+import elocindev.tierify.screen.client.TierGradientAnimator;
 import elocindev.tierify.Tierify;
+import elocindev.tierify.util.TieredTooltip;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.item.TooltipContext;
@@ -23,8 +26,6 @@ import net.minecraft.util.Identifier;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.text.OrderedText;
-import net.minecraft.text.StringVisitable;
-import net.minecraft.text.Style;
 
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -68,72 +69,6 @@ public abstract class ItemStackClientMixin {
     private String armorModifierFormat;
     private Map<String, ArrayList> map = new HashMap<>();
     private boolean toughnessZero = false;
-
-    // Helper to convert OrderedText back to String
-    private static String orderedTextToString(OrderedText text) {
-        StringBuilder sb = new StringBuilder();
-        text.accept((index, style, codePoint) -> {
-            sb.appendCodePoint(codePoint);
-            return true;
-        });
-        return sb.toString();
-    }
-
-    private List<Text> wrapText(Text text) {
-        // Use a slightly narrower width than vanilla (200 vs 240) to account for custom borders
-        int maxWidth = 200; 
-        TextRenderer renderer = MinecraftClient.getInstance().textRenderer;
-        
-        List<Text> result = new ArrayList<>();
-        
-        // 1. Optimization: If short enough, return original text object to preserve perfect fidelity.
-        if (renderer.getWidth(text) <= maxWidth) {
-            result.add(text);
-            return result;
-        }
-        
-
-        // We use StringVisitable.plain to calculate wrapping based on raw content length,
-        // then re-apply the original style to the wrapped pieces.
-        List<OrderedText> wrapped = renderer.wrapLines(StringVisitable.plain(text.getString()), maxWidth);
-        Style originalStyle = text.getStyle();
-        
-        for (OrderedText ln : wrapped) {
-            String s = orderedTextToString(ln);
-            // Re-apply the color/style of the original paragraph to the new split lines
-            result.add(Text.literal(s).setStyle(originalStyle));
-        }
-        
-        return result;
-    }
-
-    /**
-     * NEW INJECTION: THE FIX
-     * Intercepts the final tooltip list at the very end of the method and wraps long lines.
-     */
-    @Inject(method = "getTooltip", at = @At("RETURN"), cancellable = true)
-    private void wrapTooltipEntries(PlayerEntity player, TooltipContext context, CallbackInfoReturnable<List<Text>> info) {
-        List<Text> originalList = info.getReturnValue();
-        List<Text> newList = new ArrayList<>();
-
-        for (Text line : originalList) {
-            String content = line.getString();
-
-            if (content.contains("__TIERIFY") || content.startsWith(" ") || content.startsWith("+") || content.length() < 20) {
-                newList.add(line);
-                continue;
-            }
-
-            // If it passed the checks, pass it through the wrapper.
-            // The wrapper will still return the original line if it's short enough.
-            newList.addAll(wrapText(line));
-        }
-
-        // Update the final list containing wrapped descriptions
-        info.setReturnValue(newList);
-    }
-
-
 
     @Inject(method = "getTooltip", at = @At(value = "INVOKE", target = "Ljava/util/List;add(Ljava/lang/Object;)Z", ordinal = 6), locals = LocalCapture.CAPTURE_FAILHARD)
     private void storeTooltipInformation(PlayerEntity player, TooltipContext context, CallbackInfoReturnable<List> info, List list, MutableText mutableText, int i, EquipmentSlot var6[], int var7,
