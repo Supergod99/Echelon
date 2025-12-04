@@ -4,20 +4,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Mutable;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.Redirect;
 
 import elocindev.tierify.TierifyClient;
 import elocindev.tierify.Tierify;
 import elocindev.tierify.util.TieredTooltip;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.tooltip.HoveredTooltipPositioner;
@@ -31,23 +26,14 @@ import net.minecraft.text.Text;
 @Mixin(DrawContext.class)
 public class DrawContextMixin {
 
-    @Shadow
-    @Mutable
-    @Final
-    private MinecraftClient client;
-
-    @Inject(method = "drawItemTooltip", 
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/DrawContext;drawTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;Ljava/util/Optional;II)V"), 
-            cancellable = true)
-    private void drawItemTooltipMixin(TextRenderer textRenderer, ItemStack stack, int x, int y, CallbackInfo info) {
-
+    @Redirect(method = "drawItemTooltip", 
+              at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/DrawContext;drawTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;Ljava/util/Optional;II)V"))
+    private void redirectDrawTooltipMixin(DrawContext context, TextRenderer textRenderer, List<Text> text, Optional<TooltipData> data, int x, int y, TextRenderer tr, ItemStack stack) {
+        // Note: 'stack' is available because we are redirecting inside drawItemTooltip(..., ItemStack stack, ...)
+        
         if (Tierify.CLIENT_CONFIG.tieredTooltip && stack.hasNbt() && stack.getNbt().contains("Tiered")) {
             String nbtString = stack.getNbt().getCompound("Tiered").asString();
             
-            // --- MANUAL DATA GENERATION (Safety against Mixin crashes) ---
-            List<Text> text = net.minecraft.client.gui.screen.Screen.getTooltipFromItem(this.client, stack);
-            Optional<TooltipData> data = stack.getTooltipData();
-
             for (int i = 0; i < TierifyClient.BORDER_TEMPLATES.size(); i++) {
                 boolean matchesDecider = !TierifyClient.BORDER_TEMPLATES.get(i).containsStack(stack) 
                                          && TierifyClient.BORDER_TEMPLATES.get(i).containsDecider(nbtString);
@@ -58,8 +44,6 @@ public class DrawContextMixin {
                 } 
                 else if (matchesStack) {
                     List<TooltipComponent> list = new ArrayList<>();
-
-                    // --- SMART WRAP (Width 350) ---
                     int wrapWidth = 350; 
 
                     for (int k = 0; k < text.size(); k++) {
@@ -85,7 +69,7 @@ public class DrawContextMixin {
                     });
 
                     TieredTooltip.renderTieredTooltipFromComponents(
-                        (DrawContext) (Object) this, 
+                        context, 
                         textRenderer, 
                         list, 
                         x, 
@@ -93,11 +77,12 @@ public class DrawContextMixin {
                         HoveredTooltipPositioner.INSTANCE, 
                         TierifyClient.BORDER_TEMPLATES.get(i)
                     );
-
-                    info.cancel();
-                    break;
+                    return; // Return early, skipping vanilla render
                 }
             }
         }
+        
+        // Fallback to vanilla
+        context.drawTooltip(textRenderer, text, data, x, y);
     }
 }
