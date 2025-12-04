@@ -20,8 +20,6 @@ import net.minecraft.client.gui.tooltip.TooltipPositioner;
 public class TieredTooltip {
 
     public static String getPlateForModifier(String modifier) {
-        // The first string that gets added is the item border color, it might seem useless because it gets reset right afterwards, but the item borders mod doesn't have a data driven api and this is the only way for now according to the dev
-
         switch(modifier.toLowerCase()) {
             case "common":
                 return "\u00A77\u00A7r"+"\u00A7F\uFFA1\u00A7r";
@@ -61,10 +59,9 @@ public static void renderTieredTooltipFromComponents(DrawContext context, TextRe
             j += tooltipComponent.getHeight();
         }
         
-        // --- FIX 1: ADD PADDING ---
-        // Add 8 pixels of extra width so text doesn't touch the border
+        // --- FIX 1: ADD PADDING TO WIDTH ---
         i += 8; 
-        // --------------------------
+        // -----------------------------------
 
         if (borderTemplate.getIndex() == 6) {    
             j += 12;
@@ -104,7 +101,6 @@ public static void renderTieredTooltipFromComponents(DrawContext context, TextRe
             int nameCentering = 0;
             tooltipComponent2 = components.get(r);
         
-            // Center ONLY the name line if config says so
             if (r == 0 && Tierify.CLIENT_CONFIG.centerName) {
                 nameCentering = i / 2 - tooltipComponent2.getWidth(textRenderer) / 2;
             }
@@ -156,17 +152,20 @@ public static void renderTieredTooltipFromComponents(DrawContext context, TextRe
                 continue;
             }
         
+            // --- FIX 2: SHIFT TEXT X-POS FOR PADDING ---
+            // We add +4 to 'n' so the text isn't stuck to the left border.
+            // If we are centering the name, we don't add the padding to it (it calculates its own center).
+            int xPos = (r == 0 && Tierify.CLIENT_CONFIG.centerName) ? (n + nameCentering) : (n + 4);
+
             tooltipComponent2.drawText(
                     textRenderer,
-                    n + nameCentering,
+                    xPos,
                     q,
                     context.getMatrices().peek().getPositionMatrix(),
                     context.getVertexConsumers()
             );
+            // ------------------------------------------
         
-            // --- FIX 2: RESTORE VERTICAL SPACING ---
-            // Vanilla adds 2px padding after the Title (index 0).
-            // We replicate that here to fix the "crunched" look.
             q += tooltipComponent2.getHeight() + (r == 0 ? 2 : 0);
         }
 
@@ -174,7 +173,8 @@ public static void renderTieredTooltipFromComponents(DrawContext context, TextRe
 
         for (r = 0; r < components.size(); ++r) {
             tooltipComponent2 = components.get(r);
-            tooltipComponent2.drawItems(textRenderer, n, q, context);
+            // Also shift Items (like bundles) by +4
+            tooltipComponent2.drawItems(textRenderer, n + 4, q, context);
             q += tooltipComponent2.getHeight() + (r == 0 ? 2 : 0);
         }
         context.getMatrices().pop();
@@ -182,7 +182,6 @@ public static void renderTieredTooltipFromComponents(DrawContext context, TextRe
         context.getMatrices().push();
         context.getMatrices().translate(0.0f, 0.0f, 400.0f);
 
-        // [Border Drawing Logic remains the same as your file...]
         // left top corner
         context.drawTexture(borderTemplate.getIdentifier(), n - 6, o - 6, 0 + secondHalf * 64, 0 + border * 16, 8, 8, 128, 128);
         // right top corner
