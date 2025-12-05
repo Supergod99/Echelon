@@ -12,7 +12,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import elocindev.tierify.Tierify;
 import elocindev.tierify.TierifyClient;
 import elocindev.tierify.util.TieredTooltip;
-// Removed the bad import for BorderTemplate
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -22,7 +21,7 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.client.gui.tooltip.TooltipPositioner;
-import net.minecraft.client.gui.tooltip.HoveredTooltipPositioner; // NEW IMPORT
+import net.minecraft.client.gui.tooltip.HoveredTooltipPositioner; 
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
