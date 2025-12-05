@@ -21,7 +21,8 @@ import net.minecraft.item.Item;
 @Mixin(ArmorItem.class)
 public class ArmorItemMixin {
 
-    @Inject(method = "<init>", at = @At(value = "INVOKE", target = "Lcom/google/common/collect/ImmutableMultimap$Builder;put(Ljava/lang/Object;Ljava/lang/Object;)Lcom/google/common/collect/ImmutableMultimap$Builder;", ordinal = 1), locals = LocalCapture.CAPTURE_FAILSOFT)
+
+    @Inject(method = "<init>", at = @At(value = "INVOKE", target = "Lcom/google/common/collect/ImmutableMultimap$Builder;put(Ljava/lang/Object;Ljava/lang/Object;)Lcom/google/common/collect/ImmutableMultimap$Builder;", ordinal = 1, remap = false), locals = LocalCapture.CAPTURE_FAILSOFT)
     private void initMixin(ArmorMaterial material, ArmorItem.Type type, Item.Settings settings, CallbackInfo info, ImmutableMultimap.Builder<EntityAttribute, EntityAttributeModifier> builder,
             UUID uUID) {
         if (material != ArmorMaterials.NETHERITE && material.getKnockbackResistance() > 0.0001f) {
