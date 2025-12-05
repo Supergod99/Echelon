@@ -24,7 +24,7 @@
   "client": [
     "client.ItemStackClientMixin",
     "client.AnvilScreenMixin",
-    "client.DrawContextMixin",
+    "compat.TooltipOverhaulFrameMixin",
     "client.HandledScreenMixin",
     "compat.SkillInfoScreenMixin",
     "compat.ModAnvilScreenMixin"
