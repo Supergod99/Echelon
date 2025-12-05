@@ -1,8 +1,5 @@
 package elocindev.tierify.mixin.client;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -11,21 +8,17 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import elocindev.tierify.Tierify;
 import elocindev.tierify.TierifyClient;
-import elocindev.tierify.util.TieredTooltip;
-
+import elocindev.tierify.screen.client.PerfectLabelAnimator;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.client.gui.tooltip.TooltipComponent;
-import net.minecraft.client.gui.tooltip.TooltipPositioner;
-import net.minecraft.client.gui.tooltip.HoveredTooltipPositioner; 
-import net.minecraft.client.item.TooltipContext;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.screen.slot.Slot;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.Nullable;
 
@@ -39,7 +32,7 @@ public abstract class HandledScreenMixin extends Screen {
         super(title);
     }
 
-    // 1. Capture Stack
+    // 1. Capture Stack (Standard)
     @Inject(method = "render", at = @At("HEAD"))
     private void captureHandledStack(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo info) {
         if (this.focusedSlot != null && this.focusedSlot.hasStack()) {
@@ -47,76 +40,59 @@ public abstract class HandledScreenMixin extends Screen {
         }
     }
 
-    // 2. Release Stack
+    // 2. Release Stack (Standard)
     @Inject(method = "render", at = @At("RETURN"))
     private void releaseHandledStack(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo info) {
         TierifyClient.CURRENT_TOOLTIP_STACK = ItemStack.EMPTY;
     }
 
-    // 3. HOSTILE TAKEOVER RENDER (The Fix)
+    // 3. OVERLAY RENDER (Label Only)
+    // We do NOT draw the box/border here to avoid double-rendering.
+    // We ONLY draw the Perfect Label on top of the existing tooltip.
     @Inject(method = "render", at = @At("RETURN"))
-    private void renderTierifyOverlay(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo info) {
+    private void renderPerfectOverlay(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo info) {
         
-        // Safety Check 1: Ensure Client/Player exists
+        // Safety Checks
         if (this.client == null || this.client.player == null) return;
-        
         if (this.focusedSlot == null || !this.focusedSlot.hasStack()) return;
 
         ItemStack stack = this.focusedSlot.getStack();
         NbtCompound tieredTag = stack.getSubNbt(Tierify.NBT_SUBTAG_KEY);
 
-        if (tieredTag != null) {
-            boolean isPerfect = tieredTag.getBoolean("Perfect");
-            TextRenderer textRenderer = this.client.textRenderer;
-
-            if (textRenderer == null) return; 
+        // Only render if it's a Perfect Item
+        if (tieredTag != null && tieredTag.getBoolean("Perfect")) {
             
+            TextRenderer textRenderer = this.client.textRenderer;
+            if (textRenderer == null) return;
+
             // 1. Calculate Position
             int x = mouseX + 12;
             int y = mouseY - 12;
             int width = this.width;
             int height = this.height;
             
+            // Screen Clamping
             if (x + 100 > width) x -= 28 + 100;
             if (y + 20 > height) y = height - 20;
 
-            // 2. Fetch Components
-            List<Text> textList = stack.getTooltip(this.client.player, TooltipContext.Default.BASIC);
+            // 2. Render the "Perfect" Label
+            // We use Z-Level 2000 to be absolutely sure it's on top of everything.
+            context.getMatrices().push();
+            context.getMatrices().translate(0, 0, 2000); 
+
+            MutableText perfectText = PerfectLabelAnimator.getPerfectLabel();
+            float scale = 0.75f; 
+
+            // Position the label inside the tooltip box (approximate)
+            // y + 2 puts it near the top title line.
+            context.getMatrices().push();
+            context.getMatrices().translate(x + 4, y + 2, 0); 
+            context.getMatrices().scale(scale, scale, 1f);
             
-            if (textList == null) return;
-
-            List<TooltipComponent> components = textList.stream()
-                .map(Text::asOrderedText)
-                .map(TooltipComponent::of)
-                .collect(Collectors.toList());
-
-            // 3. Select Template
-            String lookupKey = isPerfect ? "{BorderTier:\"tiered:perfect\"}" : "{Tier:\"" + tieredTag.getString(Tierify.NBT_SUBTAG_DATA_KEY) + "\"}";
+            context.drawText(textRenderer, perfectText, 0, 0, 0xFFFFFF, true);
             
-            if (TierifyClient.BORDER_TEMPLATES == null) return;
-
-            for (int i = 0; i < TierifyClient.BORDER_TEMPLATES.size(); i++) {
-                // Safety Check for null entries in the template list
-                if (TierifyClient.BORDER_TEMPLATES.get(i) != null && 
-                    TierifyClient.BORDER_TEMPLATES.get(i).containsDecider(lookupKey)) {
-                    
-                    context.getMatrices().push();
-                    context.getMatrices().translate(0, 0, 500); 
-
-                    TieredTooltip.renderTieredTooltipFromComponents(
-                        context, 
-                        textRenderer, 
-                        components, 
-                        x, 
-                        y, 
-                        HoveredTooltipPositioner.INSTANCE, // FIXED: No more NULL
-                        TierifyClient.BORDER_TEMPLATES.get(i)
-                    );
-                    
-                    context.getMatrices().pop();
-                    return;
-                }
-            }
+            context.getMatrices().pop();
+            context.getMatrices().pop();
         }
     }
 }
