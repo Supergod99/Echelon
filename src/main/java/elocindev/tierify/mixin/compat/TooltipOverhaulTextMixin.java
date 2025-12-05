@@ -19,13 +19,8 @@ public class TooltipOverhaulTextMixin {
         method = "render",
         at = @At(
             value = "INVOKE",
-            // We use the Intermediary signature here. 
-            // class_5684 = TooltipComponent
-            // method_32665 = drawText
-            // class_327 = TextRenderer
-            // class_4597$class_4598 = VertexConsumerProvider$Immediate
-            target = "Lnet/minecraft/class_5684;method_32665(Lnet/minecraft/class_327;IILorg/joml/Matrix4f;Lnet/minecraft/class_4597$class_4598;)V",
-            remap = true
+            // Standard Yarn Name. Loom will automatically convert this to method_32665 in the refmap.
+            target = "Lnet/minecraft/client/gui/tooltip/TooltipComponent;drawText(Lnet/minecraft/client/font/TextRenderer;IILorg/joml/Matrix4f;Lnet/minecraft/client/render/VertexConsumerProvider$Immediate;)V"
         )
     )
     private void tierify$centerPerfectLabel(TooltipComponent instance, 
@@ -41,15 +36,16 @@ public class TooltipOverhaulTextMixin {
         int drawX = x;
         
         if (instance instanceof PerfectTierComponent) {
-
+            // size.x is the width of the entire tooltip background
+            // pos.x is the left absolute edge
             
             int tooltipWidth = size.x;
             int componentWidth = instance.getWidth(textRenderer);
             
-
+            // Calculate Center relative to the tooltip box
             int absoluteLeft = (int) pos.x;
             
-
+            // Center formula
             drawX = absoluteLeft + (tooltipWidth - componentWidth) / 2;
         }
 
