@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import elocindev.tierify.Tierify;
 import elocindev.tierify.TierifyClient;
 import elocindev.tierify.util.TieredTooltip;
+import elocindev.tierify.util.BorderTemplate;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.font.TextRenderer;
@@ -37,7 +38,7 @@ public abstract class HandledScreenMixin extends Screen {
         super(title);
     }
 
-    // 1. Capture Stack (Standard)
+    // 1. Capture Stack
     @Inject(method = "render", at = @At("HEAD"))
     private void captureHandledStack(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo info) {
         if (this.focusedSlot != null && this.focusedSlot.hasStack()) {
@@ -45,7 +46,7 @@ public abstract class HandledScreenMixin extends Screen {
         }
     }
 
-    // 2. Release Stack (Standard)
+    // 2. Release Stack
     @Inject(method = "render", at = @At("RETURN"))
     private void releaseHandledStack(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo info) {
         TierifyClient.CURRENT_TOOLTIP_STACK = ItemStack.EMPTY;
@@ -55,6 +56,9 @@ public abstract class HandledScreenMixin extends Screen {
     @Inject(method = "render", at = @At("RETURN"))
     private void renderTierifyOverlay(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo info) {
         
+        // Safety Check 1: Ensure Client/Player exists (Fixes Reforge Crash)
+        if (this.client == null || this.client.player == null) return;
+        
         if (this.focusedSlot == null || !this.focusedSlot.hasStack()) return;
 
         ItemStack stack = this.focusedSlot.getStack();
@@ -62,10 +66,11 @@ public abstract class HandledScreenMixin extends Screen {
 
         if (tieredTag != null) {
             boolean isPerfect = tieredTag.getBoolean("Perfect");
-            
             TextRenderer textRenderer = this.client.textRenderer;
+
+            if (textRenderer == null) return; // Paranoid Check
             
-            // 1. Calculate Position Manually
+            // 1. Calculate Position
             int x = mouseX + 12;
             int y = mouseY - 12;
             int width = this.width;
@@ -76,22 +81,29 @@ public abstract class HandledScreenMixin extends Screen {
 
             // 2. Fetch Components
             List<Text> textList = stack.getTooltip(this.client.player, TooltipContext.Default.BASIC);
+            
+            if (textList == null) return; // Paranoid Check
+
             List<TooltipComponent> components = textList.stream()
                 .map(Text::asOrderedText)
                 .map(TooltipComponent::of)
                 .collect(Collectors.toList());
 
-            // 3. Select the Template
+            // 3. Select Template
             String lookupKey = isPerfect ? "{BorderTier:\"tiered:perfect\"}" : "{Tier:\"" + tieredTag.getString(Tierify.NBT_SUBTAG_DATA_KEY) + "\"}";
             
+            // Safety Check 2: Ensure Templates list is valid
+            if (TierifyClient.BORDER_TEMPLATES == null) return;
+
             for (int i = 0; i < TierifyClient.BORDER_TEMPLATES.size(); i++) {
-                if (TierifyClient.BORDER_TEMPLATES.get(i).containsDecider(lookupKey)) {
+                BorderTemplate template = TierifyClient.BORDER_TEMPLATES.get(i);
+                
+                // Safety Check 3: Ensure individual template is valid
+                if (template != null && template.containsDecider(lookupKey)) {
                     
-                    // 4. THE RENDER
                     context.getMatrices().push();
                     context.getMatrices().translate(0, 0, 500); 
 
-                    // FIXED: Cast to (TooltipPositioner) instead of HoveredTooltipPositioner
                     TieredTooltip.renderTieredTooltipFromComponents(
                         context, 
                         textRenderer, 
@@ -99,7 +111,7 @@ public abstract class HandledScreenMixin extends Screen {
                         x, 
                         y, 
                         (TooltipPositioner)null, 
-                        TierifyClient.BORDER_TEMPLATES.get(i)
+                        template
                     );
                     
                     context.getMatrices().pop();
