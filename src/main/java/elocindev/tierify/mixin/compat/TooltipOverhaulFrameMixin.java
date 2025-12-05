@@ -15,7 +15,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.List;
 import java.util.Optional;
-import java.awt.Color;
 
 @Mixin(CustomFrameManager.class)
 public class TooltipOverhaulFrameMixin {
@@ -26,7 +25,6 @@ public class TooltipOverhaulFrameMixin {
         NbtCompound nbt = stack.getSubNbt(Tierify.NBT_SUBTAG_KEY);
         if (nbt == null) return;
 
-
         String lookupKey;
         boolean isPerfect = nbt.getBoolean("Perfect");
 
@@ -36,7 +34,6 @@ public class TooltipOverhaulFrameMixin {
             String tierId = nbt.getString(Tierify.NBT_SUBTAG_DATA_KEY);
             lookupKey = "{Tier:\"" + tierId + "\"}"; 
         }
-
 
         BorderTemplate match = null;
         if (TierifyClient.BORDER_TEMPLATES != null) {
@@ -50,28 +47,22 @@ public class TooltipOverhaulFrameMixin {
 
         if (match == null) return;
 
-
         String startHex = tierify$intToHex(match.getStartGradient());
         String endHex = tierify$intToHex(match.getEndGradient());
         String midHex = tierify$interpolateHex(match.getStartGradient(), match.getEndGradient());
-
 
         CustomFrameData frameData = new CustomFrameData(
             List.of(), // items
             List.of(), // tags
             Optional.empty(), // namespace
             
-
             Optional.of(match.getIdentifier().toString()), 
             
-
             Optional.of(match.getBackgroundGradient()), 
             
-
             Optional.of(CustomFrameData.InnerBorderType.GRADIENT), 
             Optional.of(CustomFrameData.GradientType.CUSTOM), 
             
-
             Optional.of(List.of(startHex, midHex, endHex)), 
             
             Optional.empty(), // itemRating
@@ -87,29 +78,29 @@ public class TooltipOverhaulFrameMixin {
             Optional.empty(), // mainPanelPaddingX
             Optional.empty(), // mainPanelPaddingY
             Optional.empty(), // iconSize
-            Optional.empty(), // iconRotatingSpeed
             
-
-            isPerfect ? Optional.of("rotate_fast") : Optional.empty(), 
+            isPerfect ? Optional.of("rotate_fast") : Optional.empty(), // iconRotatingSpeed
             
             Optional.empty(), // secondPanelX
             Optional.empty(), // secondPanelY
             Optional.empty(), // secondPanelRendererSize
             Optional.empty(), // secondPanelRendererSpeed
-            Optional.empty(), // dividerLineType
-            Optional.empty(), // dividerLineColor
             
-
-            isPerfect ? Optional.of("stars") : Optional.empty(), 
+            // FIX: Restore the Separator Line
+            Optional.of("line"), // dividerLineType
+            Optional.of(startHex), // dividerLineColor (Match border)
             
-            Optional.empty(), // specialEffect
+            isPerfect ? Optional.of("stars") : Optional.empty(), // specialEffect
+            
             Optional.empty(), // iconBackgroundType
             
-
-            Optional.of(true), 
+            Optional.of(true), // showTitle / staticFrame
             
             Optional.empty(), // showRating
-            Optional.empty(), // disableIcon
+            
+            // FIX: Explicitly Enable the Icon
+            Optional.of(false), // disableIcon (False = Enabled)
+            
             Optional.empty(), // disableScrolling
             Optional.empty(), // disableTooltip
             Optional.empty()  // disableDividerLine
