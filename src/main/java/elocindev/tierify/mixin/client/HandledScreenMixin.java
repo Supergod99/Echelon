@@ -37,7 +37,7 @@ public abstract class HandledScreenMixin extends Screen {
         super(title);
     }
 
-
+    // 1. Capture Stack (Standard)
     @Inject(method = "render", at = @At("HEAD"))
     private void captureHandledStack(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo info) {
         if (this.focusedSlot != null && this.focusedSlot.hasStack()) {
@@ -45,13 +45,13 @@ public abstract class HandledScreenMixin extends Screen {
         }
     }
 
-
+    // 2. Release Stack (Standard)
     @Inject(method = "render", at = @At("RETURN"))
     private void releaseHandledStack(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo info) {
         TierifyClient.CURRENT_TOOLTIP_STACK = ItemStack.EMPTY;
     }
 
-
+    // 3. HOSTILE TAKEOVER RENDER (The Fix)
     @Inject(method = "render", at = @At("RETURN"))
     private void renderTierifyOverlay(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo info) {
         
@@ -60,48 +60,45 @@ public abstract class HandledScreenMixin extends Screen {
         ItemStack stack = this.focusedSlot.getStack();
         NbtCompound tieredTag = stack.getSubNbt(Tierify.NBT_SUBTAG_KEY);
 
-
         if (tieredTag != null) {
             boolean isPerfect = tieredTag.getBoolean("Perfect");
             
-
             TextRenderer textRenderer = this.client.textRenderer;
             
-
+            // 1. Calculate Position Manually
             int x = mouseX + 12;
             int y = mouseY - 12;
             int width = this.width;
             int height = this.height;
             
-
             if (x + 100 > width) x -= 28 + 100;
             if (y + 20 > height) y = height - 20;
 
-
+            // 2. Fetch Components
             List<Text> textList = stack.getTooltip(this.client.player, TooltipContext.Default.BASIC);
             List<TooltipComponent> components = textList.stream()
                 .map(Text::asOrderedText)
                 .map(TooltipComponent::of)
                 .collect(Collectors.toList());
 
-
+            // 3. Select the Template
             String lookupKey = isPerfect ? "{BorderTier:\"tiered:perfect\"}" : "{Tier:\"" + tieredTag.getString(Tierify.NBT_SUBTAG_DATA_KEY) + "\"}";
             
             for (int i = 0; i < TierifyClient.BORDER_TEMPLATES.size(); i++) {
                 if (TierifyClient.BORDER_TEMPLATES.get(i).containsDecider(lookupKey)) {
                     
-
+                    // 4. THE RENDER
                     context.getMatrices().push();
                     context.getMatrices().translate(0, 0, 500); 
 
-
+                    // FIXED: Cast to (TooltipPositioner) instead of HoveredTooltipPositioner
                     TieredTooltip.renderTieredTooltipFromComponents(
                         context, 
                         textRenderer, 
                         components, 
                         x, 
                         y, 
-                        (HoveredTooltipPositioner)null, 
+                        (TooltipPositioner)null, 
                         TierifyClient.BORDER_TEMPLATES.get(i)
                     );
                     
