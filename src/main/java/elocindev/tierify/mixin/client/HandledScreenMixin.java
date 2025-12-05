@@ -12,7 +12,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import elocindev.tierify.Tierify;
 import elocindev.tierify.TierifyClient;
 import elocindev.tierify.util.TieredTooltip;
-import elocindev.tierify.util.BorderTemplate;
+// Removed the bad import here
+
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.font.TextRenderer;
@@ -68,7 +69,7 @@ public abstract class HandledScreenMixin extends Screen {
             boolean isPerfect = tieredTag.getBoolean("Perfect");
             TextRenderer textRenderer = this.client.textRenderer;
 
-            if (textRenderer == null) return; // Paranoid Check
+            if (textRenderer == null) return; 
             
             // 1. Calculate Position
             int x = mouseX + 12;
@@ -82,7 +83,7 @@ public abstract class HandledScreenMixin extends Screen {
             // 2. Fetch Components
             List<Text> textList = stack.getTooltip(this.client.player, TooltipContext.Default.BASIC);
             
-            if (textList == null) return; // Paranoid Check
+            if (textList == null) return;
 
             List<TooltipComponent> components = textList.stream()
                 .map(Text::asOrderedText)
@@ -92,14 +93,13 @@ public abstract class HandledScreenMixin extends Screen {
             // 3. Select Template
             String lookupKey = isPerfect ? "{BorderTier:\"tiered:perfect\"}" : "{Tier:\"" + tieredTag.getString(Tierify.NBT_SUBTAG_DATA_KEY) + "\"}";
             
-            // Safety Check 2: Ensure Templates list is valid
             if (TierifyClient.BORDER_TEMPLATES == null) return;
 
             for (int i = 0; i < TierifyClient.BORDER_TEMPLATES.size(); i++) {
-                BorderTemplate template = TierifyClient.BORDER_TEMPLATES.get(i);
-                
-                // Safety Check 3: Ensure individual template is valid
-                if (template != null && template.containsDecider(lookupKey)) {
+                // We access the list directly here instead of assigning it to a typed variable
+                // This avoids needing the import for 'BorderTemplate'
+                if (TierifyClient.BORDER_TEMPLATES.get(i) != null && 
+                    TierifyClient.BORDER_TEMPLATES.get(i).containsDecider(lookupKey)) {
                     
                     context.getMatrices().push();
                     context.getMatrices().translate(0, 0, 500); 
@@ -111,7 +111,7 @@ public abstract class HandledScreenMixin extends Screen {
                         x, 
                         y, 
                         (TooltipPositioner)null, 
-                        template
+                        TierifyClient.BORDER_TEMPLATES.get(i)
                     );
                     
                     context.getMatrices().pop();
