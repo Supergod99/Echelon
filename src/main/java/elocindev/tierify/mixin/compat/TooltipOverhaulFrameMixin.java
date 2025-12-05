@@ -51,19 +51,20 @@ public class TooltipOverhaulFrameMixin {
         String endHex = tierify$intToHex(match.getEndGradient());
         String midHex = tierify$interpolateHex(match.getStartGradient(), match.getEndGradient());
 
+        // Corrected Constructor for updated Tooltip Overhaul
         CustomFrameData frameData = new CustomFrameData(
             List.of(), // items
             List.of(), // tags
             Optional.empty(), // namespace
             
-            Optional.of(match.getIdentifier().toString()), 
+            Optional.of(match.getIdentifier().toString()), // texture
             
-            Optional.of(match.getBackgroundGradient()), 
+            Optional.of(match.getBackgroundGradient()), // backgroundColor
             
-            Optional.of(CustomFrameData.InnerBorderType.GRADIENT), 
-            Optional.of(CustomFrameData.GradientType.CUSTOM), 
+            Optional.of(CustomFrameData.InnerBorderType.GRADIENT), // borderType
+            Optional.of(CustomFrameData.GradientType.CUSTOM), // gradientType
             
-            Optional.of(List.of(startHex, midHex, endHex)), 
+            Optional.of(List.of(startHex, midHex, endHex)), // gradientColors
             
             Optional.empty(), // itemRating
             Optional.empty(), // colorItemRating
@@ -79,26 +80,29 @@ public class TooltipOverhaulFrameMixin {
             Optional.empty(), // mainPanelPaddingY
             Optional.empty(), // iconSize
             
-            isPerfect ? Optional.of("rotate_fast") : Optional.empty(), // iconRotatingSpeed
+            // FIX: Type changed from String to Float. "rotate_fast" is invalid here.
+            Optional.empty(), // iconRotatingSpeed (Float)
+            Optional.empty(), // iconAppearAnimation (String) - NEW FIELD
             
             Optional.empty(), // secondPanelX
             Optional.empty(), // secondPanelY
             Optional.empty(), // secondPanelRendererSize
             Optional.empty(), // secondPanelRendererSpeed
             
-            // FIX: Restore the Separator Line
-            Optional.of("line"), // dividerLineType
-            Optional.of(startHex), // dividerLineColor (Match border)
+            // FIX: Type changed from String to Enum
+            Optional.of(CustomFrameData.DividerLineType.NORMAL), // dividerLineType
+            Optional.of(startHex), // dividerLineColor
+            
+            Optional.empty(), // particles - NEW FIELD (appears before specialEffect)
             
             isPerfect ? Optional.of("stars") : Optional.empty(), // specialEffect
             
             Optional.empty(), // iconBackgroundType
             
-            Optional.of(true), // showTitle / staticFrame
+            Optional.empty(), // showSecondPanel (Was showTitle/staticFrame in old version)
             
             Optional.empty(), // showRating
             
-            // FIX: Explicitly Enable the Icon
             Optional.of(false), // disableIcon (False = Enabled)
             
             Optional.empty(), // disableScrolling
