@@ -9,7 +9,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import elocindev.tierify.screen.client.HandledScreenAccessor;
 import elocindev.tierify.TierifyClient;
 import elocindev.tierify.Tierify;
 import elocindev.tierify.util.TieredTooltip;
