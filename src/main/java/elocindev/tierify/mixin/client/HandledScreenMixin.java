@@ -9,8 +9,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import elocindev.tierify.Tierify;
 import elocindev.tierify.TierifyClient;
 import elocindev.tierify.screen.client.PerfectLabelAnimator;
-import elocindev.tierify.screen.client.PerfectBorderRenderer;
-import elocindev.tierify.util.TieredTooltip;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.font.TextRenderer;
@@ -34,7 +32,7 @@ public abstract class HandledScreenMixin extends Screen {
         super(title);
     }
 
-    // 1. Capture the Stack (Keep this, it's good for other things)
+    // 1. Capture the Stack (Standard Handshake)
     @Inject(method = "render", at = @At("HEAD"))
     private void captureHandledStack(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo info) {
         if (this.focusedSlot != null && this.focusedSlot.hasStack()) {
@@ -42,14 +40,16 @@ public abstract class HandledScreenMixin extends Screen {
         }
     }
 
+    // 2. Release Stack (Cleanup)
     @Inject(method = "render", at = @At("RETURN"))
     private void releaseHandledStack(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo info) {
         TierifyClient.CURRENT_TOOLTIP_STACK = ItemStack.EMPTY;
     }
 
-    // 2. FORCE RENDER OVERLAY (The Fix)
-    // This runs after the screen (and tooltips) are drawn.
-    @Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screen/ingame/HandledScreen;drawMouseoverTooltip(Lnet/minecraft/client/gui/DrawContext;II)V", shift = At.Shift.AFTER))
+    // 3. FORCE RENDER OVERLAY (The Fix)
+    // We inject at "RETURN" (The very end of the method).
+    // This ensures we run AFTER all tooltips are drawn, and we don't crash if the tooltip method is redirected.
+    @Inject(method = "render", at = @At("RETURN"))
     private void renderPerfectOverlay(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo info) {
         
         if (this.focusedSlot == null || !this.focusedSlot.hasStack()) return;
@@ -68,27 +68,27 @@ public abstract class HandledScreenMixin extends Screen {
             int width = this.width;
             int height = this.height;
             
-            // Adjust for screen edges (basic clamping)
+            // Adjust for screen edges (basic clamping to keep text on screen)
             if (i + 100 > width) {
-                i -= 28 + 100; // Shift left if too far right
+                i -= 28 + 100;
             }
             if (j + 20 > height) {
                 j = height - 20;
             }
 
-            // Draw the Perfect Label
-            // We push Z-Level to 1000 to ensure it draws ON TOP of Legendary Tooltips
+            // Draw the "Perfect" Label
+            // We push Z-Level to 1000 to ensure it draws ON TOP of Legendary Tooltips / Prism
             context.getMatrices().push();
             context.getMatrices().translate(0, 0, 1000); 
 
             MutableText perfectText = PerfectLabelAnimator.getPerfectLabel();
-            float scale = 0.75f; // Slightly larger for visibility
+            float scale = 0.75f; // Slightly smaller to fit nicely
 
-            // Draw the "Perfect" Text
             context.getMatrices().push();
             context.getMatrices().translate(i + 4, j + 2, 0); // Position inside tooltip box
             context.getMatrices().scale(scale, scale, 1f);
             
+            // Draw text with shadow for visibility
             context.drawText(textRenderer, perfectText, 0, 0, 0xFFFFFF, true);
             
             context.getMatrices().pop();
