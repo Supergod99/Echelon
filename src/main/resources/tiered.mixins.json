@@ -24,10 +24,12 @@
   "client": [
     "client.ItemStackClientMixin",
     "client.AnvilScreenMixin",
-    "compat.TooltipOverhaulFrameMixin",
     "client.HandledScreenMixin",
     "compat.SkillInfoScreenMixin",
-    "compat.ModAnvilScreenMixin"
+    "compat.ModAnvilScreenMixin",
+    "compat.TooltipOverhaulFrameMixin",
+    "compat.TooltipOverhaulRenderMixin",
+    "compat.TooltipOverhaulTextMixin"
   ],
   "injectors": {
     "defaultRequire": 1
