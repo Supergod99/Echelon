@@ -28,13 +28,12 @@ public abstract class HandledScreenMixin extends Screen {
     }
 
     /**
-     * CAPTURE PHASE:
-     * We do NOT render anything here. We just tell TierifyClient which item is being looked at.
-     * This allows the game to build the tooltip list normally (keeping Icons/Lines),
-     * and then DrawContextMixin (the next file) will draw the border.
+     * CAPTURE PHASE (Robust):
+     * We capture in 'render' instead of 'drawMouseoverTooltip'. 
+     * This ensures we catch the stack even if another mod redirects the tooltip method.
      */
-    @Inject(method = "drawMouseoverTooltip", at = @At("HEAD"))
-    private void captureHandledStack(DrawContext context, int x, int y, CallbackInfo info) {
+    @Inject(method = "render", at = @At("HEAD"))
+    private void captureHandledStack(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo info) {
         if (this.focusedSlot != null && this.focusedSlot.hasStack()) {
             TierifyClient.CURRENT_TOOLTIP_STACK = this.focusedSlot.getStack();
         }
@@ -42,10 +41,10 @@ public abstract class HandledScreenMixin extends Screen {
 
     /**
      * RELEASE PHASE:
-     * Clean up after we are done so we don't accidentally draw borders on other things.
+     * Clean up after the frame is done.
      */
-    @Inject(method = "drawMouseoverTooltip", at = @At("RETURN"))
-    private void releaseHandledStack(DrawContext context, int x, int y, CallbackInfo info) {
+    @Inject(method = "render", at = @At("RETURN"))
+    private void releaseHandledStack(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo info) {
         TierifyClient.CURRENT_TOOLTIP_STACK = ItemStack.EMPTY;
     }
 }
