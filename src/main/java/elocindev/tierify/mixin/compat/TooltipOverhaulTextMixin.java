@@ -3,13 +3,10 @@ package elocindev.tierify.mixin.compat;
 import dev.xylonity.tooltipoverhaul.client.style.text.DefaultText;
 import dev.xylonity.tooltipoverhaul.client.TooltipContext;
 import dev.xylonity.tooltipoverhaul.client.layer.LayerDepth;
-import elocindev.tierify.screen.client.component.PerfectTierComponent;
+import dev.xylonity.tooltipoverhaul.util.Util;
 import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.tooltip.TooltipComponent;
-import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.util.math.Vec2f;
 import net.minecraft.text.Text;
-import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -19,42 +16,38 @@ import java.awt.Point;
 @Mixin(DefaultText.class)
 public class TooltipOverhaulTextMixin {
 
-
     @Redirect(
         method = "render(Ldev/xylonity/tooltipoverhaul/client/layer/LayerDepth;Ldev/xylonity/tooltipoverhaul/client/TooltipContext;Lnet/minecraft/util/math/Vec2f;Ljava/awt/Point;Lnet/minecraft/text/Text;Lnet/minecraft/client/font/TextRenderer;)V",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/gui/tooltip/TooltipComponent;drawText(Lnet/minecraft/client/font/TextRenderer;IILorg/joml/Matrix4f;Lnet/minecraft/client/render/VertexConsumerProvider$Immediate;)V"
+            target = "Ldev/xylonity/tooltipoverhaul/util/Util;getTitleAlignmentX(Ldev/xylonity/tooltipoverhaul/client/TooltipContext;FF)I"
         )
     )
-    private void tierify$centerPerfectLabel(
-            TooltipComponent instance,
-            TextRenderer textRenderer,
-            int x, int y,
-            Matrix4f matrix,
-            VertexConsumerProvider vertexConsumers, 
+    private int tierify$modifyTitleAlignment(
+            TooltipContext ctx, 
+            float containerWidth, 
+            float textWidth, 
 
             LayerDepth depth,
-            TooltipContext ctx,
+            TooltipContext ctx2,
             Vec2f pos,
             Point size,
             Text rarity,
             TextRenderer font
     ) {
-        int drawX = x;
 
-        if (instance instanceof PerfectTierComponent) {
-            int tooltipWidth = size.x;
-            int componentWidth = instance.getWidth(textRenderer);
+        int originalX = Util.getTitleAlignmentX(ctx, containerWidth, textWidth);
+
+
+        if (rarity != null && rarity.getString().contains("Perfect")) {
             
-         
+
             int absoluteLeft = (int) pos.x;
+            int centeredX = absoluteLeft + (int)((containerWidth - textWidth) / 2.0f);
             
-
-            drawX = absoluteLeft + (tooltipWidth - componentWidth) / 2;
+            return centeredX;
         }
 
-      
-        instance.drawText(textRenderer, drawX, y, matrix, (VertexConsumerProvider.Immediate) vertexConsumers);
+        return originalX;
     }
 }
