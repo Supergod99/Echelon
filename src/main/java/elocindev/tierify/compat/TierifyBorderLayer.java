@@ -7,12 +7,15 @@ import dev.xylonity.tooltipoverhaul.client.layer.LayerDepth;
 import dev.xylonity.tooltipoverhaul.client.style.TooltipStyle;
 import elocindev.tierify.Tierify;
 import elocindev.tierify.TierifyClient;
+import elocindev.tierify.screen.client.PerfectLabelAnimator;
+import elocindev.tierify.screen.client.PerfectBorderRenderer;
 import draylar.tiered.api.BorderTemplate;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.util.math.Vec2f;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.Text;
+import net.minecraft.text.MutableText;
 import net.minecraft.util.Identifier;
 import java.awt.Point;
 
@@ -46,7 +49,8 @@ public class TierifyBorderLayer implements ITooltipLayer {
 
         if (match == null) return;
 
-        // 4. Setup Geometry
+        // 4. Setup Geometry (Standard Tooltip Bounds)
+        // Tooltip Overhaul content starts at pos.x, pos.y
         final int x = (int) pos.x; 
         final int y = (int) pos.y; 
         final int width = size.x;
@@ -65,58 +69,90 @@ public class TierifyBorderLayer implements ITooltipLayer {
 
         // 5. Draw
         ctx.push(() -> {
-            // Z-Level 3000 draws on top of everything
+            // Z-Level 3000 draws on top of standard background
             ctx.translate(0.0f, 0.0f, LayerDepth.BACKGROUND_OVERLAY.getZ());
             
             DrawContext drawContext = ctx.graphics();
             
             // --- A. Draw Gradient Lines (The "Connectors") ---
-            // [FIX] Expanded offsets from -3 to -5 to align with the fancy corners.
-            // This pushes the lines outward so they connect with the pixel art.
+            // Replicating logic from TieredTooltip.renderBorder(...)
+            // Original logic uses: i = x - 3, j = y - 3, k = w + 6, l = h + 6
             
-            int borderX = x - 5;
-            int borderY = y - 5;
-            int borderW = width + 10;
-            int borderH = height + 10;
-
-            // Vertical Left
-            drawContext.fillGradient(borderX, borderY + 1, borderX + 1, borderY + borderH - 1, 400, startColor, endColor);
-            // Vertical Right
-            drawContext.fillGradient(borderX + borderW - 1, borderY + 1, borderX + borderW, borderY + borderH - 1, 400, startColor, endColor);
-            // Horizontal Top
-            drawContext.fillGradient(borderX, borderY, borderX + borderW, borderY + 1, 400, startColor, startColor);
-            // Horizontal Bottom
-            drawContext.fillGradient(borderX, borderY + borderH - 1, borderX + borderW, borderY + borderH, 400, endColor, endColor);
+            int i = x - 3;
+            int j = y - 3;
+            int k = width + 6;
+            int l = height + 6;
+            
+            // Adjust y for top/bottom lines to match renderHorizontalLine logic (y-1) from original
+            // Original: renderHorizontalLine(..., y - 1, ...) where y passed was j+1. So j.
+            
+            // Vertical Left (at x-3)
+            drawContext.fillGradient(i, j + 1, i + 1, j + l - 1, 400, startColor, endColor);
+            
+            // Vertical Right (at x + width + 2)
+            drawContext.fillGradient(i + k - 1, j + 1, i + k, j + l - 1, 400, startColor, endColor);
+            
+            // Horizontal Top (at y-3)
+            drawContext.fillGradient(i, j, i + k, j + 1, 400, startColor, startColor);
+            
+            // Horizontal Bottom (at y + height + 2)
+            drawContext.fillGradient(i, j + l - 1, i + k, j + l, 400, endColor, endColor);
 
 
             // --- B. Draw Texture Corners & Header (The "Fancy" Bits) ---
-            // These draw at -6, so the -5 lines will sit perfectly inside them.
+            // Texture corners are drawn at offsets relative to standard border
+            // Tiered uses: n - 6 (where n is x)
             int texW = 128;
             int texH = 128;
             
-            int cX = x;
-            int cY = y;
-            int cW = width;
-            int cH = height;
-
             // Top Left Corner
-            drawContext.drawTexture(texture, cX - 6, cY - 6, 0 + secondHalf * 64, 0 + index * 16, 8, 8, texW, texH);
+            drawContext.drawTexture(texture, x - 6, y - 6, 0 + secondHalf * 64, 0 + index * 16, 8, 8, texW, texH);
             // Top Right Corner
-            drawContext.drawTexture(texture, cX + cW - 2, cY - 6, 56 + secondHalf * 64, 0 + index * 16, 8, 8, texW, texH);
+            drawContext.drawTexture(texture, x + width - 2, y - 6, 56 + secondHalf * 64, 0 + index * 16, 8, 8, texW, texH);
             // Bottom Left Corner
-            drawContext.drawTexture(texture, cX - 6, cY + cH - 2, 0 + secondHalf * 64, 8 + index * 16, 8, 8, texW, texH);
+            drawContext.drawTexture(texture, x - 6, y + height - 2, 0 + secondHalf * 64, 8 + index * 16, 8, 8, texW, texH);
             // Bottom Right Corner
-            drawContext.drawTexture(texture, cX + cW - 2, cY + cH - 2, 56 + secondHalf * 64, 8 + index * 16, 8, 8, texW, texH);
+            drawContext.drawTexture(texture, x + width - 2, y + height - 2, 56 + secondHalf * 64, 8 + index * 16, 8, 8, texW, texH);
 
             // Header Plate (Centered "Gem")
-            if (cW >= 48) {
-                 drawContext.drawTexture(texture, cX + (cW / 2) - 24, cY - 9, 8 + secondHalf * 64, 0 + index * 16, 48, 8, texW, texH);
+            if (width >= 48) {
+                 drawContext.drawTexture(texture, x + (width / 2) - 24, y - 9, 8 + secondHalf * 64, 0 + index * 16, 48, 8, texW, texH);
             }
             
-            // Footer Plate (Centered)
-             if (cW >= 48) {
-                 drawContext.drawTexture(texture, cX + (cW / 2) - 24, cY + cH + 1, 8 + secondHalf * 64, 8 + index * 16, 48, 8, texW, texH);
+             // Footer Plate (Centered)
+             if (width >= 48) {
+                 drawContext.drawTexture(texture, x + (width / 2) - 24, y + height + 1, 8 + secondHalf * 64, 8 + index * 16, 48, 8, texW, texH);
             }
+
+            // --- C. Animated Perfect Overlay (Glow) ---
+            // This applies the pulsing effect to the corners we just drew
+            ctx.push(() -> {
+                ctx.translate(0.0f, 0.0f, 10.0f); // Draw slightly above
+                PerfectBorderRenderer.renderPerfectBorderOverlay(drawContext, match, x, y, width, height);
+            });
+
+            // --- D. Draw "Perfect" Text (Self-Centering) ---
+            if (isPerfect) {
+                renderPerfectLabel(ctx, font, x, y, width);
+            }
+        });
+    }
+
+    private void renderPerfectLabel(TooltipContext ctx, TextRenderer font, int bgX, int bgY, int bgWidth) {
+        MutableText label = PerfectLabelAnimator.getPerfectLabel();
+        float scale = 0.65f;
+        int textWidth = font.getWidth(label);
+        
+        // Calculate Centered X based on the background width
+        float centeredX = bgX + (bgWidth / 2.0f) - ((textWidth * scale) / 2.0f);
+        
+        // Calculate Y: Sit exactly on Line 1 (approx 14px down from top)
+        float fixedY = bgY + 14.0f; 
+
+        ctx.push(() -> {
+            ctx.translate(centeredX, fixedY, LayerDepth.BACKGROUND_OVERLAY.getZ() + 20);
+            ctx.scale(scale, scale, 1.0f);
+            ctx.graphics().drawText(font, label, 0, 0, 0xFFFFFF, true);
         });
     }
 }
