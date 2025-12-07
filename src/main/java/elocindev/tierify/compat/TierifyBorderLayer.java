@@ -49,11 +49,11 @@ public class TierifyBorderLayer implements ITooltipLayer {
 
         if (match == null) return;
         
-        [cite_start]// FIX: Create a final reference for the lambda to use [cite: 101]
+        // FIX: Create a final reference for the lambda to use 
         final BorderTemplate finalMatch = match;
 
         // 4. Setup Geometry
-        // We cast to int immediately to align with pixel grid
+
         final int x = (int) pos.x; 
         final int y = (int) pos.y; 
         final int width = size.x;
@@ -70,15 +70,12 @@ public class TierifyBorderLayer implements ITooltipLayer {
 
         // 5. Draw Sequence
         ctx.push(() -> {
-            // LAYER 0: Move to Background Overlay Z-Depth (3000)
-            // This ensures we draw ON TOP of the standard Tooltip Overhaul background
+
             ctx.translate(0.0f, 0.0f, LayerDepth.BACKGROUND_OVERLAY.getZ());
             
             DrawContext drawContext = ctx.graphics();
             
-            // --- A. Draw Gradient Lines (The "Connectors") ---
-            // GEOMETRY FIX: Reverting to strict TieredTooltip offsets (-3)
-            // This aligns the gradient lines exactly with the tooltip boundaries + standard padding.
+
             int i = x - 3;
             int j = y - 3;
             int k = width + 6;
@@ -93,43 +90,37 @@ public class TierifyBorderLayer implements ITooltipLayer {
             // Horizontal Bottom
             drawContext.fillGradient(i, j + l - 1, i + k, j + l, 0, endColor, endColor);
 
-            // --- B. Draw Texture Corners (The "Fancy" Bits) ---
-            // LAYER 1: Move Z up slightly (+1.0) so corners render ON TOP of the gradient lines
+
             ctx.translate(0.0f, 0.0f, 1.0f);
             
             int texW = 128;
             int texH = 128;
 
-            // Texture offsets are -6, providing the visual "overlap" on the -3 gradient lines
-            // Top Left
+
             drawContext.drawTexture(texture, x - 6, y - 6, 0 + secondHalf * 64, 0 + index * 16, 8, 8, texW, texH);
-            // Top Right
+
             drawContext.drawTexture(texture, x + width - 2, y - 6, 56 + secondHalf * 64, 0 + index * 16, 8, 8, texW, texH);
-            // Bottom Left
+
             drawContext.drawTexture(texture, x - 6, y + height - 2, 0 + secondHalf * 64, 8 + index * 16, 8, 8, texW, texH);
-            // Bottom Right
+
             drawContext.drawTexture(texture, x + width - 2, y + height - 2, 56 + secondHalf * 64, 8 + index * 16, 8, 8, texW, texH);
 
-            // Header Plate (Only if width supports it)
+
             if (width >= 48) {
                  drawContext.drawTexture(texture, x + (width / 2) - 24, y - 9, 8 + secondHalf * 64, 0 + index * 16, 48, 8, texW, texH);
             }
-             // Footer Plate (Only if width supports it)
+
              if (width >= 48) {
                  drawContext.drawTexture(texture, x + (width / 2) - 24, y + height + 1, 8 + secondHalf * 64, 8 + index * 16, 48, 8, texW, texH);
             }
 
-            // --- C. Animated Perfect Overlay (Glow) ---
-            // LAYER 2: Move Z up again (+1.0) so the glow effect renders ON TOP of the corners/plates
-            // We push a new matrix stack here to isolate the glow translation
             ctx.push(() -> {
                 ctx.translate(0.0f, 0.0f, 1.0f); 
-                // Pass the raw tooltip coordinates; the renderer handles the -6 corner math internally
-                // FIX: Use finalMatch here instead of match
+
                 PerfectBorderRenderer.renderPerfectBorderOverlay(drawContext, finalMatch, x, y, width, height);
             });
 
-            // --- D. Draw "Perfect" Text (Centered) ---
+
             if (isPerfect) {
                 renderPerfectLabel(ctx, font, x, y, width);
             }
@@ -141,14 +132,13 @@ public class TierifyBorderLayer implements ITooltipLayer {
         float scale = 0.65f;
         int textWidth = font.getWidth(label);
         
-        // Center text relative to the tooltip background width
-        // Formula: StartX + (TotalWidth / 2) - (TextWidthScaled / 2)
+
         float centeredX = bgX + (bgWidth / 2.0f) - ((textWidth * scale) / 2.0f);
         
-        // Position: 14 pixels down from top (roughly fits between title and first line of description)
+
         float fixedY = bgY + 14.0f; 
 
-        // LAYER 3: Float the text well above the border (Z+10 relative to base)
+
         ctx.push(() -> {
             ctx.translate(centeredX, fixedY, LayerDepth.BACKGROUND_OVERLAY.getZ() + 10);
             ctx.scale(scale, scale, 1.0f);
