@@ -23,7 +23,7 @@ public class TierifyBorderLayer implements ITooltipLayer {
 
     @Override
     public void render(TooltipContext ctx, Vec2f pos, Point size, TooltipStyle style, Text rarity, TextRenderer font, CustomFrameData customFrame) {
-        // 1. Safety Check
+        // 1. Safety Check: Verify item has NBT
         if (!ctx.stack().hasNbt()) return;
 
         NbtCompound tierTag = ctx.stack().getSubNbt(Tierify.NBT_SUBTAG_KEY);
@@ -31,12 +31,12 @@ public class TierifyBorderLayer implements ITooltipLayer {
             return;
         }
 
-        // 2. Resolve Tier
+        // 2. Resolve Tier from NBT
         String tierId = tierTag.getString(Tierify.NBT_SUBTAG_DATA_KEY);
         boolean isPerfect = tierTag.getBoolean("Perfect");
         String lookupKey = isPerfect ? "{BorderTier:\"tiered:perfect\"}" : "{Tier:\"" + tierId + "\"}";
 
-        // 3. Find Template
+        // 3. Find Matching Border Template
         BorderTemplate match = null;
         if (TierifyClient.BORDER_TEMPLATES != null) {
             for (BorderTemplate template : TierifyClient.BORDER_TEMPLATES) {
@@ -48,8 +48,12 @@ public class TierifyBorderLayer implements ITooltipLayer {
         }
 
         if (match == null) return;
+        
+        [cite_start]// FIX: Create a final reference for the lambda to use [cite: 101]
+        final BorderTemplate finalMatch = match;
 
         // 4. Setup Geometry
+        // We cast to int immediately to align with pixel grid
         final int x = (int) pos.x; 
         final int y = (int) pos.y; 
         final int width = size.x;
@@ -64,15 +68,17 @@ public class TierifyBorderLayer implements ITooltipLayer {
         
         final Identifier texture = match.getIdentifier();
 
-        // 5. Draw
+        // 5. Draw Sequence
         ctx.push(() -> {
-            // Draw on top of the background (Z=3000)
+            // LAYER 0: Move to Background Overlay Z-Depth (3000)
+            // This ensures we draw ON TOP of the standard Tooltip Overhaul background
             ctx.translate(0.0f, 0.0f, LayerDepth.BACKGROUND_OVERLAY.getZ());
             
             DrawContext drawContext = ctx.graphics();
             
             // --- A. Draw Gradient Lines (The "Connectors") ---
-            // CORRECTION: Reverted to strict TieredTooltip offsets (-3)
+            // GEOMETRY FIX: Reverting to strict TieredTooltip offsets (-3)
+            // This aligns the gradient lines exactly with the tooltip boundaries + standard padding.
             int i = x - 3;
             int j = y - 3;
             int k = width + 6;
@@ -88,12 +94,13 @@ public class TierifyBorderLayer implements ITooltipLayer {
             drawContext.fillGradient(i, j + l - 1, i + k, j + l, 0, endColor, endColor);
 
             // --- B. Draw Texture Corners (The "Fancy" Bits) ---
-            // Move Z up slightly so corners render on top of the lines
+            // LAYER 1: Move Z up slightly (+1.0) so corners render ON TOP of the gradient lines
             ctx.translate(0.0f, 0.0f, 1.0f);
             
             int texW = 128;
             int texH = 128;
 
+            // Texture offsets are -6, providing the visual "overlap" on the -3 gradient lines
             // Top Left
             drawContext.drawTexture(texture, x - 6, y - 6, 0 + secondHalf * 64, 0 + index * 16, 8, 8, texW, texH);
             // Top Right
@@ -103,20 +110,23 @@ public class TierifyBorderLayer implements ITooltipLayer {
             // Bottom Right
             drawContext.drawTexture(texture, x + width - 2, y + height - 2, 56 + secondHalf * 64, 8 + index * 16, 8, 8, texW, texH);
 
-            // Header Plate
+            // Header Plate (Only if width supports it)
             if (width >= 48) {
                  drawContext.drawTexture(texture, x + (width / 2) - 24, y - 9, 8 + secondHalf * 64, 0 + index * 16, 48, 8, texW, texH);
             }
-             // Footer Plate
+             // Footer Plate (Only if width supports it)
              if (width >= 48) {
                  drawContext.drawTexture(texture, x + (width / 2) - 24, y + height + 1, 8 + secondHalf * 64, 8 + index * 16, 48, 8, texW, texH);
             }
 
             // --- C. Animated Perfect Overlay (Glow) ---
-            // Use your provided renderer. Translate Z up again so glow sits on top of corners.
+            // LAYER 2: Move Z up again (+1.0) so the glow effect renders ON TOP of the corners/plates
+            // We push a new matrix stack here to isolate the glow translation
             ctx.push(() -> {
                 ctx.translate(0.0f, 0.0f, 1.0f); 
-                PerfectBorderRenderer.renderPerfectBorderOverlay(drawContext, match, x, y, width, height);
+                // Pass the raw tooltip coordinates; the renderer handles the -6 corner math internally
+                // FIX: Use finalMatch here instead of match
+                PerfectBorderRenderer.renderPerfectBorderOverlay(drawContext, finalMatch, x, y, width, height);
             });
 
             // --- D. Draw "Perfect" Text (Centered) ---
@@ -131,12 +141,14 @@ public class TierifyBorderLayer implements ITooltipLayer {
         float scale = 0.65f;
         int textWidth = font.getWidth(label);
         
-        // Center text relative to the tooltip width
+        // Center text relative to the tooltip background width
+        // Formula: StartX + (TotalWidth / 2) - (TextWidthScaled / 2)
         float centeredX = bgX + (bgWidth / 2.0f) - ((textWidth * scale) / 2.0f);
         
-        // Position roughly on the second line
+        // Position: 14 pixels down from top (roughly fits between title and first line of description)
         float fixedY = bgY + 14.0f; 
 
+        // LAYER 3: Float the text well above the border (Z+10 relative to base)
         ctx.push(() -> {
             ctx.translate(centeredX, fixedY, LayerDepth.BACKGROUND_OVERLAY.getZ() + 10);
             ctx.scale(scale, scale, 1.0f);
