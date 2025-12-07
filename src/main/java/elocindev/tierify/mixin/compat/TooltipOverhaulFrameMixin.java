@@ -69,8 +69,8 @@ public class TooltipOverhaulFrameMixin {
             Optional.empty(), // colorItemRating
             Optional.empty(), // ratingAlignment
             
-            // FIX: Force "middle" alignment if item is Perfect, otherwise let config decide (empty)
-            isPerfect ? Optional.of("middle") : Optional.empty(), // titleAlignment
+            // FIX: Force "middle" alignment for ALL tiered items (Common, Rare, Perfect, etc.)
+            Optional.of("middle"), // titleAlignment
 
             Optional.empty(), // titlePositionX
             Optional.empty(), // titlePositionY
