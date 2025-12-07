@@ -12,7 +12,6 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -55,9 +54,7 @@ public class TooltipOverhaulFrameMixin {
             List.of(), // items
             List.of(), // tags
             Optional.empty(), // namespace
-            
-
-            Optional.empty(), 
+            Optional.empty(), // texture
             
             Optional.of(match.getBackgroundGradient()), 
 
@@ -71,7 +68,10 @@ public class TooltipOverhaulFrameMixin {
             Optional.empty(), // itemRating
             Optional.empty(), // colorItemRating
             Optional.empty(), // ratingAlignment
-            Optional.empty(), // titleAlignment
+            
+            // FIX: Force "middle" alignment if item is Perfect, otherwise let config decide (empty)
+            isPerfect ? Optional.of("middle") : Optional.empty(), // titleAlignment
+
             Optional.empty(), // titlePositionX
             Optional.empty(), // titlePositionY
             Optional.empty(), // ratingPositionX
