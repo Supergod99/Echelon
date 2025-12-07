@@ -75,7 +75,6 @@ public class TierifyBorderLayer implements ITooltipLayer {
             DrawContext drawContext = ctx.graphics();
             
             // --- A. Draw Gradient Lines ---
-            // Offsets (-3) to align with standard tooltip bounds
             int i = x - 3;
             int j = y - 3;
             int k = width + 6;
@@ -137,11 +136,10 @@ public class TierifyBorderLayer implements ITooltipLayer {
         // Center text relative to the tooltip background width
         float centeredX = bgX + (bgWidth / 2.0f) - ((textWidth * scale) / 2.0f);
         
-        // Position: Pushed down to 24.0f to clear the item name
-        // (Previously 14.0f which caused overlap)
-        float fixedY = bgY + 24.0f; 
+        // FIX: Moved up to 20.0f (was 24.0f) to center between Title and Description Line
+        float fixedY = bgY + 20.0f; 
 
-        // LAYER 3: Float the text well above the border (Z+10 relative to base)
+        // LAYER 3: Float the text well above the border
         ctx.push(() -> {
             ctx.translate(centeredX, fixedY, LayerDepth.BACKGROUND_OVERLAY.getZ() + 10);
             ctx.scale(scale, scale, 1.0f);
