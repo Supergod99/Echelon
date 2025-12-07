@@ -20,7 +20,7 @@ public class TierifyBorderLayer implements ITooltipLayer {
 
     @Override
     public void render(TooltipContext ctx, Vec2f pos, Point size, TooltipStyle style, Text rarity, TextRenderer font, CustomFrameData customFrame) {
-        // 1. Safety Check: Ensure stack has NBT before accessing it
+        // 1. Safety Check
         if (!ctx.stack().hasNbt()) return;
 
         NbtCompound tierTag = ctx.stack().getSubNbt(Tierify.NBT_SUBTAG_KEY);
@@ -28,12 +28,12 @@ public class TierifyBorderLayer implements ITooltipLayer {
             return;
         }
 
-        // 2. Resolve the Tier Key
+        // 2. Resolve Tier
         String tierId = tierTag.getString(Tierify.NBT_SUBTAG_DATA_KEY);
         boolean isPerfect = tierTag.getBoolean("Perfect");
         String lookupKey = isPerfect ? "{BorderTier:\"tiered:perfect\"}" : "{Tier:\"" + tierId + "\"}";
 
-        // 3. Find the matching Border Template
+        // 3. Find Template
         BorderTemplate match = null;
         if (TierifyClient.BORDER_TEMPLATES != null) {
             for (BorderTemplate template : TierifyClient.BORDER_TEMPLATES) {
@@ -46,59 +46,77 @@ public class TierifyBorderLayer implements ITooltipLayer {
 
         if (match == null) return;
 
-        // 4. Geometry Setup (Must be FINAL for use inside the lambda)
+        // 4. Setup Geometry
         final int x = (int) pos.x; 
         final int y = (int) pos.y; 
         final int width = size.x;
         final int height = size.y;
 
+        // Calculate Border Colors
+        final int startColor = match.getStartGradient();
+        final int endColor = match.getEndGradient();
+
+        // Calculate Texture Index
         int rawIndex = match.getIndex();
         final int secondHalf = rawIndex > 7 ? 1 : 0;
         final int index = rawIndex > 7 ? rawIndex - 8 : rawIndex;
         
         final Identifier texture = match.getIdentifier();
 
-        // 5. Draw the Tierify Border
+        // 5. Draw
         ctx.push(() -> {
-            // Draw at Z-Level 3000 to overlay on top of Tooltip Overhaul's background
+            // Z-Level 3000 draws on top of everything
             ctx.translate(0.0f, 0.0f, LayerDepth.BACKGROUND_OVERLAY.getZ());
             
             DrawContext drawContext = ctx.graphics();
             
-            // Texture dimensions matching your 128x128 sheet
+            // --- A. Draw Gradient Lines (The "Standard" Border) ---
+            // These connect the corners. We mimic vanilla/Tierify logic here.
+            // Note: TooltipOverhaul coords are usually top-left of the BOX.
+            
+            int borderX = x - 3;
+            int borderY = y - 3;
+            int borderW = width + 6;
+            int borderH = height + 6;
+
+            // Vertical Left
+            drawContext.fillGradient(borderX, borderY + 1, borderX + 1, borderY + borderH - 1, 400, startColor, endColor);
+            // Vertical Right
+            drawContext.fillGradient(borderX + borderW - 1, borderY + 1, borderX + borderW, borderY + borderH - 1, 400, startColor, endColor);
+            // Horizontal Top
+            drawContext.fillGradient(borderX, borderY, borderX + borderW, borderY + 1, 400, startColor, startColor);
+            // Horizontal Bottom
+            drawContext.fillGradient(borderX, borderY + borderH - 1, borderX + borderW, borderY + borderH, 400, endColor, endColor);
+
+
+            // --- B. Draw Texture Corners & Header (The "Fancy" Bits) ---
             int texW = 128;
             int texH = 128;
-
-            // --- Drawing Logic ---
-            // The texture is split into:
-            // 0-8: Top Row (Corners/Edges)
-            // 8-16: Bottom Row (Corners/Edges)
-            // Offsets are calculated based on the 128x128 grid logic from your original mod.
+            
+            // Tierify draws corners slightly outside the box (-6 offset from content x/y)
+            int cX = x;
+            int cY = y;
+            int cW = width;
+            int cH = height;
 
             // Top Left Corner
-            drawContext.drawTexture(texture, x - 6, y - 6, 0 + secondHalf * 64, 0 + index * 16, 8, 8, texW, texH);
+            drawContext.drawTexture(texture, cX - 6, cY - 6, 0 + secondHalf * 64, 0 + index * 16, 8, 8, texW, texH);
             // Top Right Corner
-            drawContext.drawTexture(texture, x + width - 2, y - 6, 56 + secondHalf * 64, 0 + index * 16, 8, 8, texW, texH);
+            drawContext.drawTexture(texture, cX + cW - 2, cY - 6, 56 + secondHalf * 64, 0 + index * 16, 8, 8, texW, texH);
             // Bottom Left Corner
-            drawContext.drawTexture(texture, x - 6, y + height - 2, 0 + secondHalf * 64, 8 + index * 16, 8, 8, texW, texH);
+            drawContext.drawTexture(texture, cX - 6, cY + cH - 2, 0 + secondHalf * 64, 8 + index * 16, 8, 8, texW, texH);
             // Bottom Right Corner
-            drawContext.drawTexture(texture, x + width - 2, y + height - 2, 56 + secondHalf * 64, 8 + index * 16, 8, 8, texW, texH);
+            drawContext.drawTexture(texture, cX + cW - 2, cY + cH - 2, 56 + secondHalf * 64, 8 + index * 16, 8, 8, texW, texH);
 
-            // Top Edge (Stretches the middle 48px segment)
-            drawContext.drawTexture(texture, x + 2, y - 6, width - 4, 8, 8 + secondHalf * 64, 0 + index * 16, 48, 8, texW, texH);
+            // Header Plate (Centered "Gem")
+            // Only draw if width is sufficient to not look weird
+            if (cW >= 48) {
+                 drawContext.drawTexture(texture, cX + (cW / 2) - 24, cY - 9, 8 + secondHalf * 64, 0 + index * 16, 48, 8, texW, texH);
+            }
             
-            // Bottom Edge
-            drawContext.drawTexture(texture, x + 2, y + height - 2, width - 4, 8, 8 + secondHalf * 64, 8 + index * 16, 48, 8, texW, texH);
-            
-            // Left Edge (Uses the left 8px column, bottom row)
-            drawContext.drawTexture(texture, x - 6, y + 2, 8, height - 4, 0 + secondHalf * 64, 8 + index * 16, 8, 8, texW, texH);
-            
-            // Right Edge (Uses the right 8px column, bottom row)
-            drawContext.drawTexture(texture, x + width - 2, y + 2, 8, height - 4, 56 + secondHalf * 64, 8 + index * 16, 8, 8, texW, texH);
-            
-            // Optional "Gem" Header (Only draws if tooltip is wide enough)
-            if (width > 48) {
-                 drawContext.drawTexture(texture, x + (width / 2) - 24, y - 9, 8 + secondHalf * 64, 0 + index * 16, 48, 8, texW, texH);
+            // Footer Plate (Centered)
+             if (cW >= 48) {
+                 drawContext.drawTexture(texture, cX + (cW / 2) - 24, cY + cH + 1, 8 + secondHalf * 64, 8 + index * 16, 48, 8, texW, texH);
             }
         });
     }
