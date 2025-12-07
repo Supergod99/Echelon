@@ -8,7 +8,8 @@ import java.util.List;
 
 @Mixin(TooltipRenderer.class)
 public interface TooltipRendererAccessor {
-    @Accessor("LAYERS_MAIN")
+
+    @Accessor(value = "LAYERS_MAIN", remap = false)
     static List<ITooltipLayer> getLayersMain() {
         throw new AssertionError();
     }
