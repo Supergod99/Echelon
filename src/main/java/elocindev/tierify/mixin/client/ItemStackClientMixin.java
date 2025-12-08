@@ -268,7 +268,7 @@ public abstract class ItemStackClientMixin {
         return original;
     }
 
-    @Inject(method = "getTooltip", at = @At("RETURN"))
+@Inject(method = "getTooltip", at = @At("RETURN"))
     private void tierify$fixInvertedAttackSpeedText(PlayerEntity player, TooltipContext context, CallbackInfoReturnable<List<Text>> cir) {
         List<Text> tooltip = cir.getReturnValue();
         if (tooltip == null || tooltip.isEmpty()) return;
@@ -287,30 +287,52 @@ public abstract class ItemStackClientMixin {
             Text line = tooltip.get(i);
             String text = line.getString();
             
+
             if (text.contains("Fast") || text.contains("Slow") || text.contains("Medium")) {
-                 if ((speed > 1.8 && (text.contains("Slow") || text.contains("Very Slow"))) || 
-                     (speed < 1.0 && (text.contains("Fast") || text.contains("Very Fast")))) {
-                      tooltip.set(i, replaceSpeedText(line, correctLabel));
+
+                 boolean labelIsFast = text.contains("Fast") || text.contains("Very Fast");
+                 boolean labelIsSlow = text.contains("Slow") || text.contains("Very Slow");
+
+                 if ((speed < 1.2 && labelIsFast) || (speed > 1.2 && labelIsSlow) || (speed >= 1.2 && speed < 2.0 && (labelIsFast || labelIsSlow))) {
+                      tooltip.set(i, replaceSpeedTextRecursively(line, correctLabel));
                  }
             }
         }
     }
 
-    private Text replaceSpeedText(Text original, String replacement) {
-        MutableText newText = Text.literal("");
+    private Text replaceSpeedTextRecursively(Text original, String replacementLabel) {
+
+        MutableText newNode = processSingleNode(original, replacementLabel);
+        
+
         for (Text sibling : original.getSiblings()) {
-            String content = sibling.getString();
-            if (content.contains("Fast") || content.contains("Slow") || content.contains("Medium")) {
-                newText.append(Text.literal(replacement).setStyle(sibling.getStyle()));
-            } else {
-                newText.append(sibling);
+            newNode.append(replaceSpeedTextRecursively(sibling, replacementLabel));
+        }
+        
+        return newNode;
+    }
+
+    private MutableText processSingleNode(Text node, String replacementLabel) {
+
+        MutableText copy = node.copyWithoutSiblings();
+        
+
+        String content = copy.getString(); 
+        
+
+        String[] targets = {"Very Fast", "Very Slow", "Fast", "Slow", "Medium"};
+        
+        for (String target : targets) {
+            if (content.contains(target)) {
+
+                String newContent = content.replace(target, replacementLabel);
+
+                return Text.literal(newContent).setStyle(node.getStyle());
             }
         }
-        if (original.getSiblings().isEmpty()) {
-             return Text.literal(replacement).setStyle(original.getStyle());
-        }
-        return newText;
+        return copy;
     }
+}
     
     @Shadow
     public Multimap<EntityAttribute, EntityAttributeModifier> getAttributeModifiers(EquipmentSlot slot) {
