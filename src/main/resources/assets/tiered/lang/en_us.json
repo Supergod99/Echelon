@@ -3,7 +3,8 @@
   "generic.crit_chance": "Crit Chance",
   "generic.durable": "Durability",
   "generic.range_attack_damage": "Range Attack Damage",
-
+  "generic.fortune": "Fortune",
+  
   "tiered.perfect.label": "Perfect",
 
   "tiered:common_melee_1.label": "Brutal",
