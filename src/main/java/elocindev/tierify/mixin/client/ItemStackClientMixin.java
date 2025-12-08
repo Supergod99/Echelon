@@ -268,6 +268,50 @@ public abstract class ItemStackClientMixin {
         return original;
     }
 
+    @Inject(method = "getTooltip", at = @At("RETURN"))
+    private void tierify$fixInvertedAttackSpeedText(PlayerEntity player, TooltipContext context, CallbackInfoReturnable<List<Text>> cir) {
+        List<Text> tooltip = cir.getReturnValue();
+        if (tooltip == null || tooltip.isEmpty()) return;
+
+        double speed = player.getAttributeValue(EntityAttributes.GENERIC_ATTACK_SPEED);
+        
+        String correctLabel;
+        if (speed >= 3.0) correctLabel = "Very Fast";
+        else if (speed >= 2.0) correctLabel = "Fast";
+        else if (speed >= 1.2) correctLabel = "Medium";
+        else if (speed > 0.6) correctLabel = "Slow"; 
+        else correctLabel = "Very Slow"; 
+
+
+        for (int i = 0; i < tooltip.size(); i++) {
+            Text line = tooltip.get(i);
+            String text = line.getString();
+            
+            if (text.contains("Fast") || text.contains("Slow") || text.contains("Medium")) {
+                 if ((speed > 1.8 && (text.contains("Slow") || text.contains("Very Slow"))) || 
+                     (speed < 1.0 && (text.contains("Fast") || text.contains("Very Fast")))) {
+                      tooltip.set(i, replaceSpeedText(line, correctLabel));
+                 }
+            }
+        }
+    }
+
+    private Text replaceSpeedText(Text original, String replacement) {
+        MutableText newText = Text.literal("");
+        for (Text sibling : original.getSiblings()) {
+            String content = sibling.getString();
+            if (content.contains("Fast") || content.contains("Slow") || content.contains("Medium")) {
+                newText.append(Text.literal(replacement).setStyle(sibling.getStyle()));
+            } else {
+                newText.append(sibling);
+            }
+        }
+        if (original.getSiblings().isEmpty()) {
+             return Text.literal(replacement).setStyle(original.getStyle());
+        }
+        return newText;
+    }
+    
     @Shadow
     public Multimap<EntityAttribute, EntityAttributeModifier> getAttributeModifiers(EquipmentSlot slot) {
         return null;
