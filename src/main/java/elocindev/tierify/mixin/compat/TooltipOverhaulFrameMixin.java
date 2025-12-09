@@ -55,22 +55,15 @@ public class TooltipOverhaulFrameMixin {
             List.of(), // tags
             Optional.empty(), // namespace
             Optional.empty(), // texture
-            
             Optional.of(match.getBackgroundGradient()), 
-
             Optional.of(CustomFrameData.InnerBorderType.NONE), 
-            
             Optional.of(CustomFrameData.GradientType.CUSTOM), 
-            
             // Keep gradient colors for Divider Line
             Optional.of(List.of(startHex, midHex, endHex)), 
-            
             Optional.empty(), // itemRating
             Optional.empty(), // colorItemRating
             Optional.empty(), // ratingAlignment
-            
             Optional.of("middle"), // titleAlignment
-
             Optional.empty(), // titlePositionX
             Optional.empty(), // titlePositionY
             Optional.empty(), // ratingPositionX
@@ -98,7 +91,6 @@ public class TooltipOverhaulFrameMixin {
             Optional.empty(), // disableTooltip
             Optional.empty()  // disableDividerLine
         );
-
         cir.setReturnValue(Optional.of(frameData));
     }
 
