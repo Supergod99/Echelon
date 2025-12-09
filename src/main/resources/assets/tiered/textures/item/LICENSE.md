@@ -1,5 +1,6 @@
-The following assets are Copyright ElocinDev 2024, All Rights Reserved.
+The following assets are Copyright Supergod99 2025, All Rights Reserved.
 
 - pyrite_chunk.png
 - limestone_chunk.png
 - galena_chunk.png
+- cleansing_stone.png
