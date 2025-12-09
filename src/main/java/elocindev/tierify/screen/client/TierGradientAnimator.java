@@ -10,44 +10,42 @@ public class TierGradientAnimator {
     private static int tick = 0;
     private static final int INTERVAL = 2;
 
-    // Gradient anchor colors per tier
-
-    // Common steel greys
+    // Common 
     private static final int[][] COMMON_COLORS = new int[][]{
             {140, 140, 140},
             {90, 90, 90},
             {160, 160, 160}
     };
 
-    // Uncommon green shimmer
+    // Uncommon 
     private static final int[][] UNCOMMON_COLORS = new int[][]{
             {90, 200, 90},
             {0, 120, 0},
             {140, 255, 140}
     };
 
-    // Rare deep blue → cyan pulse
+    // Rare 
     private static final int[][] RARE_COLORS = new int[][]{
             {80, 150, 255},
             {0, 60, 160},
             {120, 220, 255}
     };
 
-    // Epic purple / magenta wave
+    // Epic
     private static final int[][] EPIC_COLORS = new int[][]{
             {180, 70, 255},
             {100, 0, 180},
             {230, 150, 255}
     };
 
-    // Legendary hot gold → amber
+    // Legendary
     private static final int[][] LEGENDARY_COLORS = new int[][]{
             {255, 180, 0},
             {255, 220, 80},
             {255, 140, 0}
     };
 
-    // Mythic crimson → eldritch magenta
+    // Mythic
     private static final int[][] MYTHIC_COLORS = new int[][]{
             {255, 60, 60},
             {180, 0, 80},
@@ -90,15 +88,13 @@ public class TierGradientAnimator {
         int length = raw.length();
         MutableText result = Text.empty();
 
-        // Time based offset so gradient flows over the word
         long now = System.currentTimeMillis();
         double timeOffset = (now / 35L) % 100;  // 0..99
 
-        // For each character in the label, compute a gradient position + color
         for (int i = 0; i < length; i++) {
             char c = raw.charAt(i);
 
-            // Skip coloring spaces. just append a plain space to keep spacing nice
+            // Append a plain space to keep spacing nice
             if (Character.isWhitespace(c)) {
                 result.append(Text.literal(String.valueOf(c)));
                 continue;
@@ -124,7 +120,7 @@ public class TierGradientAnimator {
         return result;
     }
 
-    // Pick the palette based on tier name
+    // Pick palette based on tier name
     private static int[][] getPaletteForTier(String tier) {
         if (tier == null) return COMMON_COLORS;
         switch (tier.toLowerCase()) {
