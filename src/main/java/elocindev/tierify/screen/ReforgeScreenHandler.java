@@ -178,7 +178,11 @@ public class ReforgeScreenHandler extends ScreenHandler {
     public void reforge() {
         ItemStack itemStack = this.getSlot(1).getStack();
         ModifierUtils.removeItemStackAttribute(itemStack);
-        ModifierUtils.setItemStackAttribute(player, itemStack, true, this.getSlot(2).getStack());
+        
+        if (modifierItem.isIn(TieredItemTags.TIER_CLEANSE)) {
+        } else {
+             ModifierUtils.setItemStackAttribute(player, itemStack, true, modifierItem);
+        }
 
         if (Registries.SOUND_EVENT.get(getReforgeSound(ModifierUtils.getAttributeID(itemStack))) !=null) {
             SoundEvent soundEvent = Registries.SOUND_EVENT.get(getReforgeSound(ModifierUtils.getAttributeID(itemStack)));
