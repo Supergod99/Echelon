@@ -231,7 +231,7 @@ public class ModifierUtils {
                 Identifier possibleAttribute = getRandomAttributeForQuality(qualities, stack.getItem(), reforge);
                 if (possibleAttribute != null) {
     
-                    // 🌟 1% chance for a “perfect” roll (no downside)
+                    // 1% chance for a “perfect” roll (no downside)
                     boolean isPerfect = new java.util.Random().nextDouble() < 0.01D;
     
                     NbtCompound tierTag = stack.getOrCreateSubNbt(Tierify.NBT_SUBTAG_KEY);
