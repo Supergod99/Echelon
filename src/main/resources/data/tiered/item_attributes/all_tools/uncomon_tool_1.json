@@ -1,5 +1,5 @@
 {
-    "id": "tiered:mythic_tool_2",
+    "id": "tiered:uncomon_tool_1",
     "verifiers": [
         {
             "tag": "minecraft:pickaxes"
@@ -16,26 +16,26 @@
     ],
     "weight": 1,
     "style": {
-        "color": "red"
+        "color": "green"
     },
     "attributes": [
         {
-            "type": "tiered:generic.durable",
+            "type": "tiered:generic.dig_speed",
             "modifier": {
-                "name": "tiered:mythic_tool_2",
+                "name": "tiered:uncomon_tool_1",
                 "operation": "MULTIPLY_BASE",
-                "amount": 0.6
+                "amount": 0.1
             },
             "optional_equipment_slots": [
                 "MAINHAND"
             ]
         },
         {
-            "type": "tiered:generic.dig_speed",
+            "type": "reach-entity-attributes:reach",
             "modifier": {
-                "name": "tiered:mythic_tool_2",
-                "operation": "MULTIPLY_BASE",
-                "amount": -0.3
+                "name": "tiered:uncomon_tool_1",
+                "operation": "ADDITION",
+                "amount": -1.0
             },
             "optional_equipment_slots": [
                 "MAINHAND"

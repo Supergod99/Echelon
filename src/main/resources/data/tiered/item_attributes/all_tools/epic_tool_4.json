@@ -1,29 +1,41 @@
 {
     "id": "tiered:epic_tool_4",
     "verifiers": [
+        {
+            "tag": "minecraft:pickaxes"
+        },
+        {
+            "tag": "c:shovels"
+        },
+        {
+            "tag": "c:hoes"
+        },
+        {
+            "tag": "forge:tools/paxels"
+        }
     ],
-    "weight": 8,
+    "weight": 1,
     "style": {
-        "color": "dark_purple"
+        "color": "light_purple"
     },
     "attributes": [
         {
-            "type": "tiered:generic.dig_speed",
+            "type": "attributeslib:experience_gained",
             "modifier": {
                 "name": "tiered:epic_tool_4",
                 "operation": "MULTIPLY_BASE",
-                "amount": 0.1
+                "amount": 0.2
             },
             "optional_equipment_slots": [
                 "MAINHAND"
             ]
         },
         {
-            "type": "reach-entity-attributes:reach",
+            "type": "tiered:generic.dig_speed",
             "modifier": {
                 "name": "tiered:epic_tool_4",
-                "operation": "ADDITION",
-                "amount": 1
+                "operation": "MULTIPLY_BASE",
+                "amount": -0.2
             },
             "optional_equipment_slots": [
                 "MAINHAND"
