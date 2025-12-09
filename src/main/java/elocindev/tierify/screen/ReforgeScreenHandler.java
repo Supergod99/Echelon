@@ -177,6 +177,7 @@ public class ReforgeScreenHandler extends ScreenHandler {
 
     public void reforge() {
         ItemStack itemStack = this.getSlot(1).getStack();
+        ItemStack modifierItem = this.getSlot(2).getStack();
         ModifierUtils.removeItemStackAttribute(itemStack);
         
         if (modifierItem.isIn(TieredItemTags.TIER_CLEANSE)) {
