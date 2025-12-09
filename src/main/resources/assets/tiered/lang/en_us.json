@@ -268,26 +268,36 @@
   "tiered:common_tool_1.label": "Brisk",
   "tiered:common_tool_2.label": "Tempered",
   "tiered:common_tool_3.label": "Extended",
+  "tiered:common_tool_4.label": "Observant",
 
   "tiered:uncomon_tool_1.label": "Haste Forged",
   "tiered:uncomon_tool_2.label": "Alloy Forged",
   "tiered:uncomon_tool_3.label": "Farstrike",
+  "tiered:uncomon_tool_4.label": "Scholar",
 
   "tiered:rare_tool_1.label": "Vein Splitter",
   "tiered:rare_tool_2.label": "Adamant Hand",
   "tiered:rare_tool_3.label": "Horizon Reach",
+  "tiered:rare_tool_4.label": "Enlightened",
+  "tiered:rare_tool_5.label": "Golden Sense",
 
   "tiered:epic_tool_1.label": "Seismic Artisan",
   "tiered:epic_tool_2.label": "Forgemaster's Blessing",
   "tiered:epic_tool_3.label": "Titan's Arm",
+  "tiered:epic_tool_4.label": "Elder Insight",
+  "tiered:epic_tool_5.label": "Rift of Fortune",
 
   "tiered:legendary_tool_1.label": "Primeval Dig",
   "tiered:legendary_tool_2.label": "Indomitable Frame",
   "tiered:legendary_tool_3.label": "Grasp of Giants",
+  "tiered:legendary_tool_4.label": "Grand Savant",
+  "tiered:legendary_tool_5.label": "Wealth of Ages",
 
   "tiered:mythic_tool_1.label": "Terra Sunderer",
   "tiered:mythic_tool_2.label": "Relic of Infinite Use",
   "tiered:mythic_tool_3.label": "Hand of the Cosmic Delver",
+  "tiered:mythic_tool_4.label": "Seer of All Paths",
+  "tiered:mythic_tool_5.label": "Miracle of the Celestial",
   
 
   "tiered:common.label": "Common",
