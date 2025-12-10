@@ -7,6 +7,7 @@ import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import draylar.tiered.api.PotentialAttribute;
 import elocindev.tierify.screen.client.PerfectLabelAnimator;
 import elocindev.tierify.screen.client.TierGradientAnimator;
+import elocindev.tierify.util.SetBonusUtils;
 import elocindev.tierify.Tierify;
 import elocindev.tierify.util.TieredTooltip;
 import net.fabricmc.api.EnvType;
@@ -78,6 +79,14 @@ public abstract class ItemStackClientMixin {
             if (entry.getValue().getName().contains("tiered:") && !map.containsKey(translationKey) && multimap.get(entry.getKey()).size() > 1) {
                 
                 double value = entry.getValue().getValue();
+                //Set bonus visual check
+                boolean isSetBonus = false;
+                PlayerEntity clientPlayer = MinecraftClient.getInstance().player;
+                if (value > 0 && clientPlayer != null && SetBonusUtils.hasSetBonus(clientPlayer, (ItemStack)(Object)this)) {
+                    value *= 1.25D;  
+                    isSetBonus = true; 
+                }
+                
                 String format = MODIFIER_FORMAT.format(
                         entry.getValue().getOperation() == EntityAttributeModifier.Operation.MULTIPLY_BASE || entry.getValue().getOperation() == EntityAttributeModifier.Operation.MULTIPLY_TOTAL
                                 ? value * 100.0
@@ -99,9 +108,14 @@ public abstract class ItemStackClientMixin {
         if (this.map != null && !this.map.isEmpty() && this.map.containsKey(translationKey)) {
             if (!this.isTiered) {
                 ArrayList collected = map.get(translationKey);
+
+                boolean isSetBonus = collected.size() > 3 && (boolean) collected.get(3);
+                String colorCode = isSetBonus ? "§6§l" : "§9"; 
+                Formatting format = isSetBonus ? Formatting.GOLD : Formatting.BLUE;
+                
                 list.add(Text.translatable("tiered.attribute.modifier.plus." + (int) collected.get(0), "§9+" + this.armorModifierFormat,
                         ((boolean) collected.get(2) ? "§9(+" : "§c(") + (String) collected.get(1) + ((int) collected.get(0) > 0 ? "%)" : ")"),
-                        Text.translatable(translationKey).formatted(Formatting.BLUE)));
+                        Text.translatable(translationKey).formatted(format)));
 
             }
         } else {
