@@ -232,7 +232,7 @@ public class ModifierUtils {
                 if (possibleAttribute != null) {
     
                     // 1% chance for a “perfect” roll (no downside)
-                    boolean isPerfect = new java.util.Random().nextDouble() < 0.01D;
+                    boolean isPerfect = new java.util.Random().nextDouble() < Tierify.CONFIG.perfectRollChance;
     
                     NbtCompound tierTag = stack.getOrCreateSubNbt(Tierify.NBT_SUBTAG_KEY);
                     if (isPerfect) {
