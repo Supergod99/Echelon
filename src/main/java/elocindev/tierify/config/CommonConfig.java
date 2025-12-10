@@ -31,6 +31,8 @@ public class CommonConfig {
     public float luckReforgeModifier = 0.0F;
     @Comment("The chance for a reforge to be 'Perfect' (no negative attributes). 0.01 = 1%, 1.0 = 100%")
     public float perfectRollChance = 0.01F;
+    @Comment("If true, items can be reforged even if they are damaged.")
+    public boolean allowReforgingDamaged = true;
 
     @Comment("Tier 1 of Reforging (Limestone)")
     @Comment("Qualities here will be able to be reforged onto items while using the Tier 1 reforge material, Limestone by default. Can be changed via the item tag tiered:reforge_tier_1")
