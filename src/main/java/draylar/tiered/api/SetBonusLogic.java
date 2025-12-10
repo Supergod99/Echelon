@@ -72,10 +72,11 @@ public class SetBonusLogic {
     }
 
     public static void removeSetBonus(ServerPlayerEntity player) {
-        player.getAttributes().getAttributes().forEach(instance -> {
-            if (instance.getModifier(SET_BONUS_ID) != null) {
+        for (net.minecraft.entity.attribute.EntityAttribute attribute : net.minecraft.registry.Registries.ATTRIBUTE) {
+            net.minecraft.entity.attribute.EntityAttributeInstance instance = player.getAttributeInstance(attribute);
+            if (instance != null && instance.getModifier(SET_BONUS_ID) != null) {
                 instance.removeModifier(SET_BONUS_ID);
             }
-        });
+        }
     }
 }
