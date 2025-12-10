@@ -82,7 +82,8 @@ public class ReforgeScreenHandler extends ScreenHandler {
     private void updateResult() {
         if (this.getSlot(0).hasStack() && this.getSlot(1).hasStack() && this.getSlot(2).hasStack()) {
             Item item = this.getSlot(1).getStack().getItem();
-            if (ModifierUtils.getRandomAttributeIDFor(null, item, false) != null && !this.getSlot(1).getStack().isDamaged()) {
+            boolean canReforge = Tierify.CONFIG.allowReforgingDamaged || !this.getSlot(1).getStack().isDamaged();
+            if (ModifierUtils.getRandomAttributeIDFor(null, item, false) != null && canReforge) {
 
                 List<Item> items = Tierify.REFORGE_DATA_LOADER.getReforgeBaseItems(item);
                 ItemStack baseItem = this.getSlot(0).getStack();
