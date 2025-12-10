@@ -1,10 +1,10 @@
-package draylar.tiered.api; // <--- Changed to match the folder
+package draylar.tiered.api; 
 
 import draylar.tiered.api.AttributeTemplate;
 import draylar.tiered.api.ModifierUtils;
 import draylar.tiered.api.PotentialAttribute;
 import elocindev.tierify.Tierify;
-import elocindev.tierify.util.SetBonusUtils; // <--- Ensure this points to where you put Step 1
+import elocindev.tierify.util.SetBonusUtils; 
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.attribute.EntityAttribute;
 import net.minecraft.entity.attribute.EntityAttributeInstance;
