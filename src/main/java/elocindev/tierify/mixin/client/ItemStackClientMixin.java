@@ -74,6 +74,7 @@ public abstract class ItemStackClientMixin {
     @Inject(method = "getTooltip", at = @At("HEAD"))
     private void clearCache(PlayerEntity player, TooltipContext context, CallbackInfoReturnable<List> info) {
         this.map.clear();
+        this.isTiered = this.hasNbt() && this.getSubNbt(Tierify.NBT_SUBTAG_KEY) != null;
     }
 
     @Inject(method = "getTooltip", at = @At(value = "INVOKE", target = "Ljava/util/List;add(Ljava/lang/Object;)Z", ordinal = 6), locals = LocalCapture.CAPTURE_FAILHARD)
@@ -217,15 +218,14 @@ public abstract class ItemStackClientMixin {
         if (raw.contains("§x")) {
             return text;
         }
-        if (!isTiered) {
-            return text.formatted(formatting);
+        if (this.hasNbt() && this.getSubNbt(Tierify.NBT_SUBTAG_KEY) != null) {
+            Identifier tier = new Identifier(this.getOrCreateSubNbt(Tierify.NBT_SUBTAG_KEY).getString(Tierify.NBT_SUBTAG_DATA_KEY));
+            PotentialAttribute attribute = Tierify.ATTRIBUTE_DATA_LOADER.getItemAttributes().get(tier);
+            if (attribute != null) {
+                return text.setStyle(attribute.getStyle());
+            }
         }
-        
-        Identifier tier = new Identifier(this.getOrCreateSubNbt(Tierify.NBT_SUBTAG_KEY)
-                .getString(Tierify.NBT_SUBTAG_DATA_KEY));
-        PotentialAttribute attribute = Tierify.ATTRIBUTE_DATA_LOADER.getItemAttributes().get(tier);
-    
-        return text.setStyle(attribute.getStyle());
+        return text.formatted(formatting);
     }
 
     @ModifyVariable(method = "getTooltip", at = @At(value = "INVOKE", target = "Lcom/google/common/collect/Multimap;isEmpty()Z", remap = false), index = 10)
