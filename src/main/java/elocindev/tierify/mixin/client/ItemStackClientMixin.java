@@ -76,7 +76,7 @@ public abstract class ItemStackClientMixin {
             int var8, EquipmentSlot equipmentSlot, Multimap<EntityAttribute, EntityAttributeModifier> multimap) {
         for (Map.Entry<EntityAttribute, EntityAttributeModifier> entry : multimap.entries()) {
             String translationKey = entry.getKey().getTranslationKey();
-            if (entry.getValue().getName().contains("tiered:") && !map.containsKey(translationKey) && multimap.get(entry.getKey()).size() > 1) {
+            if (entry.getValue().getName().contains("tiered:") && !map.containsKey(translationKey)) {
                 
                 double value = entry.getValue().getValue();
                 //Set bonus visual check
