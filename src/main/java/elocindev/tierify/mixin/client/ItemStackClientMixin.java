@@ -19,7 +19,8 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
-import net.minecraft.text.TextColor;
+import net.minecraft.text.TextContent;
+import net.minecraft.text.TranslatableTextContent;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import org.spongepowered.asm.mixin.Final;
@@ -43,7 +44,6 @@ public abstract class ItemStackClientMixin {
     
     @Shadow @Final public static DecimalFormat MODIFIER_FORMAT;
 
-    // 1. NAME MODIFICATION
     @Inject(method = "getName", at = @At("RETURN"), cancellable = true)
     private void getNameMixin(CallbackInfoReturnable<Text> info) {
         if (this.hasNbt() && this.getSubNbt("display") == null && this.getSubNbt(Tierify.NBT_SUBTAG_KEY) != null) {
@@ -59,13 +59,11 @@ public abstract class ItemStackClientMixin {
         }
     }
 
-    // 2. SAFE TOOLTIP MODIFICATION
     @Inject(method = "getTooltip", at = @At("RETURN"))
     private void modifyTooltipFinal(PlayerEntity player, TooltipContext context, CallbackInfoReturnable<List<Text>> cir) {
         List<Text> tooltip = cir.getReturnValue();
         if (tooltip == null || tooltip.isEmpty()) return;
 
-        // -- BORDER LOGIC --
         if (this.hasNbt()) {
             NbtCompound tierTag = this.getSubNbt(Tierify.NBT_SUBTAG_KEY);
             if (tierTag != null && tierTag.getBoolean("Perfect")) {
@@ -73,16 +71,13 @@ public abstract class ItemStackClientMixin {
             }
         }
 
-        // -- ATTRIBUTE LOGIC (Colors & Values) --
         if (this.hasNbt() && this.getSubNbt(Tierify.NBT_SUBTAG_KEY) != null) {
             applyAttributeLogic(tooltip);
         }
 
-        // -- ATTACK SPEED FIX --
         fixAttackSpeedText(tooltip);
     }
 
-    // 3. EQUIPMENT SLOT HEADER FIX
     @ModifyExpressionValue(method = "getTooltip", at = @At(value = "INVOKE", target = "Lnet/minecraft/text/Text;translatable(Ljava/lang/String;)Lnet/minecraft/text/MutableText;", ordinal = 1))
     private MutableText modifyTooltipEquipmentSlot(MutableText original) {
         if (this.hasNbt() && this.getSubNbt(Tierify.NBT_SUBTAG_KEY) != null 
@@ -93,12 +88,9 @@ public abstract class ItemStackClientMixin {
         return original;
     }
 
-    // --- HELPER METHODS ---
-
     private void applyAttributeLogic(List<Text> tooltip) {
         boolean hasSetBonus = checkSetBonus();
 
-        // 1. Calculate Expected Values
         for (EquipmentSlot slot : EquipmentSlot.values()) {
             Multimap<EntityAttribute, EntityAttributeModifier> modifiers = this.getAttributeModifiers(slot);
             if (modifiers.isEmpty()) continue;
@@ -122,18 +114,15 @@ public abstract class ItemStackClientMixin {
                     if (isTiered) hasTiered = true;
 
                     totalBase += value;
-
                     if (isTiered && hasSetBonus && value > 0) {
-                        totalWithBonus += (value * 1.25D); // Boost only the Tiered portion
+                        totalWithBonus += (value * 1.25D); 
                     } else {
-                        totalWithBonus += value; // Base stats stay the same
+                        totalWithBonus += value;
                     }
                 }
 
-                // If buffed, update the tooltip
                 if (hasTiered && Math.abs(totalWithBonus - totalBase) > 0.0001) {
                     boolean isMultiplier = mods.get(0).getOperation() != EntityAttributeModifier.Operation.ADDITION;
-                    
                     double displayBase = totalBase;
                     double displayBonus = totalWithBonus;
 
@@ -147,75 +136,107 @@ public abstract class ItemStackClientMixin {
 
                     String oldString = MODIFIER_FORMAT.format(displayBase);
                     String newString = MODIFIER_FORMAT.format(displayBonus);
-                    
-                    // Recursive update to preserve styles (icons)
-                    updateTooltipRecursive(tooltip, oldString, newString, true, false);
+                    updateTooltipRecursive(tooltip, oldString, newString, true);
                 }
             }
         }
 
-        // 2. Final Pass: Force RED for negatives
-        // Uses the same recursive logic to avoid breaking icons
-        updateTooltipRecursive(tooltip, "-", "-", false, true);
+        for (int i = 0; i < tooltip.size(); i++) {
+            Text line = tooltip.get(i);
+            String content = line.getString();
+            
+            // Check for negative numbers
+            if (content.contains("-") && content.matches(".*-[0-9].*")) {
+                if (line instanceof MutableText mutable) {
+
+                    if (mutable.getStyle().getColor() != Formatting.RED) {
+                        tooltip.set(i, mutable.setStyle(mutable.getStyle().withColor(Formatting.RED)));
+                    }
+                } else {
+                    tooltip.set(i, line.copy().setStyle(line.getStyle().withColor(Formatting.RED)));
+                }
+            }
+        }
     }
 
-    /**
-     * Walks through the Tooltip list and updates nodes safely.
-     * @param tooltip The tooltip list
-     * @param target The string to look for (e.g., "12") or "-"
-     * @param replacement The string to replace it with (e.g., "15")
-     * @param applyGold If true, applies Gold color to the replacement
-     * @param forceRed If true, forces Red color if the node contains the target (used for negatives)
-     */
-    private void updateTooltipRecursive(List<Text> tooltip, String target, String replacement, boolean applyGold, boolean forceRed) {
+    private void updateTooltipRecursive(List<Text> tooltip, String target, String replacement, boolean applyGold) {
         for (int i = 0; i < tooltip.size(); i++) {
             Text originalLine = tooltip.get(i);
-            
-            // Optimization: Skip lines that don't contain the target to avoid object creation
             if (!originalLine.getString().contains(target)) continue;
             
-            // Process the line recursively
-            Text newLine = processNodeRecursive(originalLine, target, replacement, applyGold, forceRed);
+            Text newLine = processNodeRecursive(originalLine, target, replacement, applyGold);
             tooltip.set(i, newLine);
         }
     }
 
-    private MutableText processNodeRecursive(Text node, String target, String replacement, boolean applyGold, boolean forceRed) {
-        // 1. Create a shallow copy of the current node (Preserves content + style)
-        MutableText newNode = MutableText.of(node.getContent()).setStyle(node.getStyle());
+    private MutableText processNodeRecursive(Text node, String target, String replacement, boolean applyGold) {
 
-        // 2. Modify the content if this specific node has text
-        String content = newNode.getContent().toString(); // Use toString of content, not getString() which flattens children
-        
-        // LiteralTextContent returns the string, Translatable returns key, etc. 
-        // We generally only want to replace literals that contain numbers.
-        if (!content.isEmpty() && content.contains(target)) {
-            // Check heuristic for negatives (Must look like a number: "-1" or "-.5")
-            boolean isNegativeNumber = forceRed && content.matches(".*-.*[0-9].*");
+        if (node.getContent() instanceof TranslatableTextContent translatable) {
+            Object[] args = translatable.getArgs();
+            Object[] newArgs = new Object[args.length];
+            boolean changed = false;
 
-            if (isNegativeNumber) {
-                newNode.setStyle(newNode.getStyle().withColor(Formatting.RED));
-            } 
-            else if (!forceRed) {
-                // Perform Value Replacement
-                // Heuristic: Check if it's an attribute line (space or +)
-                if (content.contains(" ") || content.contains("+") || content.matches(".*[0-9].*")) {
-                     String newContentText = content.replace(target, replacement);
-                     newNode = Text.literal(newContentText).setStyle(newNode.getStyle());
-                     
-                     if (applyGold) {
-                         newNode.setStyle(newNode.getStyle().withColor(Formatting.GOLD));
-                     }
+            for (int j = 0; j < args.length; j++) {
+                Object arg = args[j];
+                if (arg instanceof String s && s.contains(target)) {
+
+                    newArgs[j] = applyReplacement(s, target, replacement, applyGold);
+                    changed = true;
+                } else if (arg instanceof Text t && t.getString().contains(target)) {
+
+                    newArgs[j] = processNodeRecursive(t, target, replacement, applyGold);
+                    changed = true;
+                } else {
+                    newArgs[j] = arg;
                 }
+            }
+
+            if (changed) {
+
+                MutableText newTranslatable = Text.translatable(translatable.getKey(), newArgs).setStyle(node.getStyle());
+
+                for (Text sibling : node.getSiblings()) {
+                    newTranslatable.append(processNodeRecursive(sibling, target, replacement, applyGold));
+                }
+                return newTranslatable;
             }
         }
 
-        // 3. Process Siblings Recursively
+
+        MutableText newNode = node.copy(); // Copy preserves content + style (Fonts/Icons)
+        String content = node.getContent().toString(); 
+
+
+        if (node.getString().contains(target) && (node.getContent() instanceof net.minecraft.text.LiteralTextContent)) {
+             String oldText = node.getString();
+             if (oldText.contains(target)) {
+
+                 Text replacementText = applyReplacement(oldText, target, replacement, applyGold);
+                 
+                 if (replacementText instanceof MutableText m) {
+                     newNode = m.setStyle(node.getStyle().withParent(m.getStyle())); 
+                 }
+             }
+        }
+        
+        // 3. Process Siblings
+        newNode.getSiblings().clear();
         for (Text sibling : node.getSiblings()) {
-            newNode.append(processNodeRecursive(sibling, target, replacement, applyGold, forceRed));
+            newNode.append(processNodeRecursive(sibling, target, replacement, applyGold));
         }
 
         return newNode;
+    }
+
+    private Text applyReplacement(String text, String target, String replacement, boolean applyGold) {
+        String newText = text.replace(target, replacement);
+        MutableText result = Text.literal(newText);
+        
+        if (applyGold) {
+
+            result.setStyle(Style.EMPTY.withColor(Formatting.GOLD));
+        }
+        return result;
     }
 
     private boolean checkSetBonus() {
