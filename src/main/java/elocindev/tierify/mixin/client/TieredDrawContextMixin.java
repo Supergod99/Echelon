@@ -35,6 +35,8 @@ public class TieredDrawContextMixin {
     @Inject(method = "drawItemTooltip", at = @At("HEAD"), cancellable = true)
     private void drawItemTooltipMixin(TextRenderer textRenderer, ItemStack stack, int x, int y, CallbackInfo info) {
 
+        System.out.println("TIERIFY DEBUG: drawItemTooltipMixin called!");
+
         if (FabricLoader.getInstance().isModLoaded("tooltipoverhaul")) {
             return;
         }
