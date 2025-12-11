@@ -26,7 +26,9 @@ public class TieredMixinPlugin implements IMixinConfigPlugin {
             return false;
         if (!FabricLoader.getInstance().isModLoaded("easyanvils") && mixinClassName.contains("ModAnvilScreenMixin"))
             return false;
-
+        if (mixinClassName.contains("TooltipOverhaul") || mixinClassName.contains("TooltipRendererAccessor")) {
+            return FabricLoader.getInstance().isModLoaded("tooltipoverhaul");
+        }
         return true;
     }
 
@@ -46,5 +48,4 @@ public class TieredMixinPlugin implements IMixinConfigPlugin {
     @Override
     public void postApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {
     }
-
 }
