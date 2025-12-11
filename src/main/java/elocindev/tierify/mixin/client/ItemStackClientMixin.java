@@ -21,13 +21,15 @@ import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.util.List;
+import java.text.DecimalFormat;
+import java.util.*;
 
 @Environment(EnvType.CLIENT)
 @Mixin(ItemStack.class)
@@ -37,8 +39,10 @@ public abstract class ItemStackClientMixin {
     @Shadow public abstract boolean hasNbt();
     @Shadow public abstract NbtCompound getSubNbt(String key);
     @Shadow public abstract Multimap<EntityAttribute, EntityAttributeModifier> getAttributeModifiers(EquipmentSlot slot);
+    
+    @Shadow @Final public static DecimalFormat MODIFIER_FORMAT;
 
-    // 1. NAME MODIFICATION (Kept as is, it works fine)
+    // 1. NAME MODIFICATION
     @Inject(method = "getName", at = @At("RETURN"), cancellable = true)
     private void getNameMixin(CallbackInfoReturnable<Text> info) {
         if (this.hasNbt() && this.getSubNbt("display") == null && this.getSubNbt(Tierify.NBT_SUBTAG_KEY) != null) {
@@ -54,14 +58,13 @@ public abstract class ItemStackClientMixin {
         }
     }
 
-    // 2. SAFE TOOLTIP MODIFICATION (Inject at RETURN to avoid conflicts)
+    // 2. SAFE TOOLTIP MODIFICATION
     @Inject(method = "getTooltip", at = @At("RETURN"))
     private void modifyTooltipFinal(PlayerEntity player, TooltipContext context, CallbackInfoReturnable<List<Text>> cir) {
         List<Text> tooltip = cir.getReturnValue();
         if (tooltip == null || tooltip.isEmpty()) return;
 
         // -- BORDER LOGIC --
-        // Sets the NBT so the ItemRendererMixin knows to draw the border
         if (this.hasNbt()) {
             NbtCompound tierTag = this.getSubNbt(Tierify.NBT_SUBTAG_KEY);
             if (tierTag != null && tierTag.getBoolean("Perfect")) {
@@ -69,17 +72,16 @@ public abstract class ItemStackClientMixin {
             }
         }
 
-        // -- COLOR LOGIC --
-        // Scans the existing tooltip and recolors lines that look like attributes
+        // -- ATTRIBUTE LOGIC (Colors & Values) --
         if (this.hasNbt() && this.getSubNbt(Tierify.NBT_SUBTAG_KEY) != null) {
-            applyTierColors(tooltip);
+            applyAttributeLogic(tooltip);
         }
 
         // -- ATTACK SPEED FIX --
         fixAttackSpeedText(tooltip);
     }
 
-    // 3. EQUIPMENT SLOT HEADER FIX (Kept as is)
+    // 3. EQUIPMENT SLOT HEADER FIX
     @ModifyExpressionValue(method = "getTooltip", at = @At(value = "INVOKE", target = "Lnet/minecraft/text/Text;translatable(Ljava/lang/String;)Lnet/minecraft/text/MutableText;", ordinal = 1))
     private MutableText modifyTooltipEquipmentSlot(MutableText original) {
         if (this.hasNbt() && this.getSubNbt(Tierify.NBT_SUBTAG_KEY) != null 
@@ -92,26 +94,102 @@ public abstract class ItemStackClientMixin {
 
     // --- HELPER METHODS ---
 
-    private void applyTierColors(List<Text> tooltip) {
-        // Determine if we should use Gold (Set Bonus) or Blue (Standard)
+    private void applyAttributeLogic(List<Text> tooltip) {
         boolean hasSetBonus = checkSetBonus();
-        Formatting color = hasSetBonus ? Formatting.GOLD : Formatting.BLUE;
 
+        // Group modifiers by Attribute because Vanilla merges them in the tooltip
+        for (EquipmentSlot slot : EquipmentSlot.values()) {
+            Multimap<EntityAttribute, EntityAttributeModifier> modifiers = this.getAttributeModifiers(slot);
+            if (modifiers.isEmpty()) continue;
+
+            Map<EntityAttribute, List<EntityAttributeModifier>> grouped = new HashMap<>();
+            for (Map.Entry<EntityAttribute, EntityAttributeModifier> entry : modifiers.entries()) {
+                grouped.computeIfAbsent(entry.getKey(), k -> new ArrayList<>()).add(entry.getValue());
+            }
+
+            // Process each Attribute group
+            for (Map.Entry<EntityAttribute, List<EntityAttributeModifier>> group : grouped.entrySet()) {
+                EntityAttribute attribute = group.getKey();
+                List<EntityAttributeModifier> mods = group.getValue();
+
+                double totalBase = 0;
+                double totalWithBonus = 0;
+                boolean hasTiered = false;
+
+                // Sum up the modifiers
+                for (EntityAttributeModifier mod : mods) {
+                    double value = mod.getValue();
+                    boolean isTiered = mod.getName().contains("tiered:");
+                    if (isTiered) hasTiered = true;
+
+                    totalBase += value;
+
+                    // Apply bonus ONLY to the Tiered portion
+                    if (isTiered && hasSetBonus && value > 0) {
+                        totalWithBonus += (value * 1.25D); 
+                    } else {
+                        totalWithBonus += value;
+                    }
+                }
+
+                // If this attribute group has a tiered component and the values differ, update the tooltip
+                if (hasTiered && Math.abs(totalWithBonus - totalBase) > 0.0001) {
+                    // Determine if it's a percentage or flat value
+                    boolean isMultiplier = mods.get(0).getOperation() != EntityAttributeModifier.Operation.ADDITION;
+                    
+                    double displayBase = totalBase;
+                    double displayBonus = totalWithBonus;
+
+                    if (isMultiplier) {
+                        displayBase *= 100.0;
+                        displayBonus *= 100.0;
+                    } else if (attribute.equals(EntityAttributes.GENERIC_KNOCKBACK_RESISTANCE)) {
+                        displayBase *= 10.0;
+                        displayBonus *= 10.0;
+                    }
+
+                    String oldString = MODIFIER_FORMAT.format(displayBase);
+                    String newString = MODIFIER_FORMAT.format(displayBonus);
+
+                    // Perform replacement and coloring
+                    replaceValueInTooltip(tooltip, oldString, newString, true);
+                }
+            }
+        }
+
+        // Final Pass: Ensure Negative numbers are RED
+        // This fixes the issue where vanilla negatives lose their color
         for (int i = 0; i < tooltip.size(); i++) {
             Text line = tooltip.get(i);
-            String text = line.getString();
+            String content = line.getString();
+            
+            // Check for negative numbers (e.g. "-10" or "-0.5")
+            if (content.contains("-") && content.matches(".*-[0-9].*")) {
+                 // Force Red Style
+                 tooltip.set(i, Text.literal(content).formatted(Formatting.RED));
+            }
+        }
+    }
 
-            // Heuristic: Identify lines that are likely Attribute Modifiers.
-            // Vanilla format usually contains a "+" or "Attribute Modifier" and numbers.
-            // We specifically look for the structure vanilla uses for attributes.
-            if ((text.contains("+") || text.contains("-")) && (text.matches(".*[0-9].*"))) {
-                 // Check if the style is default (usually Gray or Blue for vanilla). 
-                 // If it is, we overwrite it with our Tier Color.
-                 // We convert the line to a MutableText and apply our color style.
-                 if (!text.contains("§")) { // Avoid overwriting existing formatted text if possible
-                     MutableText coloredLine = Text.literal(text).setStyle(Style.EMPTY.withColor(color));
-                     tooltip.set(i, coloredLine);
-                 }
+    private void replaceValueInTooltip(List<Text> tooltip, String targetValue, String newValue, boolean isBonus) {
+        for (int i = 0; i < tooltip.size(); i++) {
+            Text line = tooltip.get(i);
+            String content = line.getString();
+
+            // Safety check: Ensure we are replacing an actual attribute line (contains space or +)
+            if (content.contains(targetValue) && (content.contains(" ") || content.contains("+"))) {
+                
+                String newContent = content.replace(targetValue, newValue);
+                
+                if (isBonus) {
+                    // If it's a bonus line, turn it GOLD
+                    MutableText newText = Text.literal(newContent).setStyle(Style.EMPTY.withColor(Formatting.GOLD));
+                    tooltip.set(i, newText);
+                } else {
+                    // Otherwise keep original style
+                    tooltip.set(i, Text.literal(newContent).setStyle(line.getStyle()));
+                }
+                return; // Only replace the first match to avoid duplicates
             }
         }
     }
@@ -183,9 +261,7 @@ public abstract class ItemStackClientMixin {
     }
 
     private MutableText processSingleNode(Text node, String replacementLabel) {
-        // Optimization: Create a shallow copy directly using content and style.
         MutableText copy = MutableText.of(node.getContent()).setStyle(node.getStyle());
-
         String content = copy.getString();
         String[] targets = {"Very Fast", "Very Slow", "Fast", "Slow", "Medium"};
 
