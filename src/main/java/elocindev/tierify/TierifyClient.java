@@ -1,5 +1,6 @@
 package elocindev.tierify;
 
+import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -59,12 +60,10 @@ public class TierifyClient implements ClientModInitializer {
             TierGradientAnimator.clientTick();
         });
         
-        try {
-            // Inject our custom border layer into Tooltip Overhaul
-            TooltipRendererAccessor.getLayersMain().add(new TierifyBorderLayer());
-        } catch (Throwable t) {
-            // This safely ignores errors if Tooltip Overhaul is not installed or mixin fails
-            System.out.println("[Tierify] Tooltip Overhaul not found or mixin failed, skipping border layer injection.");
+        if (FabricLoader.getInstance().isModLoaded("tooltipoverhaul")) {
+             elocindev.tierify.compat.TooltipOverhaulCompat.init();
+        } else {
+             System.out.println("[Tierify] Tooltip Overhaul not found, skipping border layer injection.");
         }
 
         registerAttributeSyncHandler();
