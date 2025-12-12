@@ -28,15 +28,21 @@ public class DrawContextMixin {
 
     @Inject(method = "drawItemTooltip", at = @At("HEAD"), cancellable = true)
     private void drawItemTooltipMixin(TextRenderer textRenderer, ItemStack stack, int x, int y, CallbackInfo info) {
+        // 1. If Tooltip Overhaul is present, let it handle everything.
         if (FabricLoader.getInstance().isModLoaded("tooltipoverhaul") || FabricLoader.getInstance().isModLoaded("legendarytooltips")) {
             return;
         }
 
+        // 2. Check if we should render a Tierify border
         if (Tierify.CLIENT_CONFIG.tieredTooltip && stack.hasNbt() && stack.getOrCreateSubNbt(Tierify.NBT_SUBTAG_KEY) != null) {
 
-            String tier = stack.getOrCreateSubNbt(Tierify.NBT_SUBTAG_KEY).getString(Tierify.NBT_SUBTAG_DATA_KEY);
-            String lookupKey = "{Tier:\"" + tier + "\"}";
 
+            // We must check for the "Perfect" tag, just like we do in the Tooltip Overhaul compat.
+            String tier = stack.getOrCreateSubNbt(Tierify.NBT_SUBTAG_KEY).getString(Tierify.NBT_SUBTAG_DATA_KEY);
+            boolean isPerfect = stack.getOrCreateSubNbt(Tierify.NBT_SUBTAG_KEY).getBoolean("Perfect");
+            
+            // If it's perfect, use the special lookup key. Otherwise, use the standard Tier ID.
+            String lookupKey = isPerfect ? "{BorderTier:\"tiered:perfect\"}" : "{Tier:\"" + tier + "\"}";
 
             for (int i = 0; i < TierifyClient.BORDER_TEMPLATES.size(); i++) {
                 if (TierifyClient.BORDER_TEMPLATES.get(i).containsDecider(lookupKey)) {
@@ -54,11 +60,10 @@ public class DrawContextMixin {
                         HoveredTooltipPositioner.INSTANCE, 
                         TierifyClient.BORDER_TEMPLATES.get(i)
                     );
-                  
+
                     info.cancel();
                     break;
                 }
             }
         }
     }
-}
