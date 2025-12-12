@@ -30,6 +30,10 @@ public class SetBonusLogic {
              Identifier tierId = ModifierUtils.getAttributeID(chest);
              if (tierId != null) {
                  applySetBonus(player, tierId);
+                 float pct = SetBonusUtils.hasPerfectSetBonus(player, chest)
+                         ? Tierify.CONFIG.armorSetPerfectBonusPercent
+                         : Tierify.CONFIG.armorSetBonusPercent;
+                 applySetBonus(player, tierId, pct);
                  return;
              }
         }
@@ -38,7 +42,7 @@ public class SetBonusLogic {
         removeSetBonus(player);
     }
 
-    private static void applySetBonus(ServerPlayerEntity player, Identifier tierId) {
+    private static void applySetBonus(ServerPlayerEntity player, Identifier tierId, float setBonusPercent) {
         PotentialAttribute attribute = Tierify.ATTRIBUTE_DATA_LOADER.getItemAttributes().get(tierId);
         if (attribute == null) return;
 
@@ -65,6 +69,16 @@ public class SetBonusLogic {
                 );
                 instance.addTemporaryModifier(bonusModifier);
             }
+            // Always refresh so 25% <-> 100% swaps correctly when the set becomes Perfect (or stops being Perfect).
+            if (instance.getModifier(SET_BONUS_ID) != null) {
+                instance.removeModifier(SET_BONUS_ID);
+            }
+
+            double bonusAmount = baseValue * setBonusPercent * 4.0D;
+            EntityAttributeModifier bonusModifier = new EntityAttributeModifier(
+                SET_BONUS_ID, BONUS_NAME, bonusAmount, template.getEntityAttributeModifier().getOperation()
+            );
+            instance.addTemporaryModifier(bonusModifier);
         }
     }
 
