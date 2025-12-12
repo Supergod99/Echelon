@@ -55,7 +55,8 @@ public class SetBonusLogic {
             if (instance == null) continue;
 
             if (instance.getModifier(SET_BONUS_ID) == null) {
-                double bonusAmount = baseValue * 0.25 * 4; 
+                double bonusMultiplier = Math.max(0.0, Tierify.CONFIG.armorSetBonusMultiplier);
+                double bonusAmount = baseValue * bonusMultiplier * 4.0;
                 EntityAttributeModifier bonusModifier = new EntityAttributeModifier(
                     SET_BONUS_ID, 
                     BONUS_NAME, 
