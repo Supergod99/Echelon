@@ -35,6 +35,8 @@ public class CommonConfig {
     public boolean allowReforgingDamaged = true;
     @Comment("Armor set bonus multiplier for a full 4-piece set. 0.25 = 25%, 1.0 = 100%")
     public float armorSetBonusMultiplier = 0.20F;
+    @Comment("Armor set bonus percent when wearing 4 matching armor pieces AND all 4 are Perfect. 1.0 = +100%.")
+    public float armorSetPerfectBonusPercent = 1.0F;
 
     @Comment("Tier 1 of Reforging (Limestone)")
     @Comment("Qualities here will be able to be reforged onto items while using the Tier 1 reforge material, Limestone by default. Can be changed via the item tag tiered:reforge_tier_1")
