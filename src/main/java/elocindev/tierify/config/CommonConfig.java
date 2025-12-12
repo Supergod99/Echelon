@@ -33,6 +33,8 @@ public class CommonConfig {
     public float perfectRollChance = 0.1F;
     @Comment("If true, items can be reforged even if they are damaged.")
     public boolean allowReforgingDamaged = true;
+    @Comment("Armor set bonus multiplier for a full 4-piece set. 0.25 = 25%, 1.0 = 100%")
+    public float armorSetBonusMultiplier = 0.20F;
 
     @Comment("Tier 1 of Reforging (Limestone)")
     @Comment("Qualities here will be able to be reforged onto items while using the Tier 1 reforge material, Limestone by default. Can be changed via the item tag tiered:reforge_tier_1")
