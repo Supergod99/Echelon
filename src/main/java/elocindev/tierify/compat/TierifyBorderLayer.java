@@ -23,6 +23,7 @@ public class TierifyBorderLayer implements ITooltipLayer {
 
     @Override
     public void render(TooltipContext ctx, Vec2f pos, Point size, TooltipStyle style, Text rarity, TextRenderer font, CustomFrameData customFrame) {
+        if (!Tierify.CLIENT_CONFIG.tieredTooltip) return;
         if (!ctx.stack().hasNbt()) return;
 
         NbtCompound tierTag = ctx.stack().getSubNbt(Tierify.NBT_SUBTAG_KEY);
