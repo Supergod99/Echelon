@@ -106,7 +106,10 @@ public class ReforgeScreen extends HandledScreen<ReforgeScreenHandler> implement
                     }
                 }
             }
-            if (itemStack != null && itemStack.isDamageable() && itemStack.isDamaged()) {
+            if (!Tierify.CONFIG.allowReforgingDamaged
+                    && itemStack != null
+                    && itemStack.isDamageable()
+                    && itemStack.isDamaged()) {
                 tooltip.add(Text.translatable("screen.tiered.reforge_damaged"));
             }
             if (!tooltip.isEmpty()) {
