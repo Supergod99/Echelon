@@ -102,10 +102,10 @@ public class TooltipOverhaulFrameMixin {
 
     @Unique
     private static String tierify$interpolateHex(int c1, int c2) {
-        int a = ((c1 >> 24) & 0xFF + (c2 >> 24) & 0xFF) / 2;
-        int r = ((c1 >> 16) & 0xFF + (c2 >> 16) & 0xFF) / 2;
-        int g = ((c1 >> 8) & 0xFF + (c2 >> 8) & 0xFF) / 2;
-        int b = ((c1) & 0xFF + (c2) & 0xFF) / 2;
+        int a = (((c1 >> 24) & 0xFF) + ((c2 >> 24) & 0xFF)) / 2;
+        int r = (((c1 >> 16) & 0xFF) + ((c2 >> 16) & 0xFF)) / 2;
+        int g = (((c1 >>  8) & 0xFF) + ((c2 >>  8) & 0xFF)) / 2;
+        int b = (((c1      ) & 0xFF) + ((c2      ) & 0xFF)) / 2;
         return String.format("#%02X%02X%02X%02X", a, r, g, b);
     }
 }
