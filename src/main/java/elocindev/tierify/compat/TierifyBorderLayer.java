@@ -21,9 +21,10 @@ import java.awt.Point;
 
 public class TierifyBorderLayer implements ITooltipLayer {
 
+    public class TierifyBorderLayer implements ITooltipLayer {
+
     @Override
     public void render(TooltipContext ctx, Vec2f pos, Point size, TooltipStyle style, Text rarity, TextRenderer font, CustomFrameData customFrame) {
-        // 1. Safety Check: Verify item has NBT
         if (!ctx.stack().hasNbt()) return;
 
         NbtCompound tierTag = ctx.stack().getSubNbt(Tierify.NBT_SUBTAG_KEY);
@@ -31,12 +32,11 @@ public class TierifyBorderLayer implements ITooltipLayer {
             return;
         }
 
-        // 2. Resolve Tier from NBT
         String tierId = tierTag.getString(Tierify.NBT_SUBTAG_DATA_KEY);
         boolean isPerfect = tierTag.getBoolean("Perfect");
-        String lookupKey = isPerfect ? "{BorderTier:\"tiered:perfect\"}" : "{Tier:\"" + tierId + "\"}";
+        
+        String lookupKey = isPerfect ? "tiered:perfect" : tierId;
 
-        // 3. Find Matching Border Template
         BorderTemplate match = null;
         if (TierifyClient.BORDER_TEMPLATES != null) {
             for (BorderTemplate template : TierifyClient.BORDER_TEMPLATES) {
