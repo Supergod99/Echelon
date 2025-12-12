@@ -26,12 +26,11 @@ public class TooltipOverhaulFrameMixin {
 
         String lookupKey;
         boolean isPerfect = nbt.getBoolean("Perfect");
-
+        
         if (isPerfect) {
-            lookupKey = "{BorderTier:\"tiered:perfect\"}"; 
+            lookupKey = "tiered:perfect";
         } else {
-            String tierId = nbt.getString(Tierify.NBT_SUBTAG_DATA_KEY);
-            lookupKey = "{Tier:\"" + tierId + "\"}"; 
+            lookupKey = nbt.getString(Tierify.NBT_SUBTAG_DATA_KEY);
         }
 
         BorderTemplate match = null;
