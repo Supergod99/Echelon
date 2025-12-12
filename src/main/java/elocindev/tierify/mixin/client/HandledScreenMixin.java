@@ -1,21 +1,30 @@
 package elocindev.tierify.mixin.client;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import elocindev.tierify.Tierify;
 import elocindev.tierify.TierifyClient;
+import elocindev.tierify.util.TieredTooltip;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
+import net.minecraft.client.gui.tooltip.HoveredTooltipPositioner;
+import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
-import org.jetbrains.annotations.Nullable;
 
 @Environment(EnvType.CLIENT)
 @Mixin(HandledScreen.class)
@@ -27,7 +36,61 @@ public abstract class HandledScreenMixin extends Screen {
         super(title);
     }
 
-    // Capture the stack when rendering starts
+    // --- RESTORED: Render logic for inventories (where DrawContext.drawItemTooltip is ignored) ---
+    @Inject(method = "drawMouseoverTooltip", at = @At("HEAD"), cancellable = true)
+    private void tierify$drawMouseoverTooltip(DrawContext context, int x, int y, CallbackInfo ci) {
+        // 1. Compatibility Check (Skip if Tooltip Overhaul is present)
+        if (FabricLoader.getInstance().isModLoaded("tooltipoverhaul")) {
+            return;
+        }
+
+        // 2. Validate Slot & Item
+        if (this.focusedSlot != null && this.focusedSlot.hasStack()) {
+            ItemStack stack = this.focusedSlot.getStack();
+            
+            // 3. Check for Tierify NBT
+            if (Tierify.CLIENT_CONFIG.tieredTooltip && stack.hasNbt()) {
+                NbtCompound tierTag = stack.getSubNbt(Tierify.NBT_SUBTAG_KEY);
+                
+                if (tierTag != null) {
+                    // 4. Resolve Lookup Key (Original Mod Logic)
+                    String tier = tierTag.getString(Tierify.NBT_SUBTAG_DATA_KEY);
+                    String lookupKey = tierTag.getBoolean("Perfect") ? "tiered:perfect" : tier;
+
+                    // 5. Match & Render
+                    for (int i = 0; i < TierifyClient.BORDER_TEMPLATES.size(); i++) {
+                        if (TierifyClient.BORDER_TEMPLATES.get(i).containsDecider(lookupKey)) {
+                            
+                            // Get tooltip text (Vanilla logic)
+                            List<Text> text = this.getTooltipFromItem(stack);
+                            List<TooltipComponent> components = text.stream()
+                                .map(Text::asOrderedText)
+                                .map(TooltipComponent::of)
+                                .collect(Collectors.toList());
+                            
+                            stack.getTooltipData().ifPresent(data -> components.add(1, TooltipComponent.of(data)));
+
+                            // Render Custom Border
+                            TieredTooltip.renderTieredTooltipFromComponents(
+                                context, 
+                                this.textRenderer, 
+                                components, 
+                                x, 
+                                y, 
+                                HoveredTooltipPositioner.INSTANCE, 
+                                TierifyClient.BORDER_TEMPLATES.get(i)
+                            );
+                            
+                            // Cancel vanilla render
+                            ci.cancel(); 
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
     @Inject(method = "render", at = @At("HEAD"))
     private void captureHandledStack(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo info) {
         if (this.focusedSlot != null && this.focusedSlot.hasStack()) {
@@ -35,7 +98,6 @@ public abstract class HandledScreenMixin extends Screen {
         }
     }
 
-    // Release the stack when rendering ends
     @Inject(method = "render", at = @At("RETURN"))
     private void releaseHandledStack(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo info) {
         TierifyClient.CURRENT_TOOLTIP_STACK = ItemStack.EMPTY;
