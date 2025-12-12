@@ -20,6 +20,7 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.tooltip.HoveredTooltipPositioner;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.Text;
 
 @Environment(EnvType.CLIENT)
@@ -33,37 +34,46 @@ public class DrawContextMixin {
             return;
         }
 
-        // 2. Check if we should render a Tierify border
-        if (Tierify.CLIENT_CONFIG.tieredTooltip && stack.hasNbt() && stack.getOrCreateSubNbt(Tierify.NBT_SUBTAG_KEY) != null) {
-
-
-            // We must check for the "Perfect" tag, just like we do in the Tooltip Overhaul compat.
-            String tier = stack.getOrCreateSubNbt(Tierify.NBT_SUBTAG_KEY).getString(Tierify.NBT_SUBTAG_DATA_KEY);
-            boolean isPerfect = stack.getOrCreateSubNbt(Tierify.NBT_SUBTAG_KEY).getBoolean("Perfect");
+        // 2. Check if the item has NBT and the specific Tiered tag
+        if (Tierify.CLIENT_CONFIG.tieredTooltip && stack.hasNbt()) {
             
-            // If it's perfect, use the special lookup key. Otherwise, use the standard Tier ID.
-            String lookupKey = isPerfect ? "{BorderTier:\"tiered:perfect\"}" : "{Tier:\"" + tier + "\"}";
+            // Use getSubNbt instead of getOrCreate to prevent modifying the stack during render
+            NbtCompound tierTag = stack.getSubNbt(Tierify.NBT_SUBTAG_KEY);
+            
+            if (tierTag != null) {
+                // 3. Resolve the Lookup Key 
+                String tier = tierTag.getString(Tierify.NBT_SUBTAG_DATA_KEY);
+                boolean isPerfect = tierTag.getBoolean("Perfect");
+                
+                // If "Perfect", use the special border key. Otherwise, use the standard Tier ID.
+                String lookupKey = isPerfect ? "{BorderTier:\"tiered:perfect\"}" : "{Tier:\"" + tier + "\"}";
 
-            for (int i = 0; i < TierifyClient.BORDER_TEMPLATES.size(); i++) {
-                if (TierifyClient.BORDER_TEMPLATES.get(i).containsDecider(lookupKey)) {
+                // 4. Find a matching Border Template
+                for (int i = 0; i < TierifyClient.BORDER_TEMPLATES.size(); i++) {
+                    if (TierifyClient.BORDER_TEMPLATES.get(i).containsDecider(lookupKey)) {
 
-                    List<Text> text = net.minecraft.client.gui.screen.Screen.getTooltipFromItem(MinecraftClient.getInstance(), stack);
-                    List<TooltipComponent> list = text.stream().map(Text::asOrderedText).map(TooltipComponent::of).collect(Collectors.toList());
-                    stack.getTooltipData().ifPresent(data -> list.add(1, TooltipComponent.of(data)));
+                        // 5. Build the tooltip components (Text + Data)
+                        List<Text> text = net.minecraft.client.gui.screen.Screen.getTooltipFromItem(MinecraftClient.getInstance(), stack);
+                        List<TooltipComponent> list = text.stream().map(Text::asOrderedText).map(TooltipComponent::of).collect(Collectors.toList());
+                        stack.getTooltipData().ifPresent(data -> list.add(1, TooltipComponent.of(data)));
 
-                    TieredTooltip.renderTieredTooltipFromComponents(
-                        (DrawContext) (Object) this, 
-                        textRenderer, 
-                        list, 
-                        x, 
-                        y, 
-                        HoveredTooltipPositioner.INSTANCE, 
-                        TierifyClient.BORDER_TEMPLATES.get(i)
-                    );
+                        // 6. Render the custom border and tooltip
+                        TieredTooltip.renderTieredTooltipFromComponents(
+                            (DrawContext) (Object) this, 
+                            textRenderer, 
+                            list, 
+                            x, 
+                            y, 
+                            HoveredTooltipPositioner.INSTANCE, 
+                            TierifyClient.BORDER_TEMPLATES.get(i)
+                        );
 
-                    info.cancel();
-                    break;
+                        // 7. Cancel the vanilla tooltip render so we don't draw double
+                        info.cancel();
+                        return;
+                    }
                 }
             }
         }
     }
+}
