@@ -133,24 +133,37 @@ public class TierifyBorderLayer implements ITooltipLayer {
     }
 
     private void renderSetBonusActiveLabel(TooltipContext ctx, TextRenderer font, int bgX, int bgY, int bgWidth) {
-        var player = MinecraftClient.getInstance().player;
-        if (player == null) return;
+        var client = MinecraftClient.getInstance();
+        if (client.player == null) return;
     
-        MutableText label = SetBonusUtils.getSetBonusActiveLabel(player, ctx.stack());
+        MutableText label = SetBonusUtils.getSetBonusActiveLabel(client.player, ctx.stack());
         if (label == null) return;
     
         float scale = 0.65f;
-        int labelWidth = font.getWidth(label);
     
-        float centeredX = bgX + (bgWidth / 2.0f) - ((labelWidth * scale) / 2.0f);
-        float fixedY = bgY - 4.0f;
+        int textWidth = font.getWidth(label);
+        float scaledWidth = textWidth * scale;
+    
+        float xPos = bgX + (bgWidth - scaledWidth) / 2f;
+    
+        float baseHeight = 9f;
+        float scaledHeight = baseHeight * scale;
+        float yOffset = -(baseHeight - scaledHeight) / 2f;
+    
+        // Matches TieredTooltip's "gap" region:
+        // background interior top starts at (bgY - 3), title starts at (bgY + topPadding)
+        float topPadding = 4f;
+        float gapTop = bgY - 3f;
+        float gapBottom = bgY + topPadding;
+        float yPos = gapTop + ((gapBottom - gapTop) - scaledHeight) / 2f;
     
         ctx.push(() -> {
-            ctx.translate(centeredX, fixedY, LayerDepth.BACKGROUND_OVERLAY.getZ() + 10);
+            ctx.translate(xPos, yPos + yOffset, LayerDepth.BACKGROUND_OVERLAY.getZ() + 10);
             ctx.scale(scale, scale, 1.0f);
             ctx.graphics().drawText(font, label, 0, 0, 0xFFFFFF, true);
         });
     }
+
     
     private void renderPerfectLabel(TooltipContext ctx, TextRenderer font, int bgX, int bgY, int bgWidth) {
         MutableText label = PerfectLabelAnimator.getPerfectLabel();
