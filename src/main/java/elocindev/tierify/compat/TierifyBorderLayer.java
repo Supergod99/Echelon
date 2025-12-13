@@ -9,9 +9,11 @@ import elocindev.tierify.Tierify;
 import elocindev.tierify.TierifyClient;
 import elocindev.tierify.screen.client.PerfectLabelAnimator;
 import elocindev.tierify.screen.client.PerfectBorderRenderer;
+import elocindev.tierify.util.SetBonusUtils;
 import draylar.tiered.api.BorderTemplate;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.math.Vec2f;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.Text;
@@ -129,6 +131,8 @@ public class TierifyBorderLayer implements ITooltipLayer {
         });
     }
 
+    renderSetBonusActiveLabel(ctx, font, x, y, width);
+    
     private void renderPerfectLabel(TooltipContext ctx, TextRenderer font, int bgX, int bgY, int bgWidth) {
         MutableText label = PerfectLabelAnimator.getPerfectLabel();
         float scale = 0.65f;
@@ -141,6 +145,26 @@ public class TierifyBorderLayer implements ITooltipLayer {
         float fixedY = bgY + 22.0f; 
 
         // LAYER 3: Float the text well above the border
+        ctx.push(() -> {
+            ctx.translate(centeredX, fixedY, LayerDepth.BACKGROUND_OVERLAY.getZ() + 10);
+            ctx.scale(scale, scale, 1.0f);
+            ctx.graphics().drawText(font, label, 0, 0, 0xFFFFFF, true);
+        });
+    }
+
+    private void renderSetBonusActiveLabel(TooltipContext ctx, TextRenderer font, int bgX, int bgY, int bgWidth) {
+        var player = MinecraftClient.getInstance().player;
+        if (player == null) return;
+    
+        MutableText label = SetBonusUtils.getSetBonusActiveLabel(player, ctx.stack());
+        if (label == null) return;
+    
+        float scale = 0.65f;
+        int labelWidth = font.getWidth(label);
+    
+        float centeredX = bgX + (bgWidth / 2.0f) - ((labelWidth * scale) / 2.0f);
+        float fixedY = bgY - 4.0f;
+    
         ctx.push(() -> {
             ctx.translate(centeredX, fixedY, LayerDepth.BACKGROUND_OVERLAY.getZ() + 10);
             ctx.scale(scale, scale, 1.0f);
