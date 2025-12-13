@@ -131,7 +131,7 @@ public class TierifyBorderLayer implements ITooltipLayer {
         });
     }
 
-    renderSetBonusActiveLabel(ctx, font, x, y, width);
+    renderSetBonusActiveLabel(context, textRenderer, n, o, l, topPadding);
     
     private void renderPerfectLabel(TooltipContext ctx, TextRenderer font, int bgX, int bgY, int bgWidth) {
         MutableText label = PerfectLabelAnimator.getPerfectLabel();
