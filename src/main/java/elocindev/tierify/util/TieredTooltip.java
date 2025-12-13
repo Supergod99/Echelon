@@ -4,13 +4,17 @@ import java.util.List;
 
 import org.joml.Vector2ic;
 
+import elocindev.tierify.TierifyClient;
+import elocindev.tierify.util.SetBonusUtils;
 import elocindev.tierify.screen.client.PerfectLabelAnimator;
 import elocindev.tierify.screen.client.PerfectBorderRenderer;
-import net.minecraft.text.MutableText;
 import draylar.tiered.api.BorderTemplate;
 import elocindev.tierify.Tierify;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.item.ItemStack;
+import net.minecraft.text.MutableText;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
@@ -102,7 +106,8 @@ public class TieredTooltip {
 
         renderTooltipBackground(context, n, o, l, m, 400, backgroundColor, colorStart, colorEnd);
         context.getMatrices().translate(0.0f, 0.0f, 400.0f);
-        
+
+        renderSetBonusActiveLabel(context, textRenderer, n, o, l);
         // Apply Top Padding to text start position
         int q = o + topPadding;
 
@@ -202,6 +207,27 @@ public class TieredTooltip {
         context.getMatrices().push();
         context.getMatrices().translate(0.0f, 0.0f, 1000.0f);
         PerfectBorderRenderer.renderPerfectBorderOverlay(context, borderTemplate, n, o, l, m);
+        context.getMatrices().pop();
+    }
+
+    private static void renderSetBonusActiveLabel(DrawContext context, TextRenderer textRenderer, int bgX, int bgY, int bgWidth) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client.player == null) return;
+    
+        ItemStack stack = TierifyClient.CURRENT_TOOLTIP_STACK;
+        MutableText label = SetBonusUtils.getSetBonusActiveLabel(client.player, stack);
+        if (label == null) return;
+    
+        float scale = 0.65f;
+        int labelWidth = textRenderer.getWidth(label);
+    
+        float centeredX = bgX + (bgWidth / 2.0f) - ((labelWidth * scale) / 2.0f);
+        float fixedY = bgY - 4.0f; // “gap” between upper border and title
+    
+        context.getMatrices().push();
+        context.getMatrices().translate(centeredX, fixedY, 400.0f);
+        context.getMatrices().scale(scale, scale, 1.0f);
+        context.drawText(textRenderer, label, 0, 0, 0xFFFFFF, true);
         context.getMatrices().pop();
     }
 
