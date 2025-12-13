@@ -186,18 +186,23 @@ public abstract class ItemStackClientMixin {
     private void updateTooltipRecursive(List<Text> tooltip, String target, String replacement, boolean applyGold) {
         for (int i = 0; i < tooltip.size(); i++) {
             Text originalLine = tooltip.get(i);
-            if (!originalLine.getString().contains(target)) continue;
-            
-            // 1. Process the line to swap numbers
-            Text newLine = processNodeRecursive(originalLine, target, replacement);
-
-            // 2. If we are applying Gold, we need to force it onto the ENTIRE line structure
-            if (applyGold) {
-                if (newLine instanceof MutableText mutable) {
-                    // Recursively set Gold on all children to ensure it overrides vanilla Blue
-                    forceColorRecursive(mutable, Formatting.GOLD);
-                }
+            if (originalLine == null) continue;
+    
+            String plain = originalLine.getString();
+            if (!plain.contains(target)) continue;
+    
+            // Only touch attribute modifier lines
+            String trimmed = plain.trim();
+            if (!(trimmed.startsWith("+") || trimmed.startsWith("-"))) {
+                continue;
             }
+    
+            Text newLine = processNodeRecursive(originalLine, target, replacement);
+    
+            if (applyGold && newLine instanceof MutableText mutable) {
+                forceColorRecursive(mutable, Formatting.GOLD);
+            }
+    
             tooltip.set(i, newLine);
         }
     }
