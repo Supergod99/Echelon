@@ -106,10 +106,10 @@ public class TieredTooltip {
 
         renderTooltipBackground(context, n, o, l, m, 400, backgroundColor, colorStart, colorEnd);
         context.getMatrices().translate(0.0f, 0.0f, 400.0f);
-
-        renderSetBonusActiveLabel(context, textRenderer, n, o, l);
         // Apply Top Padding to text start position
         int q = o + topPadding;
+
+        renderSetBonusActiveLabel(context, textRenderer, n, o, l, topPadding);
 
         for (r = 0; r < components.size(); ++r) {
             int nameCentering = 0;
@@ -210,7 +210,7 @@ public class TieredTooltip {
         context.getMatrices().pop();
     }
 
-    private static void renderSetBonusActiveLabel(DrawContext context, TextRenderer textRenderer, int bgX, int bgY, int bgWidth) {
+    private static void renderSetBonusActiveLabel(DrawContext context, TextRenderer textRenderer, int bgX, int bgY, int bgWidth, int topPadding) {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client.player == null) return;
     
@@ -219,18 +219,40 @@ public class TieredTooltip {
         if (label == null) return;
     
         float scale = 0.65f;
-        int labelWidth = textRenderer.getWidth(label);
     
-        float centeredX = bgX + (bgWidth / 2.0f) - ((labelWidth * scale) / 2.0f);
-        float fixedY = bgY - 4.0f; // “gap” between upper border and title
+        int textWidth = textRenderer.getWidth(label);
+        float scaledWidth = textWidth * scale;
+    
+        float xPos = bgX + (bgWidth - scaledWidth) / 2f;
+    
+        float baseHeight = 9f;
+        float scaledHeight = baseHeight * scale;
+        float yOffset = -(baseHeight - scaledHeight) / 2f;
+    
+        // Interior top area is roughly from (bgY - 3) up to (bgY + topPadding)
+        float gapTop = bgY - 3f;
+        float gapBottom = bgY + topPadding;
+        float yPos = gapTop + ((gapBottom - gapTop) - scaledHeight) / 2f;
     
         context.getMatrices().push();
-        context.getMatrices().translate(centeredX, fixedY, 400.0f);
+        context.getMatrices().translate(xPos, yPos + yOffset, 400.0f);
         context.getMatrices().scale(scale, scale, 1.0f);
-        context.drawText(textRenderer, label, 0, 0, 0xFFFFFF, true);
+    
+        textRenderer.draw(
+                label,
+                0,
+                0,
+                0xFFFFFF,
+                false,
+                context.getMatrices().peek().getPositionMatrix(),
+                context.getVertexConsumers(),
+                TextRenderer.TextLayerType.NORMAL,
+                0,
+                0xF000F0
+        );
+    
         context.getMatrices().pop();
     }
-
 
     private static void renderTooltipBackground(DrawContext context, int x, int y, int width, int height, int z, int backgroundColor, int colorStart, int colorEnd) {
         int i = x - 3;
