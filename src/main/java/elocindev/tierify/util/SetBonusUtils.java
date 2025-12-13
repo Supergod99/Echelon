@@ -1,6 +1,11 @@
 package elocindev.tierify.util;
 
 import elocindev.tierify.Tierify;
+
+import net.minecraft.item.ArmorItem;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
@@ -29,6 +34,23 @@ public class SetBonusUtils {
 
         // Return true only if we have 4 matches (Full Set)
         return matchCount >= 4;
+    }
+
+    public static MutableText getSetBonusActiveLabel(PlayerEntity player, ItemStack stack) {
+        if (player == null || stack == null || stack.isEmpty()) return null;
+        if (!(stack.getItem() instanceof ArmorItem)) return null;
+    
+        if (hasPerfectSetBonus(player, stack)) {
+            int pct = Math.round((float) Tierify.CONFIG.armorSetPerfectBonusPercent * 100.0f);
+            return Text.literal("Perfect Set Bonus Active (+" + pct + "%)").formatted(Formatting.GOLD);
+        }
+    
+        if (hasSetBonus(player, stack)) {
+            int pct = Math.round((float) Tierify.CONFIG.armorSetBonusMultiplier * 100.0f);
+            return Text.literal("Set Bonus Active (+" + pct + "%)").formatted(Formatting.GOLD);
+        }
+    
+        return null;
     }
 
     // True only if the player has a full matching set AND all 4 pieces are Perfect.
