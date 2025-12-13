@@ -124,31 +124,11 @@ public class TierifyBorderLayer implements ITooltipLayer {
                 PerfectBorderRenderer.renderPerfectBorderOverlay(drawContext, finalMatch, x, y, width, height);
             });
 
+            renderSetBonusActiveLabel(ctx, font, x, y, width);
             // --- D. Draw "Perfect" Text (Centered) ---
             if (isPerfect) {
                 renderPerfectLabel(ctx, font, x, y, width);
             }
-        });
-    }
-
-    renderSetBonusActiveLabel(context, textRenderer, n, o, l, topPadding);
-    
-    private void renderPerfectLabel(TooltipContext ctx, TextRenderer font, int bgX, int bgY, int bgWidth) {
-        MutableText label = PerfectLabelAnimator.getPerfectLabel();
-        float scale = 0.65f;
-        int textWidth = font.getWidth(label);
-        
-        // Center text relative to the tooltip background width
-        float centeredX = bgX + (bgWidth / 2.0f) - ((textWidth * scale) / 2.0f);
-        
-        // FIX: Moved up to 20.0f (was 24.0f) to center between Title and Description Line
-        float fixedY = bgY + 22.0f; 
-
-        // LAYER 3: Float the text well above the border
-        ctx.push(() -> {
-            ctx.translate(centeredX, fixedY, LayerDepth.BACKGROUND_OVERLAY.getZ() + 10);
-            ctx.scale(scale, scale, 1.0f);
-            ctx.graphics().drawText(font, label, 0, 0, 0xFFFFFF, true);
         });
     }
 
@@ -165,6 +145,25 @@ public class TierifyBorderLayer implements ITooltipLayer {
         float centeredX = bgX + (bgWidth / 2.0f) - ((labelWidth * scale) / 2.0f);
         float fixedY = bgY - 4.0f;
     
+        ctx.push(() -> {
+            ctx.translate(centeredX, fixedY, LayerDepth.BACKGROUND_OVERLAY.getZ() + 10);
+            ctx.scale(scale, scale, 1.0f);
+            ctx.graphics().drawText(font, label, 0, 0, 0xFFFFFF, true);
+        });
+    }
+    
+    private void renderPerfectLabel(TooltipContext ctx, TextRenderer font, int bgX, int bgY, int bgWidth) {
+        MutableText label = PerfectLabelAnimator.getPerfectLabel();
+        float scale = 0.65f;
+        int textWidth = font.getWidth(label);
+        
+        // Center text relative to the tooltip background width
+        float centeredX = bgX + (bgWidth / 2.0f) - ((textWidth * scale) / 2.0f);
+        
+        // FIX: Moved up to 20.0f (was 24.0f) to center between Title and Description Line
+        float fixedY = bgY + 22.0f; 
+
+        // LAYER 3: Float the text well above the border
         ctx.push(() -> {
             ctx.translate(centeredX, fixedY, LayerDepth.BACKGROUND_OVERLAY.getZ() + 10);
             ctx.scale(scale, scale, 1.0f);
