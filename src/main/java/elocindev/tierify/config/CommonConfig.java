@@ -30,7 +30,7 @@ public class CommonConfig {
     @Comment("Modify the biggest weights by this modifier per luck")
     public float luckReforgeModifier = 0.0F;
     @Comment("The chance for a reforge to be 'Perfect' (no negative attributes). 0.01 = 1%, 1.0 = 100%")
-    public float perfectRollChance = 0.8F;
+    public float perfectRollChance = 0.9F;
     @Comment("If true, items can be reforged even if they are damaged.")
     public boolean allowReforgingDamaged = true;
     @Comment("Armor set bonus multiplier for a full 4-piece set. 0.25 = 25%, 1.0 = 100%")
