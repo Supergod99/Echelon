@@ -41,13 +41,15 @@ public class SetBonusUtils {
         if (!(stack.getItem() instanceof ArmorItem)) return null;
     
         if (hasPerfectSetBonus(player, stack)) {
-            int pct = Math.round((float) Tierify.CONFIG.armorSetPerfectBonusPercent * 100.0f);
-            return Text.literal("Perfect Set Bonus Active (+" + pct + "%)").formatted(Formatting.GOLD);
+            int pct = (int) Math.round(Tierify.CONFIG.armorSetPerfectBonusPercent * 100.0);
+            return Text.literal("Perfect Set Bonus (+" + pct + "%)")
+                    .formatted(Formatting.GOLD, Formatting.BOLD);
         }
     
         if (hasSetBonus(player, stack)) {
-            int pct = Math.round((float) Tierify.CONFIG.armorSetBonusMultiplier * 100.0f);
-            return Text.literal("Set Bonus Active (+" + pct + "%)").formatted(Formatting.GOLD);
+            int pct = (int) Math.round(Tierify.CONFIG.armorSetBonusMultiplier * 100.0);
+            return Text.literal("Set Bonus (+" + pct + "%)")
+                    .formatted(Formatting.GOLD, Formatting.BOLD);
         }
     
         return null;
