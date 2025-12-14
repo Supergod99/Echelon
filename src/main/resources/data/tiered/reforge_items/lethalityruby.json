@@ -1,6 +1,7 @@
 {
   "items": [
-    "lethality:tained_blade"
+    "lethality:tained_blade",
+    "letahlity:caustic_edge"
   ],
   "base": [
     "terramity:ruby"
