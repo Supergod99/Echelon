@@ -1,0 +1,10 @@
+{
+  "items": [
+    "lethality:tained_blade",
+    "letahlity:caustic_edge",
+    "lethality:bladecrest_oathsword"
+  ],
+  "base": [
+    "terramity:ruby"
+  ]
+}
