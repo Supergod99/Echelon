@@ -1,13 +1,6 @@
 {
   "replace": false,
   "values": [
-        "#minecraft:swords",
-        "#minecraft:axes",
-        "#forge:swords",
-        "#forge:axes",
-        "#forge:tools/swords",
-        "#forge:tools/weapons",
-        "#c:weapons",
         "lethality:miasma",
     		"lethality:horseless_headless_horsemanns_headtaker",
     		"lethality:skysplitter_sword",
