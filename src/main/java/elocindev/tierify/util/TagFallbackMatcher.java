@@ -5,6 +5,8 @@ import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.item.*;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
+import net.minecraft.block.Blocks;
+import net.minecraft.util.UseAction;
 
 import java.util.Locale;
 
