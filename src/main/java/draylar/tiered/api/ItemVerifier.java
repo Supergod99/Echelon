@@ -1,6 +1,7 @@
 package draylar.tiered.api;
 
 import elocindev.tierify.Tierify;
+import elocindev.tierify.util.TagFallbackMatcher;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
@@ -18,37 +19,14 @@ public class ItemVerifier {
         this.tag = tag;
     }
 
-    /**
-     * Returns whether the given {@link Identifier} is valid for this ItemVerifier, which may check direct against either a {@link Identifier} or {@link Tag<Item>}.
-     * <p>
-     * The given {@link Identifier} should be the ID of an {@link Item} in {@link Registry#ITEM}.
-     *
-     * @param itemID item registry ID to check against this verifier
-     * @return whether the check succeeded
-     */
     public boolean isValid(Identifier itemID) {
         return isValid(itemID.toString());
     }
 
-    /**
-     * Returns whether the given {@link String} is valid for this ItemVerifier, which may check direct against either a {@link Identifier} or {@link Tag<Item>}.
-     * <p>
-     * The given {@link String} should be the ID of an {@link Item} in {@link Registry#ITEM}.
-     *
-     * @param itemID item registry ID to check against this verifier
-     * @return whether the check succeeded
-     */
     public boolean isValid(String itemID) {
         if (id != null) {
             return itemID.equals(id);
         } else if (tag != null) {
-            TagKey<Item> itemTag = TagKey.of(RegistryKeys.ITEM, new Identifier(tag));
-            // TagKey<Item> itemTag = ItemTags.getTagGroup().getTag(new Identifier(tag));
-
-            if (itemTag != null) {
-                return new ItemStack(Registries.ITEM.get(new Identifier(itemID))).isIn(itemTag);// itemTag.contains(Registry.ITEM.get(new Identifier(itemID)));
-            } else {
-                Tierify.LOGGER.error(tag + " was specified as an item verifier tag, but it does not exist!");
             try {
                 Identifier tagId = new Identifier(tag);
                 TagKey<Item> itemTag = TagKey.of(RegistryKeys.ITEM, tagId);
@@ -56,12 +34,12 @@ public class ItemVerifier {
                 Item item = Registries.ITEM.get(new Identifier(itemID));
                 ItemStack stack = new ItemStack(item);
 
-                // Layer 1: real tag membership
+                // real tag membership
                 if (stack.isIn(itemTag)) {
                     return true;
                 }
 
-                // Layer 2: conservative fallback inference
+                // conservative fallback inference
                 return TagFallbackMatcher.matches(tagId, stack);
             } catch (Exception e) {
                 Tierify.LOGGER.error("Invalid verifier tag/id: tag=" + tag + " item=" + itemID, e);
@@ -76,7 +54,7 @@ public class ItemVerifier {
     }
 
     public TagKey<Item> getTagKey() {
-        return TagKey.of(RegistryKeys.ITEM, new Identifier(tag));
+        return tag == null ? null : TagKey.of(RegistryKeys.ITEM, new Identifier(tag));
     }
 
     @Override
@@ -86,12 +64,12 @@ public class ItemVerifier {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof ItemVerifier other)) {
-            return false;
-        }
-        if (this != other) {
-            return false;
-        }
+        if (this == obj) return true;
+        if (!(obj instanceof ItemVerifier other)) return false;
+    
+        return (id == null ? other.id == null : id.equals(other.id))
+            && (tag == null ? other.tag == null : tag.equals(other.tag));
+    }
         String thisId = this.id == null ? "" : this.id;
         String thisTag = this.tag == null ? "" : this.tag;
         String otherId = other.id == null ? "" : other.id;
