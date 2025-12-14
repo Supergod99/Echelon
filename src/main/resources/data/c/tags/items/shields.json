@@ -1,11 +1,6 @@
 {
   "replace": false,
   "values": [
-        "minecraft:shield",
-        "#forge:tools/shields",
-        "#c:tools/shields",
-        "#c:tools/shield",
-        "#forge:tools/shield",
         "composite_material:amethyst_shield",
         "composite_material:etherite_shield",
         "legendary_monsters:shulker_shield",
