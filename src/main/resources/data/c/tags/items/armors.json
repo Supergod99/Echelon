@@ -2,12 +2,6 @@
   "replace": false,
   "values": [
 	  	"#minecraft:trimmable_armor",
-	    "#forge:armors",
-	    "#forge:armor",
-	    "#c:helmets",
-	    "#c:chestplates",
-	    "#c:leggings",
-	    "#c:boots",
 		"mekanism:free_runners_armored",
         "galosphere:sterling_boots",
         "mekanism:mekasuit_boots",
