@@ -64,11 +64,27 @@ public final class TagFallbackMatcher {
         // Melee weapons
         if (tag.equals("c:tools/melee_weapons") || tag.equals("c:melee_weapons") || tag.equals("forge:tools/weapons")) {
             if (item instanceof SwordItem) return true;
-            if (item instanceof AxeItem) return true;
             if (item instanceof TridentItem) return true;
-
-            // Do NOT treat generic mining tools as melee in the fallback (axes are already handled above).
+            if (item instanceof AxeItem) return true;
             if (item instanceof MiningToolItem) return false;
+            
+            // Exclude mining tools
+            try {
+                float stoneSpeed = stack.getMiningSpeedMultiplier(Blocks.STONE.getDefaultState());
+                if (stoneSpeed > 1.0F) return false;
+            } catch (Throwable t) {
+                return false;
+            }
+        
+            // if positive dmg in mainhand, classify as melee
+            try {
+                return stack.getAttributeModifiers(EquipmentSlot.MAINHAND)
+                        .get(EntityAttributes.GENERIC_ATTACK_DAMAGE)
+                        .stream()
+                        .anyMatch(mod -> mod.getValue() > 0.0D);
+            } catch (Throwable t) {
+                return false;
+            }
         }
 
         return false;
