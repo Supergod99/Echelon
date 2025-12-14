@@ -1,6 +1,7 @@
 {
   "items": [
-    "minecraft:crossbow"
+    "minecraft:crossbow",
+    "lethality:stop_sign"
   ],
   "base": [
     "minecraft:iron_ingot"
