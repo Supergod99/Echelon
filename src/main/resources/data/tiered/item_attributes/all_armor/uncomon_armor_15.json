@@ -63,7 +63,7 @@
             "modifier": {
                 "name": "tiered:uncomon_armor_15",
                 "operation": "MULTIPLY_BASE",
-                "amount": 0.075
+                "amount": 0.1
             },
             "optional_equipment_slots": [
                 "FEET",

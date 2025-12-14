@@ -63,7 +63,7 @@
             "modifier": {
                 "name": "tiered:epic_armor_15",
                 "operation": "MULTIPLY_BASE",
-                "amount": 0.125
+                "amount": 0.2
             },
             "optional_equipment_slots": [
                 "FEET",

@@ -55,7 +55,7 @@
     ],
     "weight": 1,
     "style": {
-        "color": "green"
+        "color": "dark_green"
     },
     "attributes": [
         {
@@ -63,7 +63,7 @@
             "modifier": {
                 "name": "tiered:uncomon_armor_19",
                 "operation": "MULTIPLY_BASE",
-                "amount": 0.06
+                "amount": 0.08
             },
             "optional_equipment_slots": [
                 "FEET",
