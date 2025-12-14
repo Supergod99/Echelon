@@ -2,6 +2,30 @@
   "replace": false,
   "values": [
     {
+      "id": "lethality:miasma",
+      "required": false
+    },
+    {
+      "id": "lethality:horseless_headless_horsemanns_headtaker",
+      "required": false
+    },
+    {
+      "id": "lethality:skysplitter_sword",
+      "required": false
+    },
+    {
+      "id": "lethality:sword_of_acclaim",
+      "required": false
+    },
+    {
+      "id": "lethality:sword_of_splendor",
+      "required": false
+    },
+    {
+      "id": "lethality:sword_of_majesty",
+      "required": false
+    },
+    {
       "id": "lethality:foreign_hook",
       "required": false
     },
