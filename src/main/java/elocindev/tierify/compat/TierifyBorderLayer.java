@@ -140,27 +140,34 @@ public class TierifyBorderLayer implements ITooltipLayer {
         if (label == null) return;
     
         float scale = 0.65f;
-    
+
         int textWidth = font.getWidth(label);
         float scaledWidth = textWidth * scale;
-    
         float xPos = bgX + (bgWidth - scaledWidth) / 2f;
-    
+        
         float baseHeight = 9f;
         float scaledHeight = baseHeight * scale;
-    
-        // Matches TieredTooltip's "gap" region:
-        // background interior top starts at (bgY - 3), title starts at (bgY + topPadding)
+        
         float topPadding = 4f;
         float gapTop = bgY - 3f;
         float gapBottom = bgY + topPadding;
+        
         float yPos = gapTop + ((gapBottom - gapTop) - scaledHeight) / 2f;
         float yOffset = (baseHeight - scaledHeight) / 2f;
         yPos += yOffset;
-    
+        
+        // clamp / safeguard
+        float titleTop = bgY + topPadding;
+        float maxY = titleTop - scaledHeight - 0.25f;
+        if (yPos > maxY) yPos = maxY;
+        
+        final float xPosFinal = xPos;
+        final float yPosFinal = yPos;
+        final float scaleFinal = scale;
+        
         ctx.push(() -> {
-            ctx.translate(xPos, yPos, LayerDepth.BACKGROUND_OVERLAY.getZ() + 10);
-            ctx.scale(scale, scale, 1.0f);
+            ctx.translate(xPosFinal, yPosFinal, LayerDepth.BACKGROUND_OVERLAY.getZ() + 10);
+            ctx.scale(scaleFinal, scaleFinal, 1.0f);
             ctx.graphics().drawText(font, label, 0, 0, 0xFFFFFF, true);
         });
     }
