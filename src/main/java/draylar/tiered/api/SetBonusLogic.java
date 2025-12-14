@@ -19,7 +19,11 @@ public class SetBonusLogic {
     private static final String BONUS_NAME = "Tierify Set Bonus";
 
     public static void updatePlayerSetBonus(ServerPlayerEntity player) {
-        // Always clear first so swaps between sets / tiers / perfect state update immediately.
+        if (!Tierify.CONFIG.enableArmorSetBonuses) {
+            removeSetBonus(player);
+            return;
+        }
+    
         removeSetBonus(player);
 
         ItemStack chest = player.getEquippedStack(EquipmentSlot.CHEST);
