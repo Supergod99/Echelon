@@ -1,9 +1,6 @@
 {
   "replace": false,
   "values": [
-    "minecraft:bow",
-    "#forge:tools/bows",
-    "#c:tools/bows",
     "experienceobelisk:cognitive_bow",
 	"composite_material:lacerator",
 	"goety:hunters_bow",
