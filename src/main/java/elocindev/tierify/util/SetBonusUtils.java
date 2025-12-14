@@ -14,6 +14,7 @@ public class SetBonusUtils {
 
     // Checks if the player is wearing 4 pieces of armor that match the Tier ID of the passed itemStack.
     public static boolean hasSetBonus(PlayerEntity player, ItemStack itemStack) {
+        if (!Tierify.CONFIG.enableArmorSetBonuses) return false;
         if (player == null || itemStack.isEmpty()) return false;
 
         // Get the Tier ID from the item being looked at
@@ -58,6 +59,7 @@ public class SetBonusUtils {
 
     // True only if the player has a full matching set AND all 4 pieces are Perfect.
     public static boolean hasPerfectSetBonus(PlayerEntity player, ItemStack itemStack) {
+        if (!Tierify.CONFIG.enableArmorSetBonuses) return false;
         if (!hasSetBonus(player, itemStack)) return false;
 
         NbtCompound nbt = itemStack.getSubNbt(Tierify.NBT_SUBTAG_KEY);
