@@ -23,6 +23,8 @@ import java.awt.Point;
 
 public class TierifyBorderLayer implements ITooltipLayer {
 
+    private static final float SET_BONUS_LABEL_NUDGE_Y = 10.0f;
+
     @Override
     public void render(TooltipContext ctx, Vec2f pos, Point size, TooltipStyle style, Text rarity, TextRenderer font, CustomFrameData customFrame) {
         if (!Tierify.CLIENT_CONFIG.tieredTooltip) return;
@@ -155,11 +157,8 @@ public class TierifyBorderLayer implements ITooltipLayer {
         float yPos = gapTop + ((gapBottom - gapTop) - scaledHeight) / 2f;
         float yOffset = (baseHeight - scaledHeight) / 2f;
         yPos += yOffset;
+        yPos += SET_BONUS_LABEL_NUDGE_Y;
         
-        // clamp / safeguard
-        float titleTop = bgY + topPadding;
-        float maxY = titleTop - scaledHeight + 2.0f;
-        if (yPos > maxY) yPos = maxY;
         
         final float xPosFinal = xPos;
         final float yPosFinal = yPos;
