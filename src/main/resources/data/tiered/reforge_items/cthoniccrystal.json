@@ -1,1 +1,8 @@
-
+{
+  "items": [
+    "lethality:blighted_cleaver"
+  ],
+  "base": [
+    "terramity:chthonic_crystal_block"
+  ]
+}
