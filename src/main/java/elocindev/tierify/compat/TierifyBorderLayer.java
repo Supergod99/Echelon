@@ -158,7 +158,7 @@ public class TierifyBorderLayer implements ITooltipLayer {
         
         // clamp / safeguard
         float titleTop = bgY + topPadding;
-        float maxY = titleTop - scaledHeight - 0.25f;
+        float maxY = titleTop - scaledHeight + 2.0f;
         if (yPos > maxY) yPos = maxY;
         
         final float xPosFinal = xPos;
