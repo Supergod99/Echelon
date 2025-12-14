@@ -37,6 +37,7 @@ public class SetBonusUtils {
     }
 
     public static MutableText getSetBonusActiveLabel(PlayerEntity player, ItemStack stack) {
+        if (!Tierify.CONFIG.enableArmorSetBonuses) return null;
         if (player == null || stack == null || stack.isEmpty()) return null;
         if (!(stack.getItem() instanceof ArmorItem)) return null;
     
