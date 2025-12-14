@@ -34,7 +34,7 @@ public class CommonConfig {
     @Comment("If true, items can be reforged even if they are damaged.")
     public boolean allowReforgingDamaged = true;
     @Comment("Enable/disable the entire armor set bonus system")
-    public boolean enableArmorSetBonuses = false;
+    public boolean enableArmorSetBonuses = true;
     @Comment("Armor set bonus multiplier for a full 4-piece set. 0.01 = 1%, 1.0 = 100%")
     public float armorSetBonusMultiplier = 0.2F;
     @Comment("Armor set bonus percent when wearing 4 matching armor pieces AND all 4 are Perfect. 0.01 = 1%, 1.0 = 100%")
