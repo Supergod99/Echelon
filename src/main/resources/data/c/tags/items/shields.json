@@ -1,0 +1,22 @@
+{
+  "replace": false,
+  "values": [
+        "minecraft:shield",
+        "#forge:tools/shields",
+        "#c:tools/shields",
+        "#c:tools/shield",
+        "#forge:tools/shield",
+        "composite_material:amethyst_shield",
+        "composite_material:etherite_shield",
+        "legendary_monsters:shulker_shield",
+        "legendary_monsters:dinosaur_bone_shield",
+        "legendary_monsters:frostbitten_shield",
+        "legendary_monsters:spiky_shield",
+        "nethers_exorcism_reborn:strampler_horn_shield",
+        "species:ricoshield",
+        "tameablebeasts:metal_shield",
+        "tameablebeasts:beetle_shield",
+        "ancient_elements:repelling_shield",
+        "unearthed_journey:scute_shield"
+  ]
+}
