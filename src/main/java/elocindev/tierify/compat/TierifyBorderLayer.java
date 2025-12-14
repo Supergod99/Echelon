@@ -148,7 +148,6 @@ public class TierifyBorderLayer implements ITooltipLayer {
     
         float baseHeight = 9f;
         float scaledHeight = baseHeight * scale;
-        float yOffset = -(baseHeight - scaledHeight) / 2f;
     
         // Matches TieredTooltip's "gap" region:
         // background interior top starts at (bgY - 3), title starts at (bgY + topPadding)
@@ -158,7 +157,7 @@ public class TierifyBorderLayer implements ITooltipLayer {
         float yPos = gapTop + ((gapBottom - gapTop) - scaledHeight) / 2f;
     
         ctx.push(() -> {
-            ctx.translate(xPos, yPos + yOffset, LayerDepth.BACKGROUND_OVERLAY.getZ() + 10);
+            ctx.translate(xPos, yPos, LayerDepth.BACKGROUND_OVERLAY.getZ() + 10);
             ctx.scale(scale, scale, 1.0f);
             ctx.graphics().drawText(font, label, 0, 0, 0xFFFFFF, true);
         });
