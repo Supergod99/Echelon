@@ -16,6 +16,8 @@ import net.minecraft.entity.attribute.EntityAttributeModifier;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.ArmorItem;
+import net.minecraft.item.Item;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
@@ -45,6 +47,8 @@ public abstract class ItemStackClientMixin {
     
     @Shadow @Final public static DecimalFormat MODIFIER_FORMAT;
 
+    private static final boolean SIGN_FIX_DEBUG = true;
+
     private double getSetBonusFactor() {
         if (!Tierify.CONFIG.enableArmorSetBonuses) return 1.0D;
         PlayerEntity player = MinecraftClient.getInstance().player;
@@ -64,6 +68,66 @@ public abstract class ItemStackClientMixin {
         if (pct < 0.0D) pct = 0.0D;
     
         return 1.0D + pct;
+    }
+
+    private EquipmentSlot inferDefaultSlotFromItem(ItemStack stack) {
+        Item item = stack.getItem();
+        if (item instanceof ArmorItem armor) {
+            return armor.getSlotType();
+        }
+        // Good default for most attribute tooltips
+        return EquipmentSlot.MAINHAND;
+    }
+    
+    private EquipmentSlot resolveSlotForAttributeLine(
+            Map<EquipmentSlot, Map<String, double[]>> sums,
+            EquipmentSlot currentSlot,
+            EquipmentSlot defaultSlot,
+            String attrTranslationKey,
+            int opIdx
+    ) {
+        if (currentSlot != null) {
+            Map<String, double[]> per = sums.get(currentSlot);
+            if (per != null) {
+                double[] ops = per.get(attrTranslationKey);
+                if (ops != null && Math.abs(ops[opIdx]) > 1.0e-9) {
+                    return currentSlot;
+                }
+            }
+        }
+    
+        EquipmentSlot onlyCandidate = null;
+        int candidates = 0;
+    
+        for (Map.Entry<EquipmentSlot, Map<String, double[]>> e : sums.entrySet()) {
+            Map<String, double[]> per = e.getValue();
+            if (per == null) continue;
+    
+            double[] ops = per.get(attrTranslationKey);
+            if (ops == null) continue;
+    
+            if (Math.abs(ops[opIdx]) > 1.0e-9) {
+                onlyCandidate = e.getKey();
+                candidates++;
+                if (candidates > 1) break;
+            }
+        }
+    
+        if (candidates == 1) return onlyCandidate;
+    
+        if (defaultSlot != null) {
+            Map<String, double[]> per = sums.get(defaultSlot);
+            if (per != null) {
+                double[] ops = per.get(attrTranslationKey);
+                if (ops != null && Math.abs(ops[opIdx]) > 1.0e-9) {
+                    return defaultSlot;
+                }
+            }
+        }
+    
+        if (sums.containsKey(EquipmentSlot.MAINHAND)) return EquipmentSlot.MAINHAND;
+    
+        return null;
     }
 
     @Inject(method = "getName", at = @At("RETURN"), cancellable = true)
@@ -188,7 +252,6 @@ public abstract class ItemStackClientMixin {
     }
 
     private void fixAttributeModifierSignMismatches(List<Text> tooltip) {
-        // Build per-slot sums exactly like vanilla does (sum by attribute + operation).
         Map<EquipmentSlot, Map<String, double[]>> sums = new EnumMap<>(EquipmentSlot.class);
     
         for (EquipmentSlot slot : EquipmentSlot.values()) {
@@ -200,7 +263,6 @@ public abstract class ItemStackClientMixin {
                 EntityAttribute attr = e.getKey();
                 EntityAttributeModifier mod = e.getValue();
     
-                // Map operation -> vanilla tooltip index (0/1/2)
                 int opIdx = switch (mod.getOperation()) {
                     case ADDITION -> 0;
                     case MULTIPLY_BASE -> 1;
@@ -214,7 +276,9 @@ public abstract class ItemStackClientMixin {
             sums.put(slot, perAttr);
         }
     
-        // Track which slot we are currently in while iterating tooltip lines.
+        ItemStack self = (ItemStack) (Object) this;
+        EquipmentSlot defaultSlot = inferDefaultSlotFromItem(self);
+    
         EquipmentSlot currentSlot = null;
     
         for (int i = 0; i < tooltip.size(); i++) {
@@ -223,17 +287,22 @@ public abstract class ItemStackClientMixin {
     
             String key = tr.getKey();
     
-            // Update current slot when we hit a "When on X:" header.
-            // Vanilla uses these keys: item.modifiers.mainhand/offhand/head/chest/legs/feet
+            // Header detection (still useful when present, but not required anymore)
             if (key.startsWith("item.modifiers.")) {
-                currentSlot = switch (key) {
-                    case "item.modifiers.mainhand", "item.modifiers.hand" -> EquipmentSlot.MAINHAND;
-                    case "item.modifiers.offhand" -> EquipmentSlot.OFFHAND;
-                    case "item.modifiers.head" -> EquipmentSlot.HEAD;
-                    case "item.modifiers.chest" -> EquipmentSlot.CHEST;
-                    case "item.modifiers.legs" -> EquipmentSlot.LEGS;
-                    case "item.modifiers.feet" -> EquipmentSlot.FEET;
-                    default -> currentSlot;
+                String suffix = key.substring("item.modifiers.".length());
+                currentSlot = switch (suffix) {
+                    case "mainhand" -> EquipmentSlot.MAINHAND;
+                    case "offhand"  -> EquipmentSlot.OFFHAND;
+                    case "head"     -> EquipmentSlot.HEAD;
+                    case "chest"    -> EquipmentSlot.CHEST;
+                    case "legs"     -> EquipmentSlot.LEGS;
+                    case "feet"     -> EquipmentSlot.FEET;
+    
+                    // If your mixin rewrites to "item.modifiers.hand", treat as "unknown section"
+                    // and let the resolver pick based on actual sums.
+                    case "hand"     -> null;
+    
+                    default         -> null;
                 };
                 continue;
             }
@@ -242,7 +311,6 @@ public abstract class ItemStackClientMixin {
             boolean isTake = key.startsWith("attribute.modifier.take.");
             if (!isPlus && !isTake) continue;
     
-            // Need the operation index (0/1/2) from the translation key suffix.
             int opIdx;
             try {
                 opIdx = Integer.parseInt(key.substring(key.lastIndexOf('.') + 1));
@@ -250,7 +318,6 @@ public abstract class ItemStackClientMixin {
                 continue;
             }
     
-            // Resolve which attribute this line refers to by finding a Text arg whose content is translatable.
             String attrTranslationKey = null;
             for (Object arg : tr.getArgs()) {
                 if (arg instanceof Text t && t.getContent() instanceof TranslatableTextContent at) {
@@ -260,23 +327,23 @@ public abstract class ItemStackClientMixin {
             }
             if (attrTranslationKey == null) continue;
     
-            // If we can’t determine the slot context, we cannot safely correct.
-            if (currentSlot == null) continue;
+            // NEW: resolve the slot even if headers are missing/altered by Tooltip Overhaul.
+            EquipmentSlot resolvedSlot = resolveSlotForAttributeLine(
+                    sums, currentSlot, defaultSlot, attrTranslationKey, opIdx
+            );
+            if (resolvedSlot == null) continue;
     
-            Map<String, double[]> perAttr = sums.get(currentSlot);
+            Map<String, double[]> perAttr = sums.get(resolvedSlot);
             if (perAttr == null) continue;
     
             double[] ops = perAttr.get(attrTranslationKey);
             if (ops == null) continue;
     
             boolean shouldBeNegative = ops[opIdx] < -1.0e-9;
-    
-            // If sign already matches, do nothing.
             if ((shouldBeNegative && isTake) || (!shouldBeNegative && isPlus)) continue;
     
             String newKey = (shouldBeNegative ? "attribute.modifier.take." : "attribute.modifier.plus.") + opIdx;
     
-            // Ensure the numeric arg is unsigned (vanilla expects abs() because sign is in the translation).
             Object[] args = tr.getArgs();
             Object[] newArgs = new Object[args.length];
             for (int j = 0; j < args.length; j++) {
@@ -296,30 +363,42 @@ public abstract class ItemStackClientMixin {
             }
     
             MutableText fixed = Text.translatable(newKey, newArgs).setStyle(line.getStyle());
-            for (Text sibling : line.getSiblings()) {
-                fixed.append(sibling);
-            }
-    
+            for (Text sibling : line.getSiblings()) fixed.append(sibling);
             tooltip.set(i, fixed);
         }
     }
 
-    private boolean hasRedRecursive(Text t, TextColor red, TextColor darkRed) {
-        TextColor c = t.getStyle().getColor();
-        if (c != null && (c.equals(red) || c.equals(darkRed))) return true;
+    private boolean isRedLike(TextColor c) {
+        if (c == null) return false;
+    
+        int rgb = c.getRgb();
+        int r = (rgb >> 16) & 0xFF;
+        int g = (rgb >> 8) & 0xFF;
+        int b = rgb & 0xFF;
+    
+        // "Red-ish" heuristic: red channel dominates and G/B are relatively low.
+        // This catches Formatting.RED, Formatting.DARK_RED, and custom dark reds used by other renderers.
+        return r >= 0x80 && g <= 0x60 && b <= 0x60;
+    }
+    
+    private boolean hasRedLikeRecursive(Text t) {
+        if (t == null) return false;
+    
+        if (isRedLike(t.getStyle().getColor())) return true;
     
         if (t.getContent() instanceof TranslatableTextContent tr) {
             for (Object arg : tr.getArgs()) {
-                if (arg instanceof Text at && hasRedRecursive(at, red, darkRed)) return true;
+                if (arg instanceof Text at && hasRedLikeRecursive(at)) return true;
             }
         }
     
         for (Text sib : t.getSiblings()) {
-            if (hasRedRecursive(sib, red, darkRed)) return true;
+            if (hasRedLikeRecursive(sib)) return true;
         }
     
         return false;
     }
+
     
     private Object[] stripLeadingSigns(Object[] args) {
         Object[] out = new Object[args.length];
@@ -352,10 +431,19 @@ public abstract class ItemStackClientMixin {
             String trimmed = line.getString().trim();
     
             // Only touch attribute-like lines that begin with "+"
-            if (!trimmed.matches("^\\+\\s*\\d.*")) continue;
+            boolean startsPlusDigit = trimmed.matches("^\\+\\s*\\d.*");
+            if (!startsPlusDigit) continue;
     
             // Must be visibly red/dark-red somewhere in the component tree
-            if (!hasRedRecursive(line, red, darkRed)) continue;
+            boolean redLike = hasRedRecursive(line, red, darkRed);
+            if (!redLike) continue;
+    
+            if (SIGN_FIX_DEBUG) {
+                String k = (line.getContent() instanceof TranslatableTextContent tr) ? tr.getKey() : "<non-translatable>";
+                TextColor topColor = line.getStyle().getColor();
+                Tierify.LOGGER.info("[SignFix][fixRedPlusLines] Candidate idx={} key={} topColor={} text='{}'",
+                        i, k, topColor, trimmed);
+            }
     
             // preserve vanilla structure by flipping the translation key
             if (line.getContent() instanceof TranslatableTextContent tr) {
@@ -369,16 +457,32 @@ public abstract class ItemStackClientMixin {
     
                     for (Text sibling : line.getSiblings()) fixed.append(sibling);
                     tooltip.set(i, fixed);
+    
+                    if (SIGN_FIX_DEBUG) {
+                        Tierify.LOGGER.info("[SignFix][fixRedPlusLines] Applied translatable flip idx={} fromKey={} toKey={}",
+                                i, key, "attribute.modifier.take." + suffix);
+                    }
                     continue;
+                } else if (SIGN_FIX_DEBUG) {
+                    Tierify.LOGGER.info("[SignFix][fixRedPlusLines] Candidate was translatable but not 'attribute.modifier.plus.*' idx={} key={}",
+                            i, key);
                 }
             }
     
             if (line.getSiblings().isEmpty()) {
                 String fixedString = line.getString().replaceFirst("^\\s*\\+", "-");
                 tooltip.set(i, Text.literal(fixedString).setStyle(line.getStyle()));
+    
+                if (SIGN_FIX_DEBUG) {
+                    Tierify.LOGGER.info("[SignFix][fixRedPlusLines] Applied literal fallback idx={} result='{}'",
+                            i, fixedString.trim());
+                }
+            } else if (SIGN_FIX_DEBUG) {
+                Tierify.LOGGER.info("[SignFix][fixRedPlusLines] Candidate skipped (non-translatable and has siblings) idx={}", i);
             }
         }
     }
+
 
 
     private void updateTooltipRecursive(List<Text> tooltip, String target, String replacement, boolean applyGold) {
