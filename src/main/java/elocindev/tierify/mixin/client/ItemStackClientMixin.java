@@ -432,7 +432,7 @@ public abstract class ItemStackClientMixin {
             String trimmed = line.getString().trim();
 
             // Only touch attribute-like lines that begin with "+"
-            if (!trimmed.matches("^\+\s*\d.*")) continue;
+            if (!trimmed.matches("^\\+\\s*\\d.*")) continue;
 
             // Must be visibly red/dark-red somewhere in the component tree
             if (!hasRedRecursive(line, red, darkRed)) continue;
@@ -457,7 +457,7 @@ public abstract class ItemStackClientMixin {
 
             // Literal fallback (only safe when there are no siblings)
             if (line.getSiblings().isEmpty()) {
-                String fixedString = line.getString().replaceFirst("^\s*\+", "-");
+                String fixedString = line.getString().replaceFirst("^\\s*\\+", "-");
                 tooltip.set(i, Text.literal(fixedString).setStyle(line.getStyle()));
             }
         }
