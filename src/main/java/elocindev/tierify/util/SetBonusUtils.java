@@ -12,6 +12,14 @@ import net.minecraft.nbt.NbtCompound;
 
 public class SetBonusUtils {
 
+    private static boolean isEquippedArmorStack(PlayerEntity player, ItemStack stack) {
+        if (player == null || stack == null || stack.isEmpty()) return false;
+        if (!(stack.getItem() instanceof ArmorItem armor)) return false;
+    
+        // only true when the hovered ItemStack IS the equipped stack instance.
+        return player.getEquippedStack(armor.getSlotType()) == stack;
+    }
+
     // Checks if the player is wearing 4 pieces of armor that match the Tier ID of the passed itemStack.
     public static boolean hasSetBonus(PlayerEntity player, ItemStack itemStack) {
         if (!Tierify.CONFIG.enableArmorSetBonuses) return false;
