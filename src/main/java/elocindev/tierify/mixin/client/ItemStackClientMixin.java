@@ -94,6 +94,7 @@ public abstract class ItemStackClientMixin {
         }
 
         if (this.hasNbt() && this.getSubNbt(Tierify.NBT_SUBTAG_KEY) != null) {
+            fixAttributeModifierSignMismatches(tooltip);
             applyAttributeLogic(tooltip);
             fixAttributeModifierSignMismatches(tooltip);
             fixRedPlusLines(tooltip);
@@ -303,6 +304,43 @@ public abstract class ItemStackClientMixin {
         }
     }
 
+    private boolean hasRedRecursive(Text t, TextColor red, TextColor darkRed) {
+        TextColor c = t.getStyle().getColor();
+        if (c != null && (c.equals(red) || c.equals(darkRed))) return true;
+    
+        if (t.getContent() instanceof TranslatableTextContent tr) {
+            for (Object arg : tr.getArgs()) {
+                if (arg instanceof Text at && hasRedRecursive(at, red, darkRed)) return true;
+            }
+        }
+    
+        for (Text sib : t.getSiblings()) {
+            if (hasRedRecursive(sib, red, darkRed)) return true;
+        }
+    
+        return false;
+    }
+    
+    private Object[] stripLeadingSigns(Object[] args) {
+        Object[] out = new Object[args.length];
+        for (int j = 0; j < args.length; j++) {
+            Object a = args[j];
+            if (a instanceof String s) {
+                out[j] = s.replaceFirst("^[+\\-]", "");
+            } else if (a instanceof Text t) {
+                String ts = t.getString();
+                if (ts.startsWith("-") || ts.startsWith("+")) {
+                    out[j] = Text.literal(ts.replaceFirst("^[+\\-]", "")).setStyle(t.getStyle());
+                } else {
+                    out[j] = a;
+                }
+            } else {
+                out[j] = a;
+            }
+        }
+        return out;
+    }
+    
     private void fixRedPlusLines(List<Text> tooltip) {
         TextColor red = TextColor.fromFormatting(Formatting.RED);
         TextColor darkRed = TextColor.fromFormatting(Formatting.DARK_RED);
@@ -311,34 +349,34 @@ public abstract class ItemStackClientMixin {
             Text line = tooltip.get(i);
             if (line == null) continue;
     
-            String s = line.getString();
-            if (s == null) continue;
+            String trimmed = line.getString().trim();
     
-            String trimmed = s.trim();
-    
-            // Only touch attribute-like lines (you already use this heuristic elsewhere)
-            if (!(trimmed.startsWith("+") || trimmed.startsWith("-"))) continue;
-    
-            // If it starts with '+', but it is already styled as red/dark red, it should be negative.
-            if (!trimmed.startsWith("+")) continue;
-    
-            TextColor c = line.getStyle().getColor();
-            if (c == null) continue;
-    
-            if (!c.equals(red) && !c.equals(darkRed)) continue;
-    
-            // Extra safety: require a digit after the sign (avoids odd text lines)
-            // Examples it should match: "+2 Armor", "+ 1 Spell Power"
+            // Only touch attribute-like lines that begin with "+"
             if (!trimmed.matches("^\\+\\s*\\d.*")) continue;
     
-            String fixedString = s.replaceFirst("\\+", "-");
+            // Must be visibly red/dark-red somewhere in the component tree
+            if (!hasRedRecursive(line, red, darkRed)) continue;
     
-            MutableText fixed = Text.literal(fixedString).setStyle(line.getStyle());
-            for (Text sibling : line.getSiblings()) {
-                fixed.append(sibling);
+            // preserve vanilla structure by flipping the translation key
+            if (line.getContent() instanceof TranslatableTextContent tr) {
+                String key = tr.getKey();
+                if (key.startsWith("attribute.modifier.plus.")) {
+                    String suffix = key.substring("attribute.modifier.plus.".length());
+                    Object[] newArgs = stripLeadingSigns(tr.getArgs());
+    
+                    MutableText fixed = Text.translatable("attribute.modifier.take." + suffix, newArgs)
+                            .setStyle(line.getStyle());
+    
+                    for (Text sibling : line.getSiblings()) fixed.append(sibling);
+                    tooltip.set(i, fixed);
+                    continue;
+                }
             }
     
-            tooltip.set(i, fixed);
+            if (line.getSiblings().isEmpty()) {
+                String fixedString = line.getString().replaceFirst("^\\s*\\+", "-");
+                tooltip.set(i, Text.literal(fixedString).setStyle(line.getStyle()));
+            }
         }
     }
 
