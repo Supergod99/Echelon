@@ -96,6 +96,7 @@ public abstract class ItemStackClientMixin {
         if (this.hasNbt() && this.getSubNbt(Tierify.NBT_SUBTAG_KEY) != null) {
             applyAttributeLogic(tooltip);
             fixAttributeModifierSignMismatches(tooltip);
+            fixRedPlusLines(tooltip);
         }
 
         fixAttackSpeedText(tooltip);
@@ -294,6 +295,45 @@ public abstract class ItemStackClientMixin {
             }
     
             MutableText fixed = Text.translatable(newKey, newArgs).setStyle(line.getStyle());
+            for (Text sibling : line.getSiblings()) {
+                fixed.append(sibling);
+            }
+    
+            tooltip.set(i, fixed);
+        }
+    }
+
+    private void fixRedPlusLines(List<Text> tooltip) {
+        TextColor red = TextColor.fromFormatting(Formatting.RED);
+        TextColor darkRed = TextColor.fromFormatting(Formatting.DARK_RED);
+    
+        for (int i = 0; i < tooltip.size(); i++) {
+            Text line = tooltip.get(i);
+            if (line == null) continue;
+    
+            String s = line.getString();
+            if (s == null) continue;
+    
+            String trimmed = s.trim();
+    
+            // Only touch attribute-like lines (you already use this heuristic elsewhere)
+            if (!(trimmed.startsWith("+") || trimmed.startsWith("-"))) continue;
+    
+            // If it starts with '+', but it is already styled as red/dark red, it should be negative.
+            if (!trimmed.startsWith("+")) continue;
+    
+            TextColor c = line.getStyle().getColor();
+            if (c == null) continue;
+    
+            if (!c.equals(red) && !c.equals(darkRed)) continue;
+    
+            // Extra safety: require a digit after the sign (avoids odd text lines)
+            // Examples it should match: "+2 Armor", "+ 1 Spell Power"
+            if (!trimmed.matches("^\\+\\s*\\d.*")) continue;
+    
+            String fixedString = s.replaceFirst("\\+", "-");
+    
+            MutableText fixed = Text.literal(fixedString).setStyle(line.getStyle());
             for (Text sibling : line.getSiblings()) {
                 fixed.append(sibling);
             }
