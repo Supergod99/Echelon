@@ -1,6 +1,7 @@
 package elocindev.tierify.mixin.client;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -22,6 +23,7 @@ import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.Text;
+import net.minecraft.text.OrderedText;
 
 @Environment(EnvType.CLIENT)
 @Mixin(DrawContext.class)
@@ -52,9 +54,29 @@ public class DrawContextMixin {
                 for (int i = 0; i < TierifyClient.BORDER_TEMPLATES.size(); i++) {
                     if (TierifyClient.BORDER_TEMPLATES.get(i).containsDecider(lookupKey)) {
 
-                        List<Text> text = net.minecraft.client.gui.screen.Screen.getTooltipFromItem(MinecraftClient.getInstance(), stack);
-                        List<TooltipComponent> list = text.stream().map(Text::asOrderedText).map(TooltipComponent::of).collect(Collectors.toList());
-                        stack.getTooltipData().ifPresent(data -> list.add(1, TooltipComponent.of(data)));
+                        List<Text> text = Screen.getTooltipFromItem(MinecraftClient.getInstance(), stack);
+                        // Use the window width here 
+                        int maxWidth = ((DrawContext)(Object)this).getScaledWindowWidth() - 16;
+                        List<TooltipComponent> list = new ArrayList<>();
+                        int dataInsertIndex = 1;
+           
+                        for (int lineIndex = 0; lineIndex < text.size(); lineIndex++) {
+                            Text line = text.get(lineIndex);
+                            List<OrderedText> wrapped = textRenderer.wrapLines(line, maxWidth);
+                        
+                            for (OrderedText ot : wrapped) {
+                                list.add(TooltipComponent.of(ot));
+                            }
+                        
+                            if (lineIndex == 0) {
+                                dataInsertIndex = list.size();
+                            }
+                        }
+
+                        stack.getTooltipData().ifPresent(data -> {
+                            int idx = Math.min(Math.max(dataInsertIndex, 1), list.size());
+                            list.add(idx, TooltipComponent.of(data));
+                        });
 
                         TieredTooltip.renderTieredTooltipFromComponents(
                             (DrawContext) (Object) this, 
