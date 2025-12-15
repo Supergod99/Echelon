@@ -46,6 +46,7 @@ public abstract class ItemStackClientMixin {
     @Shadow @Final public static DecimalFormat MODIFIER_FORMAT;
 
     private double getSetBonusFactor() {
+        if (!Tierify.CONFIG.enableArmorSetBonuses) return 1.0D;
         PlayerEntity player = MinecraftClient.getInstance().player;
         if (player == null) return 1.0D;
     
