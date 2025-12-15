@@ -87,8 +87,8 @@ public abstract class HandledScreenMixin extends Screen {
                             
                             final int insertIndex = dataInsertIndex;
                             stack.getTooltipData().ifPresent(data -> {
-                                int idx = Math.min(Math.max(insertIndex, 1), list.size());
-                                list.add(idx, TooltipComponent.of(data));
+                                int idx = Math.min(Math.max(insertIndex, 1), components.size());
+                                components.add(idx, TooltipComponent.of(data));
                             });
 
                             // Render Custom Border
