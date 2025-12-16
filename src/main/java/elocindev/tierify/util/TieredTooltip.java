@@ -23,7 +23,7 @@ import net.minecraft.client.gui.tooltip.TooltipPositioner;
 @Environment(EnvType.CLIENT)
 public class TieredTooltip {
 
-    private static final float SET_BONUS_LABEL_NUDGE_Y = 0.0f;
+    private static final float SET_BONUS_LABEL_NUDGE_Y = 1.0f;
 
     public static String getPlateForModifier(String modifier) {
         switch(modifier.toLowerCase()) {
@@ -83,7 +83,7 @@ public class TieredTooltip {
         }
         
         // Reserve real space above the name
-        final int setBonusHeaderHeight = 12; // same magnitude as Perfect's extra height
+        final int setBonusHeaderHeight = 9; // same magnitude as Perfect's extra height
         if (setBonusLabel != null) {
             topPadding += setBonusHeaderHeight;
         }
