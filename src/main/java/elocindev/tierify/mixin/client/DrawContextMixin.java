@@ -57,7 +57,7 @@ public class DrawContextMixin {
 
                         List<Text> text = Screen.getTooltipFromItem(MinecraftClient.getInstance(), stack);
                         // Use the window width here 
-                        int maxWidth = ((DrawContext)(Object)this).getScaledWindowWidth() - 16;
+                        int maxWidth = Math.min(((DrawContext)(Object)this).getScaledWindowWidth() - 16, 280);
                         List<TooltipComponent> list = new ArrayList<>();
                         int dataInsertIndex = 1;
            
