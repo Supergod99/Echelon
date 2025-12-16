@@ -67,7 +67,7 @@ public abstract class HandledScreenMixin extends Screen {
                             // Get tooltip text (Vanilla logic)
                             List<Text> text = Screen.getTooltipFromItem(this.client, stack);
                             // Vanilla-like wrapping: cap width to the screen
-                            int maxWidth = this.width - 16;
+                            int maxWidth = Math.min(this.width - 16, 280);
                             List<TooltipComponent> components = new ArrayList<>();
                             int dataInsertIndex = 1; // will be corrected after title is processed
                             
