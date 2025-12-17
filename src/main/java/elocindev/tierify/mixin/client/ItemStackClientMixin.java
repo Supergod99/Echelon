@@ -475,9 +475,6 @@ public abstract class ItemStackClientMixin {
             if (!trimmed.matches("^[+\\-]\\s*\\d.*")) continue;
     
             if (isDisplayedNumericZero(trimmed)) {
-                if (SIGN_FIX_DEBUG) {
-                    Tierify.LOGGER.info("[SignFix][removeZero] Removed text='{}'", trimmed);
-                }
                 it.remove();
             }
         }
