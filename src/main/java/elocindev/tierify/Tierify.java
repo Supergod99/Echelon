@@ -48,7 +48,7 @@ import elocindev.tierify.data.ReforgeDataLoader;
 import elocindev.tierify.network.TieredServerPacket;
 import elocindev.tierify.registry.ItemRegistry;
 import elocindev.tierify.screen.ReforgeScreenHandler;
-
+import java.util.UUID;
 import java.util.*;
 
 @SuppressWarnings("unused")
