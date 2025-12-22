@@ -19,7 +19,7 @@ import net.minecraft.util.Identifier;
  *
  * The EquipmentSlot is used to only apply this template to certain items.
  */
-public class AttributeTemplate {
+public class  {
 
     @SerializedName("type")
     private final String attributeTypeID;
@@ -64,9 +64,17 @@ public class AttributeTemplate {
      * @param multimap map to add {@link AttributeTemplate}
      * @param slot
      */
-    public void realize(Multimap<EntityAttribute, EntityAttributeModifier> multimap, EquipmentSlot slot) {
-        EntityAttributeModifier cloneModifier = new EntityAttributeModifier(Tierify.MODIFIERS[slot.getArmorStandSlotId()], entityAttributeModifier.getName() + "_" + slot.getName(),
-                entityAttributeModifier.getValue(), entityAttributeModifier.getOperation());
+    public void realize(Multimap<EntityAttribute, EntityAttributeModifier> multimap, EquipmentSlot slot, ItemStack stack) {
+        
+        // FIX: Generate a unique UUID based on the Attribute Type + Slot + Item Name
+        UUID uniqueID = UUID.nameUUIDFromBytes((attributeTypeID + "_" + slot.getName() + "_" + stack.getItem().getTranslationKey()).getBytes());
+
+        EntityAttributeModifier cloneModifier = new EntityAttributeModifier(
+            uniqueID,
+            entityAttributeModifier.getName() + "_" + slot.getName(),
+            entityAttributeModifier.getValue(), 
+            entityAttributeModifier.getOperation()
+        );
 
         EntityAttribute key = Registries.ATTRIBUTE.get(new Identifier(attributeTypeID));
         if (key == null) {
