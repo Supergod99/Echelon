@@ -150,6 +150,7 @@ public class Tierify implements ModInitializer {
         ServerPlayConnectionEvents.INIT.register((handler, server) -> {
             updateItemStackNbt(handler.player.getInventory());
         });
+        // ... inside onInitialize ...
         ModifyItemAttributeModifiersCallback.EVENT.register((itemStack, slot, modifiers) -> {
             if (itemStack.getSubNbt(Tierify.NBT_SUBTAG_KEY) != null) {
                 Identifier tier = new Identifier(itemStack.getOrCreateSubNbt(Tierify.NBT_SUBTAG_KEY).getString(Tierify.NBT_SUBTAG_DATA_KEY));
@@ -157,7 +158,7 @@ public class Tierify implements ModInitializer {
                 if (!itemStack.hasNbt() || !itemStack.getNbt().contains("AttributeModifiers", 9)) {
                     PotentialAttribute potentialAttribute = Tierify.ATTRIBUTE_DATA_LOADER.getItemAttributes().get(tier);
                     if (potentialAttribute != null) {
-                        // 🔍 Read perfect flag from NBT
+                        // Read perfect flag from NBT
                         NbtCompound tierTag = itemStack.getSubNbt(Tierify.NBT_SUBTAG_KEY);
                         boolean isPerfect = tierTag != null && tierTag.getBoolean("Perfect");
                     
@@ -168,12 +169,14 @@ public class Tierify implements ModInitializer {
                             if (isPerfect && amount < 0.0D) {
                                 continue;
                             }
+                            
                             // get required equipment slots
                             if (template.getRequiredEquipmentSlots() != null) {
                                 List<EquipmentSlot> requiredEquipmentSlots = new ArrayList<>(Arrays.asList(template.getRequiredEquipmentSlots()));
 
                                 if (requiredEquipmentSlots.contains(slot))
-                                    template.realize(modifiers, slot);
+                                    // UPDATE: Pass 'itemStack' here
+                                    template.realize(modifiers, slot, itemStack);
                             }
 
                             // get optional equipment slots
@@ -182,7 +185,7 @@ public class Tierify implements ModInitializer {
 
                                 // optional equipment slots are valid ONLY IF the equipment slot is valid for the thing
                                 if (optionalEquipmentSlots.contains(slot) && Tierify.isPreferredEquipmentSlot(itemStack, slot)) {
-                                    template.realize(modifiers, slot);
+                                    template.realize(modifiers, slot, itemStack);
                                 }
                             }
                         }
