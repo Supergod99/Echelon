@@ -9,6 +9,8 @@ import net.minecraft.entity.attribute.EntityAttribute;
 import net.minecraft.entity.attribute.EntityAttributeModifier;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
+import net.minecraft.item.ItemStack;
+import java.util.UUID;
 
 /**
  * Stores information on an AttributeModifier template applied to an ItemStack.
