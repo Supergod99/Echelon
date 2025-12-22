@@ -19,7 +19,7 @@ import net.minecraft.util.Identifier;
  *
  * The EquipmentSlot is used to only apply this template to certain items.
  */
-public class  {
+public class  AttributeTemplate {
 
     @SerializedName("type")
     private final String attributeTypeID;
