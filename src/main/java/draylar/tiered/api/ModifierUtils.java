@@ -161,12 +161,13 @@ public class ModifierUtils {
         if (potentialAttributeID != null) {
 
             stack.getOrCreateSubNbt(Tierify.NBT_SUBTAG_KEY).putString(Tierify.NBT_SUBTAG_DATA_KEY, potentialAttributeID.toString());
-
+            
+            // Generate a random unique ID for this specific item instance -
+            stack.getOrCreateSubNbt(Tierify.NBT_SUBTAG_KEY).putUuid("TierUUID", UUID.randomUUID());
             stack.getOrCreateSubNbt("itemborders_colors").putString("top", ItemBordersCompat.getColorForIdentifier(potentialAttributeID));
             stack.getOrCreateSubNbt("itemborders_colors").putString("bottom", ItemBordersCompat.getColorForIdentifier(potentialAttributeID));
 
             HashMap<String, Object> nbtMap = Tierify.ATTRIBUTE_DATA_LOADER.getItemAttributes().get(new Identifier(potentialAttributeID.toString())).getNbtValues();
-
             // add durability nbt
             List<AttributeTemplate> attributeList = Tierify.ATTRIBUTE_DATA_LOADER.getItemAttributes().get(new Identifier(potentialAttributeID.toString())).getAttributes();
             for (int i = 0; i < attributeList.size(); i++) {
@@ -178,7 +179,6 @@ public class ModifierUtils {
                     break;
                 }
             }
-
             // add nbtMap
             if (nbtMap != null) {
                 NbtCompound nbtCompound = stack.getNbt();
@@ -186,9 +186,6 @@ public class ModifierUtils {
                     String key = entry.getKey();
                     Object value = entry.getValue();
 
-                    // json list will get read as ArrayList class
-                    // json map will get read as linkedtreemap
-                    // json integer is read by gson -> always double
                     if (value instanceof String) {
                         nbtCompound.putString(key, (String) value);
                     } else if (value instanceof Boolean) {
