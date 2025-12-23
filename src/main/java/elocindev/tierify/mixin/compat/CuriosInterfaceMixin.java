@@ -14,34 +14,26 @@ import top.theillusivec4.curios.api.type.capability.ICurioItem;
 
 import java.util.UUID;
 
-// We target the Interface. This safely applies to ALL Curios items without 
-// forcing the Brutality mod to load early (avoiding the KubeJS crash).
 @Mixin(ICurioItem.class)
 public class CuriosInterfaceMixin {
 
-    @Inject(method = "getAttributeModifiers(Ltop/theillusivec4/curios/api/SlotContext;Ljava/util/UUID;Lnet/minecraft/item/ItemStack;)Lcom/google/common/collect/Multimap;", 
-            at = @At("RETURN"), 
-            cancellable = true, 
-            remap = false)
-    private void fixBrutalityStacking(SlotContext slotContext, UUID uuid, ItemStack stack, CallbackInfoReturnable<Multimap<EntityAttribute, EntityAttributeModifier>> cir) {
-        // 1. PERFORMANCE & SAFETY CHECK
-        // Only run for Brutality items. Using String check avoids loading Brutality classes.
+    @Inject(method = "getAttributeModifiers", at = @At("RETURN"), cancellable = true)
+    private void fixBrutalityStacking(SlotContext slotContext, UUID uuid, ItemStack stack, CallbackInfoReturnable<Multimap<EntityAttribute, EntityAttributeModifier>> cir) {   
+        // If the stack is empty or NOT a Brutality item, stop immediately.
         if (stack == null || stack.isEmpty()) return;
-        
-        // We check the Item ID string. If it's not a brutality item, we exit immediately.
-        String itemId = stack.getItem().toString();
+        // We use string checking to verify the mod ID without importing broken classes.
+        String itemId = stack.getItem().toString(); 
         if (!itemId.contains("brutality")) {
             return;
         }
 
         Multimap<EntityAttribute, EntityAttributeModifier> originalMap = cir.getReturnValue();
         if (originalMap == null || originalMap.isEmpty()) return;
-
-        // 2. REBUILD MAP WITH UNIQUE UUIDS
+        // Rebuild the attribute map with unique UUIDs.
         ImmutableMultimap.Builder<EntityAttribute, EntityAttributeModifier> newMap = ImmutableMultimap.builder();
-
         originalMap.forEach((attribute, modifier) -> {
-            // Generate unique salt: "UUID:SlotID:SlotIndex"
+            // Generate a unique salt based on: Original UUID + Slot Name + Slot Index
+            // This guarantees that two identical Rings in two different slots get different UUIDs.
             String salt = modifier.getId().toString() + ":" + slotContext.identifier() + ":" + slotContext.index();
             UUID uniqueID = UUID.nameUUIDFromBytes(salt.getBytes());
 
