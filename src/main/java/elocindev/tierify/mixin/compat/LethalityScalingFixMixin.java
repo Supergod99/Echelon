@@ -11,7 +11,7 @@ import net.minecraft.registry.tag.DamageTypeTags;
 import net.minecraft.util.Identifier;
 import net.minecraft.entity.DamageUtil;
 
-import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Mixin.Dynamic;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -54,11 +54,17 @@ public abstract class LethalityScalingFixMixin {
      * require = 0: if this method name doesn't exist in the current mapping/runtime, do NOT crash.
      * This is the safest way to “try” the alternate name under Connector setups.
      * ----------------------------- */
-    @Inject(method = "getDamageAfterArmorAbsorb", at = @At("HEAD"), cancellable = true, require = 0)
+    @Dynamic("Present in some runtimes / mappings; Connector-safe optional hook")
+    @Inject(
+        method = "getDamageAfterArmorAbsorb(Lnet/minecraft/entity/damage/DamageSource;F)F",
+        at = @At("HEAD"),
+        cancellable = true,
+        require = 0
+    )
     private void echelon$fixLethality_getDamageAfterArmorAbsorb(DamageSource source, float amount, CallbackInfoReturnable<Float> cir) {
         Float out = echelon$computeLethalityAdjustedDamage(source, amount);
         if (out != null) {
-            cir.setReturnValue(out); // also cancels
+            cir.setReturnValue(out);
         }
     }
 
