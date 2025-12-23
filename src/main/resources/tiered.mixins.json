@@ -20,7 +20,8 @@
     "MobEntityMixin",
     "ArmorStandEntityMixin",
     "ArmorItemMixin",
-    "EnchantmentHelperMixin"
+    "EnchantmentHelperMixin",
+    "compat.BrutalityStackingFixMixin"
   ],
   "client": [
     "client.ItemStackClientMixin",
@@ -31,8 +32,7 @@
     "compat.ModAnvilScreenMixin",
     "compat.TooltipOverhaulFrameMixin",
     "compat.TooltipOverhaulRenderMixin",
-    "compat.TooltipRendererAccessor",
-    "compat.BrutalityStackingFixMixin"
+    "compat.TooltipRendererAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
