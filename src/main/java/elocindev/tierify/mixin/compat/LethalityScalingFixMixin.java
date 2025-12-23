@@ -11,9 +11,9 @@ import net.minecraft.registry.tag.DamageTypeTags;
 import net.minecraft.util.Identifier;
 import net.minecraft.entity.DamageUtil;
 
+import org.spongepowered.asm.mixin.Dynamic;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
-import org.spongepowered.asm.mixin.Dynamic;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -22,7 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * Connector-safe lethality fix:
  * - Does NOT reference Brutality classes.
  * - Only activates when Brutality's lethality attribute is present AND non-zero.
- * - Cancels before Brutality's own getDamageAfterArmorAbsorb injection runs.
+ * - Attempts to cancel BEFORE Brutality's own getDamageAfterArmorAbsorb injection runs.
  */
 @Mixin(value = LivingEntity.class, priority = 3000)
 public abstract class LethalityScalingFixMixin {
@@ -31,60 +31,77 @@ public abstract class LethalityScalingFixMixin {
 
     /**
      * How far below zero we allow "effective armor" to go.
-     * Negative armor increases damage in vanilla formulas; extremely negative values can produce pathological results
-     * when other mods feed in weird numbers. Keep this conservative.
+     * Negative armor increases damage in vanilla formulas; extremely negative values can produce pathological results.
      */
     @Unique private static final float MIN_EFFECTIVE_ARMOR = -30.0F;
 
     @Unique private static final double EPS = 1.0e-6;
 
-    /* -----------------------------
-     * Primary: Yarn/Fabric name
-     * ----------------------------- */
-    @Inject(method = "applyArmorToDamage", at = @At("HEAD"), cancellable = true)
+    /* -------------------------------------------------------
+     * Primary: Yarn/Fabric name (explicit descriptor)
+     * ------------------------------------------------------- */
+    @Inject(
+        method = "applyArmorToDamage(Lnet/minecraft/entity/damage/DamageSource;F)F",
+        at = @At("HEAD"),
+        cancellable = true
+    )
     private void echelon$fixLethality_applyArmorToDamage(DamageSource source, float amount, CallbackInfoReturnable<Float> cir) {
         Float out = echelon$computeLethalityAdjustedDamage(source, amount);
-        if (out != null) {
-            cir.setReturnValue(out); // also cancels
-        }
+        if (out != null) cir.setReturnValue(out);
     }
 
-    /* -----------------------------
-     * Secondary: Mojmap/Forge name
-     *
-     * require = 0: if this method name doesn't exist in the current mapping/runtime, do NOT crash.
-     * This is the safest way to “try” the alternate name under Connector setups.
-     * ----------------------------- */
+    /* -------------------------------------------------------
+     * Secondary: Mojmap/Forge name (optional, Connector-safe)
+     * ------------------------------------------------------- */
     @Dynamic("Present in some runtimes / mappings; Connector-safe optional hook")
     @Inject(
         method = "getDamageAfterArmorAbsorb(Lnet/minecraft/entity/damage/DamageSource;F)F",
         at = @At("HEAD"),
         cancellable = true,
-        require = 0
+        require = 0,
+        expect = 0
     )
     private void echelon$fixLethality_getDamageAfterArmorAbsorb(DamageSource source, float amount, CallbackInfoReturnable<Float> cir) {
         Float out = echelon$computeLethalityAdjustedDamage(source, amount);
-        if (out != null) {
-            cir.setReturnValue(out);
-        }
+        if (out != null) cir.setReturnValue(out);
+    }
+
+    /* -------------------------------------------------------
+     * Tertiary: Intermediary-ish fallback (optional)
+     *
+     * NOTE: This name can differ per mapping set. This is a best-effort “extra net”.
+     * If it does not exist, require/expect 0 prevents failure.
+     * ------------------------------------------------------- */
+    @Dynamic("Fallback for intermediary-named armor reduction method in some pipelines")
+    @Inject(
+        method = "method_26323(Lnet/minecraft/entity/damage/DamageSource;F)F",
+        at = @At("HEAD"),
+        cancellable = true,
+        require = 0,
+        expect = 0
+    )
+    private void echelon$fixLethality_method_26323(DamageSource source, float amount, CallbackInfoReturnable<Float> cir) {
+        Float out = echelon$computeLethalityAdjustedDamage(source, amount);
+        if (out != null) cir.setReturnValue(out);
     }
 
     /**
      * Returns:
-     * - null if we should NOT override vanilla (or Brutality) behavior
+     * - null if we should NOT override vanilla / other mods
      * - a finite float damage value if we should override
      */
     @Unique
     private Float echelon$computeLethalityAdjustedDamage(DamageSource source, float amount) {
-        // Basic sanity: do not touch bypass-armor damage, non-finite, or non-positive damage
         if (source == null) return null;
+
+        // Do not touch bypass-armor damage, non-finite, or non-positive damage
         if (source.isIn(DamageTypeTags.BYPASSES_ARMOR)) return null;
         if (!Float.isFinite(amount) || amount <= 0.0F) return null;
 
-        // Lethality should be attacker-driven; only apply for player attackers
+        // Lethality is attacker-driven; only apply for player attackers
         if (!(source.getAttacker() instanceof PlayerEntity player)) return null;
 
-        // Only run if Brutality's attribute actually exists in the registry
+        // Only run if Brutality's lethality attribute exists in the registry
         EntityAttribute lethalityAttr = Registries.ATTRIBUTE.get(BRUTALITY_LETHALITY_ID);
         if (lethalityAttr == null) return null;
 
@@ -92,26 +109,30 @@ public abstract class LethalityScalingFixMixin {
         if (lethalityInst == null) return null;
 
         double lethality = lethalityInst.getValue();
-        if (!Double.isFinite(lethality) || Math.abs(lethality) < EPS) {
-            // IMPORTANT: if there's no lethality, we do NOT override anything.
-            return null;
-        }
+
+        // IMPORTANT: if there's no lethality (or it's invalid), do NOT override anything.
+        if (!Double.isFinite(lethality) || Math.abs(lethality) < EPS) return null;
+        // TEMP Debug
+        System.out.println("[Echelon] Lethality override ran; lethality=" + lethality + " amount=" + amount);
 
         LivingEntity target = (LivingEntity) (Object) this;
 
         float armor = target.getArmor();
         float toughness = (float) target.getAttributeValue(EntityAttributes.GENERIC_ARMOR_TOUGHNESS);
 
-        // Apply lethality as a direct armor reduction.
+        // Apply lethality as direct armor reduction
         float effectiveArmor = armor - (float) lethality;
 
-        // Clamp only on the negative side to avoid extreme values.
+        // Clamp only on the negative side to avoid extreme values
         if (!Float.isFinite(effectiveArmor)) return null;
         if (effectiveArmor < MIN_EFFECTIVE_ARMOR) effectiveArmor = MIN_EFFECTIVE_ARMOR;
 
         float out = DamageUtil.getDamageLeft(amount, effectiveArmor, toughness);
         if (!Float.isFinite(out)) return null;
 
+        System.out.println("[Echelon] Lethality override returning out=" + out
+        + " armor=" + armor + " effArmor=" + effectiveArmor + " tough=" + toughness);
+        
         return out;
     }
 }
