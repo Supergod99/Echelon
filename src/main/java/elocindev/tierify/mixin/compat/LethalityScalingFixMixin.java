@@ -2,8 +2,10 @@ package elocindev.tierify.mixin.compat;
 
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.entity.player.PlayerEntity; 
 import net.minecraft.entity.attribute.EntityAttribute;
 import net.minecraft.entity.attribute.EntityAttributeInstance;
+import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
 import net.minecraft.entity.DamageUtil; 
@@ -15,9 +17,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(value = LivingEntity.class, priority = 500)
 public class LethalityScalingFixMixin {
 
-    @Inject(method = "getDamageAfterArmorAbsorb", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "applyArmorToDamage", at = @At("HEAD"), cancellable = true)
     private void fixBrutalityMath(DamageSource source, float amount, CallbackInfoReturnable<Float> cir) {
-        if (source.getAttacker() instanceof net.minecraft.entity.player.Player player) {
+        if (source.getAttacker() instanceof PlayerEntity player) {
             
             EntityAttribute lethalityAttr = Registries.ATTRIBUTE.get(new Identifier("brutality", "lethality"));
             EntityAttribute penAttr = Registries.ATTRIBUTE.get(new Identifier("brutality", "armor_penetration"));
@@ -41,7 +43,7 @@ public class LethalityScalingFixMixin {
                 
                 modifiedArmor -= (float) lethality;
                 
-                float toughness = (float) target.getAttributeValue(net.minecraft.entity.attribute.EntityAttributes.GENERIC_ARMOR_TOUGHNESS);
+                float toughness = (float) target.getAttributeValue(EntityAttributes.GENERIC_ARMOR_TOUGHNESS);
                 float finalDamage = DamageUtil.getDamageLeft(amount, modifiedArmor, toughness);
 
                 cir.setReturnValue(finalDamage);
