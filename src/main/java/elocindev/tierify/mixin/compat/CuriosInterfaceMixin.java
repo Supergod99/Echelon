@@ -17,7 +17,7 @@ import java.util.UUID;
 @Mixin(ICurioItem.class)
 public class CuriosInterfaceMixin {
 
-    @Inject(method = "getAttributeModifiers", at = @At("RETURN"), cancellable = true)
+    @Inject(method = "getAttributeModifiers", at = @At("RETURN"), cancellable = true, remap = false)
     private void fixBrutalityStacking(SlotContext slotContext, UUID uuid, ItemStack stack, CallbackInfoReturnable<Multimap<EntityAttribute, EntityAttributeModifier>> cir) {   
         // If the stack is empty or NOT a Brutality item, stop immediately.
         if (stack == null || stack.isEmpty()) return;
