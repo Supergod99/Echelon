@@ -6,98 +6,110 @@ import net.minecraft.entity.attribute.EntityAttribute;
 import net.minecraft.entity.attribute.EntityAttributeInstance;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.tag.DamageTypeTags;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.entity.DamageUtil;
 import org.slf4j.Logger;
+
+import org.spongepowered.asm.mixin.Dynamic;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
- * Connector-safe lethality fix:
- * - Does NOT reference Brutality classes.
- * - Only activates when Brutality's lethality attribute exists AND is non-zero.
- * - Tries multiple target method names (Yarn/Mojmap/intermediary) with require=0.
- * - Uses logger (shows in latest.log), not System.out.
- */
+import java.lang.reflect.Method;
+
 @Mixin(value = LivingEntity.class, priority = 3000)
 public abstract class LethalityScalingFixMixin {
 
-    @Unique private static final Logger ECHELON_LOG = LogUtils.getLogger();
+    @Unique private static final Logger LOG = LogUtils.getLogger();
 
-    // Flip to true temporarily while validating that the injector is firing.
+    // Flip to true while testing; set false once confirmed.
     @Unique private static final boolean DEBUG = true;
 
     @Unique private static final Identifier BRUTALITY_LETHALITY_ID = new Identifier("brutality", "lethality");
-
-    /**
-     * How far below zero we allow armor to go after lethality.
-     * Negative armor increases damage; very negative values can cause instability with other mods.
-     */
-    @Unique private static final float MIN_EFFECTIVE_ARMOR = -30.0F;
-
     @Unique private static final double EPS = 1.0e-6;
 
     /**
-     * Dual/tri-method strategy in one injector:
-     * - Yarn/Fabric: applyArmorToDamage
-     * - Mojmap/Forge: getDamageAfterArmorAbsorb
-     * - Intermediary fallback sometimes seen in remapped environments: method_26323
-     *
-     * require=0 ensures "missing method" does not crash under Connector.
+     * When Apothic's ALCombatRules is present, negative armor is treated as "unarmored" (armor<=0 => amount),
+     * so allowing big negative values is unnecessary and can amplify instability elsewhere.
      */
-    @Inject(
-        method = {
-            "applyArmorToDamage",
-            "getDamageAfterArmorAbsorb",
-            // Descriptor variant for Mojmap environments (safe as a string; no direct class refs needed):
-            "getDamageAfterArmorAbsorb(Lnet/minecraft/world/damagesource/DamageSource;F)F",
-            // Intermediary-ish fallback:
-            "method_26323"
-        },
-        at = @At("HEAD"),
-        cancellable = true,
-        require = 0
-    )
-    private void echelon$fixLethality_anyArmorMethod(DamageSource source, float amount, CallbackInfoReturnable<Float> cir) {
-        Float out = echelon$computeLethalityAdjustedDamage(source, amount);
-        if (out != null) {
-            cir.setReturnValue(out);
-        }
-    }
+    @Unique private static final float MIN_EFFECTIVE_ARMOR_APOTHIC = 0.0F;
 
     /**
-     * Returns:
-     * - null if we should NOT override vanilla/other-mod behavior
-     * - a finite float damage value if we should override
+     * If Apothic is NOT present, we can allow a small negative window (bonus damage) but still clamp.
      */
+    @Unique private static final float MIN_EFFECTIVE_ARMOR_VANILLA = -30.0F;
+
+    // Reflection cache for ALCombatRules.getDamageAfterArmor(...)
+    @Unique private static volatile boolean AL_LOOKED_UP = false;
+    @Unique private static volatile Method AL_GET_DAMAGE_AFTER_ARMOR = null;
+
+    /* -------------------------------------------------------
+     * Primary: Yarn/Fabric name (explicit descriptor)
+     * ------------------------------------------------------- */
+    @Inject(
+        method = "applyArmorToDamage(Lnet/minecraft/entity/damage/DamageSource;F)F",
+        at = @At("HEAD"),
+        cancellable = true
+    )
+    private void echelon$fixLethality_applyArmorToDamage(DamageSource source, float amount, CallbackInfoReturnable<Float> cir) {
+        Float out = echelon$computeLethalityAdjustedDamage(source, amount);
+        if (out != null) cir.setReturnValue(out);
+    }
+
+    /* -------------------------------------------------------
+     * Secondary: Mojmap/Forge name (optional, Connector-safe)
+     * ------------------------------------------------------- */
+    @Dynamic("Present in some runtimes / mappings; Connector-safe optional hook")
+    @Inject(
+        method = "getDamageAfterArmorAbsorb(Lnet/minecraft/entity/damage/DamageSource;F)F",
+        at = @At("HEAD"),
+        cancellable = true,
+        require = 0,
+        expect = 0
+    )
+    private void echelon$fixLethality_getDamageAfterArmorAbsorb(DamageSource source, float amount, CallbackInfoReturnable<Float> cir) {
+        Float out = echelon$computeLethalityAdjustedDamage(source, amount);
+        if (out != null) cir.setReturnValue(out);
+    }
+
+    /* -------------------------------------------------------
+     * Tertiary: Intermediary-ish fallback (optional)
+     * ------------------------------------------------------- */
+    @Dynamic("Fallback for intermediary-named armor reduction method in some pipelines")
+    @Inject(
+        method = "method_26323(Lnet/minecraft/entity/damage/DamageSource;F)F",
+        at = @At("HEAD"),
+        cancellable = true,
+        require = 0,
+        expect = 0
+    )
+    private void echelon$fixLethality_method_26323(DamageSource source, float amount, CallbackInfoReturnable<Float> cir) {
+        Float out = echelon$computeLethalityAdjustedDamage(source, amount);
+        if (out != null) cir.setReturnValue(out);
+    }
+
     @Unique
     private Float echelon$computeLethalityAdjustedDamage(DamageSource source, float amount) {
-        // Basic sanity: do not touch bypass-armor damage, non-finite, or non-positive damage
         if (source == null) return null;
         if (source.isIn(DamageTypeTags.BYPASSES_ARMOR)) return null;
         if (!Float.isFinite(amount) || amount <= 0.0F) return null;
 
-        // Attacker must be a living entity (player, etc.). This is more robust than PlayerEntity-only.
-        if (!(source.getAttacker() instanceof net.minecraft.entity.LivingEntity attacker)) return null;
+        if (!(source.getAttacker() instanceof PlayerEntity attacker)) return null;
 
-        // Only run if Brutality's attribute actually exists in the registry
         EntityAttribute lethalityAttr = Registries.ATTRIBUTE.get(BRUTALITY_LETHALITY_ID);
-        if (lethalityAttr == null) {
-            if (DEBUG) ECHELON_LOG.info("[Echelon] LethalityFix: brutality:lethality not present in registry.");
-            return null;
-        }
+        if (lethalityAttr == null) return null;
 
         EntityAttributeInstance lethalityInst = attacker.getAttributeInstance(lethalityAttr);
         if (lethalityInst == null) return null;
 
         double lethality = lethalityInst.getValue();
         if (!Double.isFinite(lethality) || Math.abs(lethality) < EPS) {
-            // Critical behavior: with no lethality, we DO NOT override anything.
+            // Critical: with no lethality, we do NOT override anything.
             return null;
         }
 
@@ -106,34 +118,82 @@ public abstract class LethalityScalingFixMixin {
         float armor = target.getArmor();
         float toughness = (float) target.getAttributeValue(EntityAttributes.GENERIC_ARMOR_TOUGHNESS);
 
-        // Apply lethality as a direct armor reduction.
         float effectiveArmor = armor - (float) lethality;
-
-        // Clamp only on the negative side.
         if (!Float.isFinite(effectiveArmor)) return null;
-        if (effectiveArmor < MIN_EFFECTIVE_ARMOR) effectiveArmor = MIN_EFFECTIVE_ARMOR;
 
-        float out = echelon$vanillaArmorFormula(amount, effectiveArmor, toughness);
+        // If Apothic is present, clamp to >= 0 to match its semantics (armor<=0 => amount).
+        boolean hasApothic = echelon$ensureALCombatRulesLookup();
+        float minArmor = hasApothic ? MIN_EFFECTIVE_ARMOR_APOTHIC : MIN_EFFECTIVE_ARMOR_VANILLA;
+        if (effectiveArmor < minArmor) effectiveArmor = minArmor;
+
+        Float out = hasApothic
+            ? echelon$callALCombatRules(target, source, amount, effectiveArmor, toughness)
+            : null;
+
+        if (out == null) {
+            // Fallback to vanilla/Yarn formula
+            out = DamageUtil.getDamageLeft(amount, effectiveArmor, toughness);
+        }
+
         if (!Float.isFinite(out)) return null;
 
         if (DEBUG) {
-            ECHELON_LOG.info(
-                "[Echelon] LethalityFix OVERRIDE: amount={} lethality={} armor={} tough={} effArmor={} -> out={}",
-                amount, lethality, armor, toughness, effectiveArmor, out
-            );
+            LOG.info("[Echelon] LethalityFix: amount={} lethality={} armor={} tough={} effArmor={} apothic={} -> out={}",
+                amount, lethality, armor, toughness, effectiveArmor, hasApothic, out);
         }
 
         return out;
     }
 
     /**
-     * Vanilla armor reduction formula (1.20.x equivalent to DamageUtil/CombatRules).
-     * Implemented locally to avoid mapping/classname mismatches under Connector.
+     * Attempts to locate dev.shadowsoffire.attributeslib.api.ALCombatRules#getDamageAfterArmor(...) at runtime.
+     * Returns true if found and cached.
      */
     @Unique
-    private static float echelon$vanillaArmorFormula(float damage, float armor, float toughness) {
-        float f = 2.0F + toughness / 4.0F;
-        float g = MathHelper.clamp(armor - damage / f, armor * 0.2F, 20.0F);
-        return damage * (1.0F - g / 25.0F);
+    private static boolean echelon$ensureALCombatRulesLookup() {
+        if (AL_LOOKED_UP) return AL_GET_DAMAGE_AFTER_ARMOR != null;
+        AL_LOOKED_UP = true;
+
+        try {
+            Class<?> cls = Class.forName("dev.shadowsoffire.attributeslib.api.ALCombatRules");
+            for (Method m : cls.getDeclaredMethods()) {
+                if (!m.getName().equals("getDamageAfterArmor")) continue;
+                if (m.getReturnType() != float.class) continue;
+                Class<?>[] p = m.getParameterTypes();
+                if (p.length != 5) continue;
+
+                // We only accept the method if the first two params match our runtime types by name,
+                // otherwise invocation will fail under Connector mapping mismatches.
+                // p[0] should be LivingEntity, p[1] should be DamageSource (whatever mapping is active).
+                if (!p[0].getName().endsWith("LivingEntity")) continue;
+                if (!p[1].getName().endsWith("DamageSource")) continue;
+
+                m.setAccessible(true);
+                AL_GET_DAMAGE_AFTER_ARMOR = m;
+                break;
+            }
+        } catch (Throwable ignored) {
+            AL_GET_DAMAGE_AFTER_ARMOR = null;
+        }
+
+        return AL_GET_DAMAGE_AFTER_ARMOR != null;
+    }
+
+    /**
+     * Calls ALCombatRules.getDamageAfterArmor via reflection.
+     * Returns null if invocation fails (mapping mismatch, etc.).
+     */
+    @Unique
+    private static Float echelon$callALCombatRules(LivingEntity target, DamageSource src, float amount, float armor, float toughness) {
+        Method m = AL_GET_DAMAGE_AFTER_ARMOR;
+        if (m == null) return null;
+        try {
+            Object r = m.invoke(null, target, src, amount, armor, toughness);
+            return (r instanceof Float f) ? f : null;
+        } catch (Throwable t) {
+            // If this fails once (usually due to type mismatch), disable Apothic path for the session.
+            AL_GET_DAMAGE_AFTER_ARMOR = null;
+            return null;
+        }
     }
 }
