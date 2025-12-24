@@ -27,10 +27,10 @@ public abstract class LethalityScalingFixMixin {
 
     @Unique private static final double EPS = 1.0e-6;
 
-    // Your requested strength: 5% of D0 per excess lethality point (uncapped).
-    @Unique private static final double EXCESS_BONUS_PER_POINT = 0.05;
+    // % of D0 per excess lethality point 
+    @Unique private static final double EXCESS_BONUS_PER_POINT = 0.10;
 
-    // Pure numeric safety (not a lethality cap)
+    // Pure numeric safety 
     @Unique private static final double MAX_DAMAGE_OUT = 1.0e12;
 
     // AttributesLib reflection cache
@@ -86,7 +86,7 @@ public abstract class LethalityScalingFixMixin {
         double lethality = lethInst.getValue();
         if (!Double.isFinite(lethality) || Math.abs(lethality) < EPS) return null; // no lethality => no override
 
-        // Read armor pen, but do not change its semantics; follow Brutality’s model: armor * (2 - armorPen)
+        // Brutality’s model: armor * (2 - armorPen)
         double armorPen = 1.0; // Brutality baseline behavior effectively assumes 1.0 means "no change"
         EntityAttribute penAttr = Registries.ATTRIBUTE.get(BRUTALITY_ARMOR_PEN_ID);
         if (penAttr != null) {
@@ -105,7 +105,7 @@ public abstract class LethalityScalingFixMixin {
         float toughness = (float) target.getAttributeValue(EntityAttributes.GENERIC_ARMOR_TOUGHNESS);
         if (!Float.isFinite(toughness)) toughness = 0.0F;
 
-        // Brutality semantics: multiplier = (2 - armorPen). Numeric safety only: block negative multipliers.
+        // Numeric safety only: block negative multipliers.
         double multD = 2.0 - armorPen;
         if (!Double.isFinite(multD)) multD = 1.0;
         if (multD < 0.0) multD = 0.0;              // prevent negative effective armor
@@ -130,7 +130,7 @@ public abstract class LethalityScalingFixMixin {
         float afterArmor = echelon$afterArmorCompat(target, source, amount, reducedArmor, toughness);
         if (!Float.isFinite(afterArmor) || afterArmor < 0.0F) afterArmor = 0.0F;
 
-        // D0: damage at 0 armor under the active armor rules (AttributesLib returns amount when armor<=0).
+        // D0: damage at 0 armor under the active armor rules 
         float d0 = echelon$afterArmorCompat(target, source, amount, 0.0F, toughness);
         if (!Float.isFinite(d0) || d0 < 0.0F) d0 = amount;
 
