@@ -90,6 +90,7 @@ public class Tierify implements ModInitializer {
     public static final String NBT_SUBTAG_KEY = "Tiered";
     public static final String NBT_SUBTAG_DATA_KEY = "Tier";
     public static final String NBT_SUBTAG_TEMPLATE_DATA_KEY = "Template";
+    public static final String NBT_SUBTAG_EXTRA_KEY = "TierifyExtra";
 
     @Override
     public void onInitialize() {
