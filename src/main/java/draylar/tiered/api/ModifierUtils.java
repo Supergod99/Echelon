@@ -281,15 +281,16 @@ public class ModifierUtils {
                 if (!nbtKeys.isEmpty()) {
                     for (int i = 0; i < nbtKeys.size(); i++) {
                         if (!nbtKeys.get(i).equals("Damage")) {
-                            // Remove only managed subtags
+                            boolean hadTierTag = itemStack.getSubNbt(Tierify.NBT_SUBTAG_KEY) != null;
+                            NbtCompound root = itemStack.getNbt();
+                            boolean hadLegacyDurable = hadTierTag && root != null && root.contains("durable");
+                            // Remove namespaced extra + tier data
                             itemStack.removeSubNbt(Tierify.NBT_SUBTAG_EXTRA_KEY);
                             itemStack.removeSubNbt(Tierify.NBT_SUBTAG_KEY);
-                            // legacy cleanup for old tierify items only
-                            if (itemStack.hasNbt() && itemStack.getSubNbt(Tierify.NBT_SUBTAG_KEY) != null) {
-                                NbtCompound root = itemStack.getNbt();
-                                if (root != null && root.contains("durable")) {
-                                    root.remove("durable");
-                                }
+                            // Optional legacy cleanup (Tierify items only)
+                            if (hadLegacyDurable) {
+                                NbtCompound r = itemStack.getNbt();
+                                if (r != null) r.remove("durable");
                             }
                         }
                     }
