@@ -174,7 +174,7 @@ public class Tierify implements ModInitializer {
                 if (template.getRequiredEquipmentSlots() != null) {
                     List<EquipmentSlot> required = new ArrayList<>(Arrays.asList(template.getRequiredEquipmentSlots()));
                     if (required.contains(slot)) {
-                        if (!TierifyCompatUtil.hasSameModifierAlready(modifiers, template)) {
+                        if (!TierifyCompatUtil.hasSameModifierAlready(modifiers, template, slot, itemStack)) {
                             template.realize(modifiers, slot, itemStack);
                         }
                     }
@@ -184,7 +184,7 @@ public class Tierify implements ModInitializer {
                 if (template.getOptionalEquipmentSlots() != null) {
                     List<EquipmentSlot> optional = new ArrayList<>(Arrays.asList(template.getOptionalEquipmentSlots()));
                     if (optional.contains(slot) && Tierify.isPreferredEquipmentSlot(itemStack, slot)) {
-                        if (!TierifyCompatUtil.hasSameModifierAlready(modifiers, template)) {
+                        if (!TierifyCompatUtil.hasSameModifierAlready(modifiers, template, slot, itemStack)) {
                             template.realize(modifiers, slot, itemStack);
                         }
                     }
