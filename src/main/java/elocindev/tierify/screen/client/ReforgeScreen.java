@@ -70,9 +70,11 @@ public class ReforgeScreen extends HandledScreen<ReforgeScreenHandler> implement
 
         if (this.isPointWithinBounds(79, 56, 18, 18, (double) mouseX, (double) mouseY)) {
             ItemStack itemStack = this.getScreenHandler().getSlot(1).getStack();
-            if (itemStack.isEmpty()) {
+            if (itemStack == null || itemStack.isEmpty()) {
                 baseItems = Collections.emptyList();
+                last = ItemStack.EMPTY;
             } else {
+                if (last == null) last = ItemStack.EMPTY;
                 if (!ItemStack.areEqual(itemStack, last)) {
                     last = itemStack.copy();
                     baseItems = new ArrayList<Item>();
