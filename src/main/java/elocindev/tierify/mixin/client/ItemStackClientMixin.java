@@ -624,40 +624,55 @@ public abstract class ItemStackClientMixin {
         double addedValue = 0.0;
         double multiplyBase = 0.0;
         double multiplyTotal = 0.0;
-
-        Multimap<EntityAttribute, EntityAttributeModifier> modifiers = this.getAttributeModifiers(EquipmentSlot.MAINHAND);
-
-        if (modifiers.containsKey(EntityAttributes.GENERIC_ATTACK_SPEED)) {
-            for (EntityAttributeModifier mod : modifiers.get(EntityAttributes.GENERIC_ATTACK_SPEED)) {
-                if (mod.getOperation() == EntityAttributeModifier.Operation.ADDITION) {
-                    addedValue += mod.getValue();
-                } else if (mod.getOperation() == EntityAttributeModifier.Operation.MULTIPLY_BASE) {
-                    multiplyBase += mod.getValue();
-                } else if (mod.getOperation() == EntityAttributeModifier.Operation.MULTIPLY_TOTAL) {
-                    multiplyTotal += mod.getValue();
-                }
+    
+        Multimap<EntityAttribute, EntityAttributeModifier> modifiers =
+                this.getAttributeModifiers(EquipmentSlot.MAINHAND);
+    
+        // CRITICAL: If this item doesn't have attack speed modifiers, do nothing.
+        if (modifiers == null || !modifiers.containsKey(EntityAttributes.GENERIC_ATTACK_SPEED)) {
+            return;
+        }
+    
+        for (EntityAttributeModifier mod : modifiers.get(EntityAttributes.GENERIC_ATTACK_SPEED)) {
+            if (mod.getOperation() == EntityAttributeModifier.Operation.ADDITION) {
+                addedValue += mod.getValue();
+            } else if (mod.getOperation() == EntityAttributeModifier.Operation.MULTIPLY_BASE) {
+                multiplyBase += mod.getValue();
+            } else if (mod.getOperation() == EntityAttributeModifier.Operation.MULTIPLY_TOTAL) {
+                multiplyTotal += mod.getValue();
             }
         }
-
+    
         double speed = (baseSpeed + addedValue) * (1.0 + multiplyBase) * (1.0 + multiplyTotal);
-
+    
         String correctLabel;
         if (speed >= 3.0) correctLabel = "§2Very Fast";
         else if (speed >= 2.0) correctLabel = "§aFast";
         else if (speed >= 1.2) correctLabel = "§fMedium";
         else if (speed > 0.6) correctLabel = "§cSlow";
         else correctLabel = "§4Very Slow";
-
+    
         for (int i = 0; i < tooltip.size(); i++) {
             Text line = tooltip.get(i);
-            String text = line.getString();
-
-            if (text.contains("Fast") || text.contains("Slow") || text.contains("Medium")) {
+            String text = line.getString().trim();
+    
+            // Only touch the standalone Tiered speed label line
+            if (isStandaloneSpeedLabel(text)) {
                 tooltip.set(i, replaceSpeedTextRecursively(line, correctLabel));
                 break;
             }
         }
     }
+    
+    private static boolean isStandaloneSpeedLabel(String text) {
+        // Match exactly these labels, and nothing else
+        return text.equals("Very Fast")
+                || text.equals("Fast")
+                || text.equals("Medium")
+                || text.equals("Slow")
+                || text.equals("Very Slow");
+    }
+
 
     private Text replaceSpeedTextRecursively(Text original, String replacementLabel) {
         MutableText newNode = processSingleNode(original, replacementLabel);
@@ -669,14 +684,10 @@ public abstract class ItemStackClientMixin {
 
     private MutableText processSingleNode(Text node, String replacementLabel) {
         MutableText copy = MutableText.of(node.getContent()).setStyle(node.getStyle());
-        String content = copy.getString();
-        String[] targets = {"Very Fast", "Very Slow", "Fast", "Slow", "Medium"};
-
-        for (String target : targets) {
-            if (content.contains(target)) {
-                String newContent = content.replace(target, replacementLabel);
-                return Text.literal(newContent).setStyle(node.getStyle());
-            }
+        String content = copy.getString().trim();
+    
+        if (isStandaloneSpeedLabel(content)) {
+            return Text.literal(replacementLabel).setStyle(node.getStyle());
         }
         return copy;
     }
