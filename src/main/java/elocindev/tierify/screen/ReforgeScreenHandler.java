@@ -90,9 +90,24 @@ public class ReforgeScreenHandler extends ScreenHandler {
                 if (!items.isEmpty()) {
                     this.reforgeReady = items.stream().anyMatch(it -> it == baseItem.getItem());
                 } else if (item instanceof ToolItem toolItem) {
-                    this.reforgeReady = toolItem.getMaterial().getRepairIngredient().test(baseItem);
-                } else if (item instanceof ArmorItem armorItem && armorItem.getMaterial().getRepairIngredient() != null) {
-                    this.reforgeReady = armorItem.getMaterial().getRepairIngredient().test(baseItem);
+                    var ing = toolItem.getMaterial().getRepairIngredient();
+                
+                    if (ing == null || ing.isEmpty() || ing.getMatchingStacks().length == 0) {
+                        // your intended fallback
+                        this.reforgeReady = baseItem.isIn(TieredItemTags.REFORGE_BASE_ITEM);
+                        // or hardcode iron:
+                        // this.reforgeReady = baseItem.isOf(Items.IRON_INGOT);
+                    } else {
+                        this.reforgeReady = ing.test(baseItem);
+                    }
+                } else if (item instanceof ArmorItem armorItem) {
+                    var ing = armorItem.getMaterial().getRepairIngredient();
+                
+                    if (ing == null || ing.isEmpty() || ing.getMatchingStacks().length == 0) {
+                        this.reforgeReady = baseItem.isIn(TieredItemTags.REFORGE_BASE_ITEM);
+                    } else {
+                        this.reforgeReady = ing.test(baseItem);
+                    }
                 } else {
                     this.reforgeReady = baseItem.isIn(TieredItemTags.REFORGE_BASE_ITEM);
                 }
