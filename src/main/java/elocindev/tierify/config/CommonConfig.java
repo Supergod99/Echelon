@@ -64,24 +64,24 @@ public class CommonConfig {
         )
     );
     
-    @Comment("Tier 4 of Reforging (Eclipsium Alloy)")
-    @Comment("Qualities here will be able to be reforged onto items while using the Tier 4 reforge material, Eclipsium Alloy by default. Can be changed via the item tag tiered:reforge_tier_4")
+    @Comment("Tier 4 of Reforging (Charoite)")
+    @Comment("Qualities here will be able to be reforged onto items while using the Tier 4 reforge material, Charoite by default. Can be changed via the item tag tiered:reforge_tier_4")
     public ArrayList<String> tier_4_qualities = new ArrayList<>(
         List.of(
             "Epic"
         )
     );
 
-        @Comment("Tier 5 of Reforging (Hemalith Catalyst)")
-    @Comment("Qualities here will be able to be reforged onto items while using the Tier 5 reforge material, Hemalith Catalyst by default. Can be changed via the item tag tiered:reforge_tier_5")
+        @Comment("Tier 5 of Reforging (Golden Topaz)")
+    @Comment("Qualities here will be able to be reforged onto items while using the Tier 5 reforge material, Golden Topaz by default. Can be changed via the item tag tiered:reforge_tier_5")
     public ArrayList<String> tier_5_qualities = new ArrayList<>(
         List.of(
             "Legendary"
         )
     );
 
-        @Comment("Tier 6 of Reforging (Cosmos Shard)")
-    @Comment("Qualities here will be able to be reforged onto items while using the Tier 6 reforge material, Cosmos Shard by default. Can be changed via the item tag tiered:reforge_tier_6")
+        @Comment("Tier 6 of Reforging (Painite)")
+    @Comment("Qualities here will be able to be reforged onto items while using the Tier 6 reforge material, Painite by default. Can be changed via the item tag tiered:reforge_tier_6")
     public ArrayList<String> tier_6_qualities = new ArrayList<>(
         List.of(
             "Mythic"
