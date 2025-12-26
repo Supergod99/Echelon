@@ -84,6 +84,9 @@ dependencies {
 
 	// curios
 	modCompileOnly ("curse.maven:curios-309927:6418456")
+
+	//obscureAPI
+	modCompileOnly("curse.maven:obscure-api-638417:7171906")
 	
 	// Additional Entity Attributes
 	// modImplementation include ("com.github.DaFuqs:AdditionalEntityAttributes:d0cd35d"), {
