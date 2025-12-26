@@ -658,6 +658,49 @@ public abstract class ItemStackClientMixin {
         return s;
     }
 
+    private static Double parseFirstNumber(String s) {
+        if (s == null) return null;
+        var m = java.util.regex.Pattern.compile("([+-]?\\d+(?:[\\.,]\\d+)?)").matcher(s);
+        if (!m.find()) return null;
+        String num = m.group(1).replace(",", ".");
+        try { return Double.parseDouble(num); }
+        catch (NumberFormatException ignored) { return null; }
+    }
+    
+    private static Double findDisplayedAttackSpeed(List<Text> tooltip) {
+        String mainHandHeader = Text.translatable("item.modifiers.mainhand").getString();
+        String handHeader     = Text.translatable("item.modifiers.hand").getString();
+        String offHandHeader  = Text.translatable("item.modifiers.offhand").getString();
+        String feetHeader  = Text.translatable("item.modifiers.feet").getString();
+        String legsHeader  = Text.translatable("item.modifiers.legs").getString();
+        String chestHeader = Text.translatable("item.modifiers.chest").getString();
+        String headHeader  = Text.translatable("item.modifiers.head").getString();
+    
+        String atkSpeedName = Text.translatable(EntityAttributes.GENERIC_ATTACK_SPEED.getTranslationKey()).getString();
+    
+        boolean inHandBlock = false;
+    
+        for (Text line : tooltip) {
+            if (line == null) continue;
+            String s = normalizeSpaces(line.getString());
+            if (s.isEmpty()) continue;
+    
+            if (s.contains(mainHandHeader) || s.contains(handHeader)) {
+                inHandBlock = true;
+                continue;
+            }
+            if (inHandBlock && (s.contains(offHandHeader) || s.contains(feetHeader) || s.contains(legsHeader)
+                    || s.contains(chestHeader) || s.contains(headHeader))) {
+                break;
+            }
+    
+            if (inHandBlock && s.contains(atkSpeedName)) {
+                return parseFirstNumber(s);
+            }
+        }
+        return null;
+    }
+
     private void fixAttackSpeedText(List<Text> tooltip) {
         double baseSpeed = 4.0;
         double addedValue = 0.0;
@@ -682,12 +725,20 @@ public abstract class ItemStackClientMixin {
             }
         }
     
-        double speed = (baseSpeed + addedValue) * (1.0 + multiplyBase) * (1.0 + multiplyTotal);
+        Double displayed = findDisplayedAttackSpeed(tooltip);
+        double speed;
+        
+        if (displayed != null) {
+            speed = displayed;
+        } else {
+            // fallback to modifier-derived
+            speed = (baseSpeed + addedValue) * (1.0 + multiplyBase) * (1.0 + multiplyTotal);
+        }
     
         final String labelText;
         final Formatting labelColor;
     
-        if (speed >= 3.0)      { labelText = "VF_TEST"; labelColor = Formatting.DARK_GREEN; }
+        if (speed >= 3.0)      { labelText = "Very Fast"; labelColor = Formatting.DARK_GREEN; }
         else if (speed >= 2.0) { labelText = "Fast";      labelColor = Formatting.GREEN; }
         else if (speed >= 1.2) { labelText = "Medium";    labelColor = Formatting.WHITE; }
         else if (speed > 0.6)  { labelText = "Slow";      labelColor = Formatting.RED; }
@@ -726,7 +777,7 @@ public abstract class ItemStackClientMixin {
     
         // Fallback: if some mod reorders, scan the whole tooltip 
         if (foundIdx == -1) {
-            for (int i = 0; i < tooltip.size(); i++) {
+            for (int i = 0; i < headerIdx; i++) {
                 Text line = tooltip.get(i);
                 if (line == null) continue;
     
@@ -758,32 +809,21 @@ public abstract class ItemStackClientMixin {
     }
     
     private MutableText replaceSpeedLabelInSingleNode(Text node, String replacementText, Formatting replacementColor) {
-        String contentOnly = normalizeSpaces(MutableText.of(node.getContent()).getString());
-    
-        // 1) Literal / content-only replacement (substring-based)
-        if (containsSpeedLabelToken(contentOnly)) {
-            String replaced = replaceAnySpeedLabel(contentOnly, replacementText);
-            return Text.literal(replaced).setStyle(node.getStyle().withColor(replacementColor));
-        }
-    
-        // 2) Translatable: replace within args (label may be an arg)
         if (node.getContent() instanceof TranslatableTextContent tr) {
             Object[] args = tr.getArgs();
-            Object[] newArgs = args;
-    
             if (args != null && args.length > 0) {
-                newArgs = new Object[args.length];
+                Object[] newArgs = new Object[args.length];
                 boolean changed = false;
     
                 for (int i = 0; i < args.length; i++) {
                     Object a = args[i];
     
                     if (a instanceof String s && containsSpeedLabelToken(s)) {
-                        newArgs[i] = replaceAnySpeedLabel(s, replacementText);
+                        String replaced = replaceAnySpeedLabel(s, replacementText);
+                        newArgs[i] = Text.literal(replaced).formatted(replacementColor);
                         changed = true;
                     } else if (a instanceof Text t) {
-                        String ts = t.getString();
-                        if (containsSpeedLabelToken(ts)) {
+                        if (containsSpeedLabelToken(t.getString())) {
                             newArgs[i] = replaceSpeedLabelSubstringRecursive(t, replacementText, replacementColor);
                             changed = true;
                         } else {
@@ -798,9 +838,18 @@ public abstract class ItemStackClientMixin {
                     return Text.translatable(tr.getKey(), newArgs).setStyle(node.getStyle());
                 }
             }
+    
+            // No change: preserve translation
+            return Text.translatable(tr.getKey(), args).setStyle(node.getStyle());
         }
     
-        // No change: copy content + style
+        // Non-translatable: substring replace inside this node's content only
+        String contentOnly = normalizeSpaces(MutableText.of(node.getContent()).getString());
+        if (containsSpeedLabelToken(contentOnly)) {
+            String replaced = replaceAnySpeedLabel(contentOnly, replacementText);
+            return Text.literal(replaced).setStyle(node.getStyle().withColor(replacementColor));
+        }
+    
         return MutableText.of(node.getContent()).setStyle(node.getStyle());
     }
 }
