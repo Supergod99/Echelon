@@ -654,74 +654,114 @@ public abstract class ItemStackClientMixin {
         else if (speed > 0.6)  { labelText = "Slow";      labelColor = Formatting.RED; }
         else                   { labelText = "Very Slow"; labelColor = Formatting.DARK_RED; }
     
-        // Only scan the top “summary” section (stop at the vanilla equipment header).
-        String mainHandHeader = Text.translatable("item.modifiers.mainhand").getString();
-        int scanLimit = tooltip.size();
-        for (int i = 0; i < tooltip.size(); i++) {
-            Text line = tooltip.get(i);
-            if (line == null) continue;
-            String s = line.getString();
-            if (s != null && s.contains(mainHandHeader)) {
-                scanLimit = i;
-                break;
-            }
-        }
+        // First: scan only the "top" area 
+        int scanLimit = Math.min(tooltip.size(), 10);
     
+        int foundIdx = -1;
         for (int i = 0; i < scanLimit; i++) {
             Text line = tooltip.get(i);
             if (line == null) continue;
     
-            // Detect whether any NODE in the line is exactly the label.
-            if (containsStandaloneSpeedLabelNode(line)) {
-                tooltip.set(i, replaceSpeedTextRecursively(line, labelText, labelColor));
+            if (containsStandaloneSpeedLabelDeep(line)) {
+                foundIdx = i;
                 break;
             }
         }
-    }
     
-    private boolean containsStandaloneSpeedLabelNode(Text node) {
-        if (node == null) return false;
+        // Fallback: if not found near the top (other mods may reorder), scan the whole tooltip.
+        if (foundIdx == -1) {
+            for (int i = 0; i < tooltip.size(); i++) {
+                Text line = tooltip.get(i);
+                if (line == null) continue;
     
-        // Copy just this node's content (no siblings) and check its resolved string.
-        String content = MutableText.of(node.getContent()).getString().trim();
-        if (isStandaloneSpeedLabel(content)) {
-            return true;
-        }
-    
-        for (Text sibling : node.getSiblings()) {
-            if (containsStandaloneSpeedLabelNode(sibling)) {
-                return true;
+                if (containsStandaloneSpeedLabelDeep(line)) {
+                    foundIdx = i;
+                    break;
+                }
             }
         }
-        return false;
+    
+        if (foundIdx != -1) {
+            Text original = tooltip.get(foundIdx);
+            tooltip.set(foundIdx, replaceSpeedTextDeep(original, labelText, labelColor));
+        }
     }
-         
+    
     private static boolean isStandaloneSpeedLabel(String text) {
-        // Match exactly these labels, and nothing else
         return text.equals("Very Fast")
                 || text.equals("Fast")
                 || text.equals("Medium")
                 || text.equals("Slow")
                 || text.equals("Very Slow");
     }
-
-
-    private Text replaceSpeedTextRecursively(Text original, String replacementText, Formatting replacementColor) {
-        MutableText newNode = processSingleNode(original, replacementText, replacementColor);
-        for (Text sibling : original.getSiblings()) {
-            newNode.append(replaceSpeedTextRecursively(sibling, replacementText, replacementColor));
+    
+    private boolean containsStandaloneSpeedLabelDeep(Text node) {
+        if (node == null) return false;
+    
+        // Check this node's content only (no siblings).
+        String contentOnly = MutableText.of(node.getContent()).getString().trim();
+        if (isStandaloneSpeedLabel(contentOnly)) return true;
+    
+        // If this is translatable text, also walk its args (label may be an arg, not a sibling).
+        if (node.getContent() instanceof TranslatableTextContent ttc) {
+            Object[] args = ttc.getArgs();
+            if (args != null) {
+                for (Object arg : args) {
+                    if (arg instanceof Text t && containsStandaloneSpeedLabelDeep(t)) return true;
+                    if (arg instanceof String s && isStandaloneSpeedLabel(s.trim())) return true;
+                }
+            }
         }
-        return newNode;
+    
+        // Walk siblings normally.
+        for (Text sibling : node.getSiblings()) {
+            if (containsStandaloneSpeedLabelDeep(sibling)) return true;
+        }
+    
+        return false;
     }
     
-    private MutableText processSingleNode(Text node, String replacementText, Formatting replacementColor) {
-        MutableText copy = MutableText.of(node.getContent()).setStyle(node.getStyle());
-        String content = copy.getString().trim();
+    private Text replaceSpeedTextDeep(Text node, String replacementText, Formatting replacementColor) {
+        if (node == null) return Text.empty();
+        MutableText rebuilt = replaceOneNode(node, replacementText, replacementColor);
+        // Re-append siblings (transformed)
+        for (Text sibling : node.getSiblings()) {
+            rebuilt.append(replaceSpeedTextDeep(sibling, replacementText, replacementColor));
+        }
     
-        if (isStandaloneSpeedLabel(content)) {
+        return rebuilt;
+    }
+    
+    private MutableText replaceOneNode(Text node, String replacementText, Formatting replacementColor) {
+        // If THIS node is exactly the label, replace it (preserve all style except color override).
+        String contentOnly = MutableText.of(node.getContent()).getString().trim();
+        if (isStandaloneSpeedLabel(contentOnly)) {
             return Text.literal(replacementText).setStyle(node.getStyle().withColor(replacementColor));
         }
-        return copy;
+    
+        // If translatable, rebuild it with transformed args (this is the important part).
+        if (node.getContent() instanceof TranslatableTextContent ttc) {
+            Object[] args = ttc.getArgs();
+            Object[] newArgs = args;
+    
+            if (args != null && args.length > 0) {
+                newArgs = new Object[args.length];
+                for (int i = 0; i < args.length; i++) {
+                    Object a = args[i];
+    
+                    if (a instanceof Text t) {
+                        newArgs[i] = replaceSpeedTextDeep(t, replacementText, replacementColor);
+                    } else if (a instanceof String s && isStandaloneSpeedLabel(s.trim())) {
+                        // Replace string arg with a styled Text so we can force the color.
+                        newArgs[i] = Text.literal(replacementText).formatted(replacementColor);
+                    } else {
+                        newArgs[i] = a;
+                    }
+                }
+            }
+            return Text.translatable(ttc.getKey(), newArgs).setStyle(node.getStyle());
+        }
+        // Otherwise, just copy content + style
+        return MutableText.of(node.getContent()).setStyle(node.getStyle());
     }
-
 }
