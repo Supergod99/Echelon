@@ -626,7 +626,8 @@ public abstract class ItemStackClientMixin {
     
     private static String normalizeSpaces(String s) {
         if (s == null) return "";
-        return s.replace('\u00A0', ' ').trim();
+        // NBSP -> space, then collapse any whitespace runs to a single space
+        return s.replace('\u00A0', ' ').replaceAll("\\s+", " ").trim();
     }
     
     private record SpeedLabelHit(String normalized, int start, int end) {}
@@ -635,10 +636,15 @@ public abstract class ItemStackClientMixin {
         String s = normalizeSpaces(raw);
     
         for (String label : SPEED_LABELS) {
-            // Treat the space in "Very Fast/Slow" as flexible whitespace
-            String pattern = java.util.regex.Pattern.quote(label).replace("\\ ", "\\\\s+");
+            String[] parts = label.split(" ");
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < parts.length; i++) {
+                if (i > 0) sb.append("\\s+");
+                sb.append(java.util.regex.Pattern.quote(parts[i]));
+            }
+            
             var m = java.util.regex.Pattern
-                    .compile("(?<!\\p{L})" + pattern + "(?!\\p{L})")
+                    .compile("(?<!\\p{L})" + sb + "(?!\\p{L})")
                     .matcher(s);
     
             if (m.find()) {
@@ -733,6 +739,10 @@ public abstract class ItemStackClientMixin {
     }
 
     private void fixAttackSpeedText(List<Text> tooltip) {
+        ItemStack self = (ItemStack) (Object) this;
+        if (self.getItem() instanceof ArmorItem) {
+            return;
+        }
         double baseSpeed = 4.0;
         double addedValue = 0.0;
         double multiplyBase = 0.0;
