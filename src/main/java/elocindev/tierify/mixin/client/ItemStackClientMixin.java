@@ -629,33 +629,44 @@ public abstract class ItemStackClientMixin {
         return s.replace('\u00A0', ' ').trim();
     }
     
-    private static boolean containsSpeedLabelToken(String s) {
-        s = normalizeSpaces(s);
+    private record SpeedLabelHit(String normalized, int start, int end) {}
+    
+    private static SpeedLabelHit findSpeedLabelHit(String raw) {
+        String s = normalizeSpaces(raw);
+    
         for (String label : SPEED_LABELS) {
-            if (containsWholeWordLabel(s, label)) return true;
+            // Treat the space in "Very Fast/Slow" as flexible whitespace
+            String pattern = java.util.regex.Pattern.quote(label).replace("\\ ", "\\\\s+");
+            var m = java.util.regex.Pattern
+                    .compile("(?<!\\p{L})" + pattern + "(?!\\p{L})")
+                    .matcher(s);
+    
+            if (m.find()) {
+                return new SpeedLabelHit(s, m.start(), m.end());
+            }
         }
-        return false;
+        return null;
     }
     
-    private static boolean containsWholeWordLabel(String haystack, String label) {
-        // Treat the space in "Very Fast/Slow" as flexible whitespace
-        String pattern = java.util.regex.Pattern.quote(label).replace("\\ ", "\\\\s+");
-        return java.util.regex.Pattern.compile("(?<!\\p{L})" + pattern + "(?!\\p{L})")
-                .matcher(haystack)
-                .find();
+    private static boolean containsSpeedLabelToken(String s) {
+        return findSpeedLabelHit(s) != null;
     }
     
-    private static String replaceAnySpeedLabel(String s, String replacement) {
-        s = normalizeSpaces(s);
+    private static MutableText rebuildWithColoredReplacement(
+            String raw,
+            net.minecraft.text.Style baseStyle,
+            String replacementText,
+            Formatting replacementColor
+    ) {
+        SpeedLabelHit hit = findSpeedLabelHit(raw);
+        if (hit == null) return null;
     
-        // Use regex boundaries to avoid replacing inside unrelated words.
-        s = s.replaceAll("(?<!\\p{L})Very\\s+Fast(?!\\p{L})", replacement);
-        s = s.replaceAll("(?<!\\p{L})Very\\s+Slow(?!\\p{L})", replacement);
-        s = s.replaceAll("(?<!\\p{L})Medium(?!\\p{L})", replacement);
-        s = s.replaceAll("(?<!\\p{L})Fast(?!\\p{L})", replacement);
-        s = s.replaceAll("(?<!\\p{L})Slow(?!\\p{L})", replacement);
+        String before = hit.normalized().substring(0, hit.start());
+        String after  = hit.normalized().substring(hit.end());
     
-        return s;
+        return Text.literal(before).setStyle(baseStyle)
+                .append(Text.literal(replacementText).setStyle(baseStyle.withColor(replacementColor)))
+                .append(Text.literal(after).setStyle(baseStyle));
     }
 
     private static Double parseFirstNumber(String s) {
@@ -665,6 +676,25 @@ public abstract class ItemStackClientMixin {
         String num = m.group(1).replace(",", ".");
         try { return Double.parseDouble(num); }
         catch (NumberFormatException ignored) { return null; }
+    }
+
+    private static Double parseNumberBeforeToken(String s, String token) {
+        if (s == null || token == null) return null;
+        s = normalizeSpaces(s);
+    
+        int idx = s.indexOf(token);
+        if (idx < 0) return null;
+    
+        String left = s.substring(0, idx);
+    
+        var m = java.util.regex.Pattern.compile("([+-]?\\d+(?:[\\.,]\\d+)?)").matcher(left);
+        Double last = null;
+        while (m.find()) {
+            String num = m.group(1).replace(",", ".");
+            try { last = Double.parseDouble(num); }
+            catch (NumberFormatException ignored) { /* keep scanning */ }
+        }
+        return last;
     }
     
     private static Double findDisplayedAttackSpeed(List<Text> tooltip) {
@@ -695,7 +725,8 @@ public abstract class ItemStackClientMixin {
             }
     
             if (inHandBlock && s.contains(atkSpeedName)) {
-                return parseFirstNumber(s);
+                Double near = parseNumberBeforeToken(s, atkSpeedName);
+                return (near != null) ? near : parseFirstNumber(s);
             }
         }
         return null;
@@ -777,7 +808,7 @@ public abstract class ItemStackClientMixin {
     
         // Fallback: if some mod reorders, scan the whole tooltip 
         if (foundIdx == -1) {
-            for (int i = 0; i < headerIdx; i++) {
+            for (int i = 0; i < tooltip.size(); i++) {
                 Text line = tooltip.get(i);
                 if (line == null) continue;
     
@@ -809,6 +840,7 @@ public abstract class ItemStackClientMixin {
     }
     
     private MutableText replaceSpeedLabelInSingleNode(Text node, String replacementText, Formatting replacementColor) {
+        // Translatable: replace within args (label may live inside an arg)
         if (node.getContent() instanceof TranslatableTextContent tr) {
             Object[] args = tr.getArgs();
             if (args != null && args.length > 0) {
@@ -818,10 +850,14 @@ public abstract class ItemStackClientMixin {
                 for (int i = 0; i < args.length; i++) {
                     Object a = args[i];
     
-                    if (a instanceof String s && containsSpeedLabelToken(s)) {
-                        String replaced = replaceAnySpeedLabel(s, replacementText);
-                        newArgs[i] = Text.literal(replaced).formatted(replacementColor);
-                        changed = true;
+                    if (a instanceof String s) {
+                        MutableText rebuilt = rebuildWithColoredReplacement(s, node.getStyle(), replacementText, replacementColor);
+                        if (rebuilt != null) {
+                            newArgs[i] = rebuilt;      // NOTE: Text arg, not String
+                            changed = true;
+                        } else {
+                            newArgs[i] = a;
+                        }
                     } else if (a instanceof Text t) {
                         if (containsSpeedLabelToken(t.getString())) {
                             newArgs[i] = replaceSpeedLabelSubstringRecursive(t, replacementText, replacementColor);
@@ -843,11 +879,11 @@ public abstract class ItemStackClientMixin {
             return Text.translatable(tr.getKey(), args).setStyle(node.getStyle());
         }
     
-        // Non-translatable: substring replace inside this node's content only
-        String contentOnly = normalizeSpaces(MutableText.of(node.getContent()).getString());
-        if (containsSpeedLabelToken(contentOnly)) {
-            String replaced = replaceAnySpeedLabel(contentOnly, replacementText);
-            return Text.literal(replaced).setStyle(node.getStyle().withColor(replacementColor));
+        // Non-translatable: ONLY color the replacement label, not the whole node
+        String raw = MutableText.of(node.getContent()).getString();
+        MutableText rebuilt = rebuildWithColoredReplacement(raw, node.getStyle(), replacementText, replacementColor);
+        if (rebuilt != null) {
+            return rebuilt;
         }
     
         return MutableText.of(node.getContent()).setStyle(node.getStyle());
