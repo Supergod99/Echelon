@@ -645,7 +645,6 @@ public abstract class ItemStackClientMixin {
     
         double speed = (baseSpeed + addedValue) * (1.0 + multiplyBase) * (1.0 + multiplyTotal);
     
-        // Compute label text + color WITHOUT introducing a new class type
         final String labelText;
         final Formatting labelColor;
     
@@ -655,17 +654,39 @@ public abstract class ItemStackClientMixin {
         else if (speed > 0.6)  { labelText = "Slow";      labelColor = Formatting.RED; }
         else                   { labelText = "Very Slow"; labelColor = Formatting.DARK_RED; }
     
-        for (int i = 0; i < tooltip.size(); i++) {
-            Text line = tooltip.get(i);
-            String text = line.getString().trim();
+        // Only scan the top section where the Brutality summary line lives.
+        int scanLimit = Math.min(tooltip.size(), 8);
     
-            // Only touch the standalone Tiered speed label line
-            if (isStandaloneSpeedLabel(text)) {
+        for (int i = 0; i < scanLimit; i++) {
+            Text line = tooltip.get(i);
+            if (line == null) continue;
+    
+            // Instead of requiring the whole line to equal "Fast"/etc,
+            // detect whether any NODE in the line is exactly the label.
+            if (containsStandaloneSpeedLabelNode(line)) {
                 tooltip.set(i, replaceSpeedTextRecursively(line, labelText, labelColor));
                 break;
             }
         }
     }
+    
+    private boolean containsStandaloneSpeedLabelNode(Text node) {
+        if (node == null) return false;
+    
+        // Copy just this node's content (no siblings) and check its literal resolved string.
+        String content = MutableText.of(node.getContent()).getString().trim();
+        if (isStandaloneSpeedLabel(content)) {
+            return true;
+        }
+    
+        for (Text sibling : node.getSiblings()) {
+            if (containsStandaloneSpeedLabelNode(sibling)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
          
     private static boolean isStandaloneSpeedLabel(String text) {
         // Match exactly these labels, and nothing else
