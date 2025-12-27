@@ -16,6 +16,7 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.math.Vec2f;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
 import net.minecraft.text.MutableText;
 import net.minecraft.client.font.TextRenderer;
