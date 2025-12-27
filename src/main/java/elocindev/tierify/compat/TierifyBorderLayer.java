@@ -145,7 +145,24 @@ public class TierifyBorderLayer implements ITooltipLayer {
 
         int textWidth = font.getWidth(label);
         float scaledWidth = textWidth * scale;
-        float xPos = bgX + (bgWidth - scaledWidth) / 2f;
+        
+        Text title = stack.getName();
+        int titleWidth = textRenderer.getWidth(title);
+        
+        // If your tooltip draws an item icon, this is usually 20px; otherwise 4px.
+        final float TITLE_X_WITH_ICON = bgX + 20.0f;
+        final float TITLE_X_NO_ICON   = bgX + 4.0f;
+        
+        // Heuristic: if the tooltip is significantly wider than the title, we likely have an icon column.
+        float titleX = ((bgWidth - titleWidth) >= 24) ? TITLE_X_WITH_ICON : TITLE_X_NO_ICON;
+        
+        float titleCenterX = titleX + (titleWidth / 2f);
+        float xPos = titleCenterX - (scaledWidth / 2f);
+        
+        // Safety clamp (recommended)
+        float minX = bgX + 4.0f;
+        float maxX = bgX + bgWidth - scaledWidth - 4.0f;
+        xPos = Math.max(minX, Math.min(maxX, xPos));
         
         float baseHeight = 9f;
         float scaledHeight = baseHeight * scale;
