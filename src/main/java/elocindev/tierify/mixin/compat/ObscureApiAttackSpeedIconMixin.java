@@ -1,32 +1,30 @@
 package elocindev.tierify.mixin.compat;
 
-import java.util.Collection;
-
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/*
-    Fixes Obscure API's attack-speed category icon mapping at the source.
-    Uses vanilla-like attribute evaluation:
-    d0 = base + sum(addition)
-    d1 = d0 + d0 * sum(multiply_base)
-    d1 *= product(1 + multiply_total)
- */
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.Collection;
+
 @Mixin(targets = "com.obscuria.obscureapi.client.TooltipBuilder$AttributeIcons", remap = false)
 public class ObscureApiAttackSpeedIconMixin {
 
     @Inject(method = "getAttackSpeedIcon", at = @At("HEAD"), cancellable = true)
-    private static void tierify$fixAttackSpeedIcon(Collection<?> modifier, CallbackInfoReturnable<String> cir) {
+    private static void tierify$fixAttackSpeedIcon(Collection modifier, CallbackInfoReturnable<String> cir) {
         if (modifier == null || modifier.isEmpty()) return;
 
-        double speed = computeAttackSpeedVanillaLike(modifier);
+        Double speed = computeAttackSpeedVanillaLike(modifier);
+
+        // Fail-safe: if we couldn't read anything do NOT override.
+        if (speed == null) return;
 
         final String iconEnumName;
         if (speed >= 3.0) iconEnumName = "ATTACK_SPEED_VERY_FAST";
         else if (speed >= 2.0) iconEnumName = "ATTACK_SPEED_FAST";
-        else if (speed >= 1.2) iconEnumName = "ATTACK_SPEED_MEDIUM";
+        else if (speed >= 1.0) iconEnumName = "ATTACK_SPEED_MEDIUM";
         else if (speed > 0.6) iconEnumName = "ATTACK_SPEED_SLOW";
         else iconEnumName = "ATTACK_SPEED_VERY_SLOW";
 
@@ -37,20 +35,24 @@ public class ObscureApiAttackSpeedIconMixin {
         // If icon lookup fails, fall through to Obscure API's original logic.
     }
 
-    private static double computeAttackSpeedVanillaLike(Collection<?> mods) {
+    private static Double computeAttackSpeedVanillaLike(Collection mods) {
         final double base = 4.0;
-    
+
         double add = 0.0;
         double multBase = 0.0;
         double multTotal = 1.0;
-    
-        for (Object m : mods) {
-            if (m == null) continue;
-    
-            Double amount = readModifierAmount(m);
-            String opName = readModifierOperationName(m);
+
+        boolean readAny = false;
+
+        for (Object o : mods) {
+            if (o == null) continue;
+
+            Double amount = readModifierAmount(o);
+            String opName = readModifierOperationName(o);
+
             if (amount == null || opName == null) continue;
-    
+            readAny = true;
+
             switch (opName) {
                 case "ADDITION" -> add += amount;
                 case "MULTIPLY_BASE" -> multBase += amount;
@@ -58,40 +60,81 @@ public class ObscureApiAttackSpeedIconMixin {
                 default -> { /* ignore */ }
             }
         }
-    
+
+        if (!readAny) return null;
+
         double d0 = base + add;
         double d1 = d0 + (d0 * multBase);
         d1 *= multTotal;
         return d1;
     }
-    
-    private static Double readModifierAmount(Object modifier) {
-        // Yarn: getValue(); Mojmap: getAmount()
-        try { return (double) modifier.getClass().getMethod("getValue").invoke(modifier); } catch (Throwable ignored) {}
-        try { return (double) modifier.getClass().getMethod("getAmount").invoke(modifier); } catch (Throwable ignored) {}
-    
-        // Fallback: try common field names
-        try {
-            var f = modifier.getClass().getDeclaredField("value");
-            f.setAccessible(true);
-            return ((Number) f.get(modifier)).doubleValue();
-        } catch (Throwable ignored) {}
-        try {
-            var f = modifier.getClass().getDeclaredField("amount");
-            f.setAccessible(true);
-            return ((Number) f.get(modifier)).doubleValue();
-        } catch (Throwable ignored) {}
-    
+
+    private static Double readModifierAmount(Object mod) {
+        // Methods first
+        Double v = invokeDoubleNoArgs(mod, "getValue");
+        if (v != null) return v;
+
+        v = invokeDoubleNoArgs(mod, "getAmount");
+        if (v != null) return v;
+
+        v = invokeDoubleNoArgs(mod, "m_22218_");
+        if (v != null) return v;
+
+        v = readDoubleField(mod, "value");
+        if (v != null) return v;
+
+        v = readDoubleField(mod, "amount");
+        if (v != null) return v;
+
         return null;
     }
     
-    private static String readModifierOperationName(Object modifier) {
-        // Yarn/Mojmap both: getOperation()
+    private static String readModifierOperationName(Object mod) {
+        Object op = invokeNoArgs(mod, "getOperation");
+        if (op == null) {
+
+            op = invokeNoArgs(mod, "m_22217_");
+        }
+        if (op == null) return null;
+
+        if (op instanceof Enum<?> e) return e.name();
+
+        // defensive fallback
         try {
-            Object op = modifier.getClass().getMethod("getOperation").invoke(modifier);
-            if (op instanceof Enum<?> e) return e.name();
-        } catch (Throwable ignored) {}
+            Method name = op.getClass().getMethod("name");
+            Object n = name.invoke(op);
+            return (n instanceof String s) ? s : null;
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    private static Object invokeNoArgs(Object target, String methodName) {
+        try {
+            Method m = target.getClass().getMethod(methodName);
+            m.setAccessible(true);
+            return m.invoke(target);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    private static Double invokeDoubleNoArgs(Object target, String methodName) {
+        Object out = invokeNoArgs(target, methodName);
+        if (out instanceof Number n) return n.doubleValue();
         return null;
+    }
+
+    private static Double readDoubleField(Object target, String fieldName) {
+        try {
+            Field f = target.getClass().getDeclaredField(fieldName);
+            f.setAccessible(true);
+            Object out = f.get(target);
+            if (out instanceof Number n) return n.doubleValue();
+            return null;
+        } catch (Throwable t) {
+            return null;
+        }
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
