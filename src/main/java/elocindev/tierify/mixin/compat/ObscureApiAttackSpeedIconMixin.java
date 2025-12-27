@@ -29,12 +29,26 @@ public class ObscureApiAttackSpeedIconMixin {
         else iconEnumName = "ATTACK_SPEED_VERY_SLOW";
 
         String icon = getObscureIcon(iconEnumName);
-        if (icon != null && !icon.isEmpty()) {
-            cir.setReturnValue(icon + " ");
-        }
+        if (icon == null || icon.isEmpty()) return;
+
+        String plain = stripMcFormatting(icon);
+        
+        String color = switch (iconEnumName) {
+            case "ATTACK_SPEED_VERY_FAST" -> "§2"; // DARK GREEN
+            case "ATTACK_SPEED_FAST"      -> "§a"; // GREEN
+            case "ATTACK_SPEED_MEDIUM"    -> "§f"; // WHITE
+            case "ATTACK_SPEED_SLOW"      -> "§c"; // RED
+            default                       -> "§4"; // VERY SLOW - DARK RED
+        };
+        // Color + text + reset + trailing space
+        cir.setReturnValue(color + plain + "§r ");
         // If icon lookup fails, fall through to Obscure API's original logic.
     }
 
+    private static String stripMcFormatting(String s) {
+        return (s == null) ? "" : s.replaceAll("(?i)\u00A7[0-9A-FK-OR]", "");
+    }
+    
     private static Double computeAttackSpeedVanillaLike(Collection mods) {
         final double base = 4.0;
 
