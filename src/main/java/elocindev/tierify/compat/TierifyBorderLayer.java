@@ -128,7 +128,7 @@ public class TierifyBorderLayer implements ITooltipLayer {
                 PerfectBorderRenderer.renderPerfectBorderOverlay(drawContext, finalMatch, x, y, width, height);
             });
 
-            renderSetBonusActiveLabel(ctx, font, x, y, width);
+            renderSetBonusActiveLabel(ctx, font, x, y, width, customFrame);
             // --- D. Draw "Perfect" Text (Centered) ---
             if (isPerfect) {
                 renderPerfectLabel(ctx, font, x, y, width);
@@ -136,7 +136,7 @@ public class TierifyBorderLayer implements ITooltipLayer {
         });
     }
 
-    private void renderSetBonusActiveLabel(TooltipContext ctx, TextRenderer font, int bgX, int bgY, int bgWidth) {
+    private void renderSetBonusActiveLabel(TooltipContext ctx, TextRenderer font, int bgX, int bgY, int bgWidth, CustomFrameData customFrame) {
         var client = MinecraftClient.getInstance();
         if (client.player == null) return;
     
@@ -144,48 +144,90 @@ public class TierifyBorderLayer implements ITooltipLayer {
         if (label == null) return;
     
         float scale = 0.65f;
-
+    
         int textWidth = font.getWidth(label);
         float scaledWidth = textWidth * scale;
-
+    
         ItemStack stack = ctx.stack();
-
         Text title = stack.getName();
         int titleWidth = font.getWidth(title);
-        
-        // If the title fits with a 24px left gutter, assume icon gutter exists.
-        // (Matches your previous intent: center over name, not over full tooltip.)
-        float titleStartX = bgX + ((bgWidth - titleWidth) >= 24 ? 20.0f : 4.0f);
-        
-        float xPos = titleStartX + (titleWidth - scaledWidth) / 2.0f;
-        
-        // Clamp
-        float minX = bgX + 4.0f;
-        float maxX = bgX + bgWidth - scaledWidth - 4.0f;
+    
+        // TooltipOverhaul frame defaults:
+        final float padding = 4.0f;
+        final boolean iconDisabled = frameDisableIcon(customFrame);
+        final float iconGutter = iconDisabled ? 0.0f : 20.0f; // 4px pad + 16px icon (matches prior intent)
+    
+        // Title region excludes the icon gutter when icon is enabled
+        float contentLeft = bgX + padding + iconGutter;
+        float contentRight = bgX + bgWidth - padding;
+        float contentWidth = Math.max(0.0f, contentRight - contentLeft);
+    
+        String alignment = frameTitleAlignment(customFrame);
+        float titleStartX;
+        if ("middle".equalsIgnoreCase(alignment) || "center".equalsIgnoreCase(alignment)) {
+            titleStartX = contentLeft + (contentWidth - titleWidth) / 2.0f;
+        } else if ("right".equalsIgnoreCase(alignment)) {
+            titleStartX = contentRight - titleWidth;
+        } else {
+            // left / default
+            titleStartX = contentLeft;
+        }
+    
+        float titleCenterX = titleStartX + (titleWidth / 2.0f);
+        float xPos = titleCenterX - (scaledWidth / 2.0f);
+    
+        // Clamp: never enter icon gutter; never exceed tooltip bounds
+        float minX = contentLeft; // critical: prevents overlap with icon column
+        float maxX = bgX + bgWidth - scaledWidth - padding;
         xPos = Math.max(minX, Math.min(maxX, xPos));
-        
+    
         float baseHeight = 9f;
         float scaledHeight = baseHeight * scale;
-        
+    
         float topPadding = 4f;
         float gapTop = bgY - 3f;
         float gapBottom = bgY + topPadding;
-        
+    
         float yPos = gapTop + ((gapBottom - gapTop) - scaledHeight) / 2f;
         float yOffset = (baseHeight - scaledHeight) / 2f;
         yPos += yOffset;
         yPos += SET_BONUS_LABEL_NUDGE_Y;
-        
-        
+    
         final float xPosFinal = xPos;
         final float yPosFinal = yPos;
         final float scaleFinal = scale;
-        
+    
         ctx.push(() -> {
             ctx.translate(xPosFinal, yPosFinal, LayerDepth.BACKGROUND_OVERLAY.getZ() + 10);
             ctx.scale(scaleFinal, scaleFinal, 1.0f);
             ctx.graphics().drawText(font, label, 0, 0, 0xFFFFFF, true);
         });
+    }
+    
+    private static boolean frameDisableIcon(CustomFrameData frame) {
+        if (frame == null) return false;
+        try {
+            var m = frame.getClass().getMethod("disableIcon"); // record accessor in many builds
+            Object opt = m.invoke(frame);
+            if (opt instanceof java.util.Optional<?> o) {
+                Object v = o.orElse(Boolean.FALSE);
+                if (v instanceof Boolean b) return b;
+            }
+        } catch (Throwable ignored) {}
+        return false;
+    }
+    
+    private static String frameTitleAlignment(CustomFrameData frame) {
+        if (frame == null) return "left";
+        try {
+            var m = frame.getClass().getMethod("titleAlignment");
+            Object opt = m.invoke(frame);
+            if (opt instanceof java.util.Optional<?> o) {
+                Object v = o.orElse("left");
+                if (v instanceof String s) return s;
+            }
+        } catch (Throwable ignored) {}
+        return "left";
     }
 
     
