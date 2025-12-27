@@ -242,7 +242,7 @@ public class TieredTooltip {
         int textWidth = textRenderer.getWidth(label);
         float scaledWidth = textWidth * scale;
     
-       Text title = stack.getName();
+        Text title = stack.getName();
         int titleWidth = textRenderer.getWidth(title);    
         // Vanilla-aligned title X
         final float TITLE_BASE_X = bgX + 4.0f;
