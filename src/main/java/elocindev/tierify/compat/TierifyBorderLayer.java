@@ -18,6 +18,7 @@ import net.minecraft.util.math.Vec2f;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.Text;
 import net.minecraft.text.MutableText;
+import net.minecraft.client.font.TextRenderer;
 import net.minecraft.util.Identifier;
 import java.awt.Point;
 
