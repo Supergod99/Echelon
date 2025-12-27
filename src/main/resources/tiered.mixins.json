@@ -22,7 +22,7 @@
     "ArmorItemMixin",
     "EnchantmentHelperMixin",
     "compat.CuriosBrutalityUuidSaltMixin",
-    "compat.LethalityScalingFixMixin",
+    "compat.LethalityScalingFixMixin"
   ],
   "client": [
     "client.ItemStackClientMixin",
@@ -35,7 +35,8 @@
     "compat.TooltipOverhaulRenderMixin",
     "compat.TooltipRendererAccessor",
     "compat.ObscureApiAttackSpeedIconMixin",
-    "compat.ObscureApiAttributeIconMathMixin"
+    "compat.ObscureApiAttributeIconMathMixin",
+    "compat.ObscureApiIconsMixin"
   ],
   "injectors": {
     "defaultRequire": 1
