@@ -19,6 +19,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.ArmorItem;
 import net.minecraft.item.Item;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.registry.Registries;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TextColor;
@@ -129,7 +130,10 @@ public abstract class ItemStackClientMixin {
 
     @Inject(method = "getName", at = @At("RETURN"), cancellable = true)
     private void getNameMixin(CallbackInfoReturnable<Text> info) {
-        if (this.hasNbt() && this.getSubNbt("display") == null && this.getSubNbt(Tierify.NBT_SUBTAG_KEY) != null) {
+        // Respect custom renamed items
+        if (this.getSubNbt("display") != null) return;
+
+        if (this.hasNbt() && this.getSubNbt(Tierify.NBT_SUBTAG_KEY) != null) {
             Identifier tier = new Identifier(getOrCreateSubNbt(Tierify.NBT_SUBTAG_KEY).getString(Tierify.NBT_SUBTAG_DATA_KEY));
             PotentialAttribute potentialAttribute = Tierify.ATTRIBUTE_DATA_LOADER.getItemAttributes().get(tier);
             if (potentialAttribute != null) {
@@ -138,8 +142,27 @@ public abstract class ItemStackClientMixin {
                 text = TierGradientAnimator.animate(text, tierKey);
                 MutableText vanilla = info.getReturnValue().copy();
                 info.setReturnValue(text.append(" ").append(vanilla));
+                return;
             }
         }
+        // animate the reforge material item name 
+        ItemStack self = (ItemStack) (Object) this;
+        Identifier id = Registries.ITEM.getId(self.getItem());
+    
+        if (!"tiered".equals(id.getNamespace())) return;
+    
+        String tierKey;
+        switch (id.getPath()) {
+            case "limestone_chunk" -> tierKey = "common";
+            case "pyrite_chunk"    -> tierKey = "uncomon";
+            case "galena_chunk"    -> tierKey = "rare";
+            case "charoite"        -> tierKey = "epic";
+            case "crown_topaz"     -> tierKey = "legendary";
+            case "painite"         -> tierKey = "mythic";
+            default -> { return; }
+        }
+        MutableText base = info.getReturnValue().copy();
+        info.setReturnValue(TierGradientAnimator.animate(base, tierKey));
     }
 
     @Inject(method = "getTooltip", at = @At("RETURN"))
