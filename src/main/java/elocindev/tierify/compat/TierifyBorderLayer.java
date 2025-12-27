@@ -204,14 +204,18 @@ public class TierifyBorderLayer implements ITooltipLayer {
         });
     }
     
-    private static boolean frameDisableIcon(CustomFrameData frame) {
+        private static boolean frameDisableIcon(CustomFrameData frame) {
         if (frame == null) return false;
         try {
             var m = frame.getClass().getMethod("disableIcon"); // record accessor in many builds
-            Object opt = m.invoke(frame);
-            if (opt instanceof java.util.Optional<?> o) {
-                Object v = o.orElse(Boolean.FALSE);
-                if (v instanceof Boolean b) return b;
+            Object optObj = m.invoke(frame);
+    
+            if (optObj instanceof java.util.Optional<?> o) {
+                if (o.isPresent()) {
+                    Object v = o.get();
+                    if (v instanceof Boolean b) return b;
+                }
+                return false;
             }
         } catch (Throwable ignored) {}
         return false;
@@ -221,10 +225,14 @@ public class TierifyBorderLayer implements ITooltipLayer {
         if (frame == null) return "left";
         try {
             var m = frame.getClass().getMethod("titleAlignment");
-            Object opt = m.invoke(frame);
-            if (opt instanceof java.util.Optional<?> o) {
-                Object v = o.orElse("left");
-                if (v instanceof String s) return s;
+            Object optObj = m.invoke(frame);
+    
+            if (optObj instanceof java.util.Optional<?> o) {
+                if (o.isPresent()) {
+                    Object v = o.get();
+                    if (v instanceof String s && !s.isEmpty()) return s;
+                }
+                return "left";
             }
         } catch (Throwable ignored) {}
         return "left";
