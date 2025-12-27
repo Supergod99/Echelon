@@ -20,55 +20,57 @@ public class ObscureApiAttributeIconMathMixin {
             return;
         }
 
-        Calc c = computeVanillaLike(base, modifier);
-        if (!c.readAny || c.value == 0.0) {
+        // out[0] = computed value, out[1] = multBase, out[2] = readAny(1 or 0)
+        double[] out = computeVanillaLike(base, modifier);
+        if (out[2] == 0.0) return; // fail-safe: if we couldn't read anything, don't override
+
+        double value = out[0];
+        double multBase = out[1];
+
+        if (value == 0.0) {
             cir.setReturnValue("");
             return;
         }
 
-        double shown = percent ? (c.value * 100.0) : c.value;
+        double shown = percent ? (value * 100.0) : value;
         String formatted = new DecimalFormat("##.#").format(shown).replace(".0", "");
 
-        // Preserve Obscure API’s green if multiply_base > 0 behavior.
-        String green = (c.multBase > 0.0) ? "§2" : "";
+        // Preserve Obscure’s “green when multiply_base positive” behavior
+        String green = (multBase > 0.0) ? "§2" : "";
 
         cir.setReturnValue(icon + green + formatted + (percent ? "% " : " "));
     }
 
-    private static final class Calc {
-        boolean readAny;
-        double add;
-        double multBase;
+    private static double[] computeVanillaLike(double base, Collection mods) {
+        double add = 0.0;
+        double multBase = 0.0;
         double multTotal = 1.0;
-        double value;
-    }
-
-    private static Calc computeVanillaLike(double base, Collection mods) {
-        Calc c = new Calc();
+        boolean readAny = false;
 
         for (Object m : mods) {
             if (m == null) continue;
 
             Double amount = readModifierAmount(m);
             String op = readModifierOperationName(m);
-
             if (amount == null || op == null) continue;
-            c.readAny = true;
+
+            readAny = true;
 
             switch (op) {
-                case "ADDITION" -> c.add += amount;
-                case "MULTIPLY_BASE" -> c.multBase += amount;
-                case "MULTIPLY_TOTAL" -> c.multTotal *= (1.0 + amount);
+                case "ADDITION" -> add += amount;
+                case "MULTIPLY_BASE" -> multBase += amount;
+                case "MULTIPLY_TOTAL" -> multTotal *= (1.0 + amount);
                 default -> { /* ignore */ }
             }
         }
 
-        double d0 = base + c.add;
-        double d1 = d0 + (d0 * c.multBase);
-        d1 *= c.multTotal;
-        c.value = d1;
+        if (!readAny) return new double[] { 0.0, 0.0, 0.0 };
 
-        return c;
+        double d0 = base + add;
+        double d1 = d0 + (d0 * multBase);
+        d1 *= multTotal;
+
+        return new double[] { d1, multBase, 1.0 };
     }
 
     private static Double readModifierAmount(Object mod) {
@@ -78,6 +80,7 @@ public class ObscureApiAttributeIconMathMixin {
         v = invokeDoubleNoArgs(mod, "getAmount");
         if (v != null) return v;
 
+        // Mojmap/obf 1.20.1 
         v = invokeDoubleNoArgs(mod, "m_22218_");
         if (v != null) return v;
 
@@ -91,7 +94,6 @@ public class ObscureApiAttributeIconMathMixin {
 
         if (op instanceof Enum<?> e) return e.name();
 
-        // Defensive fallback: try name()
         try {
             Method name = op.getClass().getMethod("name");
             Object out = name.invoke(op);
