@@ -242,12 +242,15 @@ public class TieredTooltip {
         int textWidth = textRenderer.getWidth(label);
         float scaledWidth = textWidth * scale;
     
-        Text title = ctx.stack().getName();
-        int titleWidth = font.getWidth(title);
-        
-        float titleStartX = bgX + ((bgWidth - titleWidth) >= 24 ? 20.0f : 4.0f);
-        
-        float xPos = titleStartX + (titleWidth - scaledWidth) / 2.0f;
+       Text title = stack.getName();
+        int titleWidth = textRenderer.getWidth(title);    
+        // Vanilla-aligned title X
+        final float TITLE_BASE_X = bgX + 4.0f;
+        final float TITLE_ICON_SHIFT = 18.0f; // icon (16) + padding (2)
+        boolean hasIcon = stack != null && !stack.isEmpty();
+        float titleX = TITLE_BASE_X + (hasIcon ? TITLE_ICON_SHIFT : 0.0f);
+    
+        float xPos = titleX + (titleWidth / 2.0f) - (scaledWidth / 2.0f);
         
         float minX = bgX + 4.0f;
         float maxX = bgX + bgWidth - scaledWidth - 4.0f;
