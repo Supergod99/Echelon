@@ -16,10 +16,10 @@ public class CommonConfig {
     }
 
     @Comment("Items in for example mineshaft chests get modifiers")
-    public boolean lootContainerModifier = false;
+    public boolean lootContainerModifier = true;
     @Comment("Equipped items on entities get modifiers")
     public boolean entityItemModifier = true;
-    @Comment("Tier weights for mob-equipped items when entityItemModifier=true. Higher = more common. These are relative weights, not %.")
+    @Comment("Tier weights for mob-equipped items/chests when entityItemModifier=true OR lootContainerModifier=true. Higher = more common. These are relative weights, not %.")
     @Comment("Set all to 0 to disable weighting and fall back to the old fully-random behavior.")
     public int entityTier1Weight = 50; // Common
     public int entityTier2Weight = 25; // Uncomon
