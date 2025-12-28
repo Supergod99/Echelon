@@ -45,7 +45,7 @@ public abstract class ArmorStandEntityMixin {
     @Inject(method = "equipStack", at = @At("HEAD"))
     private void equipStackMixin(EquipmentSlot slot, ItemStack stack, CallbackInfo info) {
         if (!this.isClient && this.isGenerated && Tierify.CONFIG.lootContainerModifier) {
-            ModifierUtils.setItemStackAttribute(null, stack, false);
+            ModifierUtils.setItemStackAttributeEntityWeighted(null, stack);
         }
     }
 
