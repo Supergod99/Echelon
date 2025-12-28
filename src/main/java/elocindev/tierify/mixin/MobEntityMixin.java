@@ -30,7 +30,7 @@ public class MobEntityMixin {
                 if (itemStack.isEmpty()) {
                     continue;
                 }
-                ModifierUtils.setItemStackAttribute(null, itemStack, false);
+                ModifierUtils.setItemStackAttributeEntityWeighted(null, itemStack);
             }
         }
     }
