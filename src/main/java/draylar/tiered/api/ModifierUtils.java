@@ -345,16 +345,25 @@ public class ModifierUtils {
 
     public static void removeItemStackAttribute(ItemStack itemStack) {
         if (!itemStack.hasNbt()) return;
-        // Only operate on Tierify-tiered items
+    
         NbtCompound tierTag = itemStack.getSubNbt(Tierify.NBT_SUBTAG_KEY);
         if (tierTag == null) return;
+        // Restore stashed custom name (if present) back into vanilla display.Name,
+        // but dont overwrite an actively renamed item
+        NbtCompound extra = itemStack.getSubNbt(Tierify.NBT_SUBTAG_EXTRA_KEY);
+        if (extra != null && extra.contains(STORED_CUSTOM_NAME_KEY, 8 /* STRING */)) {
+            NbtCompound display = itemStack.getOrCreateSubNbt("display");
+            if (!display.contains("Name", 8 /* STRING */)) {
+                display.putString("Name", extra.getString(STORED_CUSTOM_NAME_KEY));
+            }
+        }
         // Capture legacy durable presence BEFORE removing tier tag
         NbtCompound root = itemStack.getNbt();
         boolean hadLegacyDurable = root != null && root.contains("durable");
-        // Remove Tierify-managed subtags only (safe in modpacks)
+        // Remove Tierify managed subtags only 
         itemStack.removeSubNbt(Tierify.NBT_SUBTAG_EXTRA_KEY);
         itemStack.removeSubNbt(Tierify.NBT_SUBTAG_KEY);
-        // Optional legacy cleanup: only because we already proved this was a Tierify-tiered item
+    
         if (hadLegacyDurable) {
             NbtCompound r = itemStack.getNbt();
             if (r != null) r.remove("durable");
