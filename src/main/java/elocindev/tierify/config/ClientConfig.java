@@ -5,7 +5,7 @@ import me.shedaniel.autoconfig.annotation.ConfigEntry;
 import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.cloth.clothconfig.shadowed.blue.endless.jankson.Comment;
 
-@Config(name = "tierify-client")
+@Config(name = "echelon-client")
 @Config.Gui.Background("minecraft:textures/block/stone.png")
 public class ClientConfig implements ConfigData {
     @Comment("Whether or not to show the reforging tab in the anvil screen.")
