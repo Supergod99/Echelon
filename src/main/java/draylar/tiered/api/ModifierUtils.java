@@ -158,6 +158,66 @@ public class ModifierUtils {
         return null;
     }
 
+    public static void setItemStackAttributeEntityWeighted(@Nullable PlayerEntity playerEntity, ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return;
+
+        // Don't overwrite an already-tiered item
+        NbtCompound tierTag = stack.getSubNbt(Tierify.NBT_SUBTAG_KEY);
+        if (tierTag != null && tierTag.contains(Tierify.NBT_SUBTAG_DATA_KEY)) return;
+
+        // If all weights are 0, keep old behavior
+        int w1 = Math.max(0, Tierify.CONFIG.entityTier1Weight);
+        int w2 = Math.max(0, Tierify.CONFIG.entityTier2Weight);
+        int w3 = Math.max(0, Tierify.CONFIG.entityTier3Weight);
+        int w4 = Math.max(0, Tierify.CONFIG.entityTier4Weight);
+        int w5 = Math.max(0, Tierify.CONFIG.entityTier5Weight);
+        int w6 = Math.max(0, Tierify.CONFIG.entityTier6Weight);
+        int total = w1 + w2 + w3 + w4 + w5 + w6;
+
+        Identifier chosen = null;
+
+        if (total > 0) {
+            // Try a few times in case a tier has no valid attributes for this particular item
+            for (int attempt = 0; attempt < 10 && chosen == null; attempt++) {
+                List<String> qualities = pickEntityTierQualities(w1, w2, w3, w4, w5, w6, total);
+                if (qualities == null || qualities.isEmpty()) break;
+
+                chosen = getRandomAttributeForQuality(qualities, stack.getItem(), false);
+            }
+        }
+
+        // Fallback to old behavior if weighting fails (or weights disabled)
+        if (chosen == null) {
+            chosen = getRandomAttributeIDFor(playerEntity, stack.getItem(), false);
+        }
+
+        if (chosen != null) {
+            setItemStackAttribute(chosen, stack);
+        }
+    }
+
+    @Nullable
+    private static List<String> pickEntityTierQualities(int w1, int w2, int w3, int w4, int w5, int w6, int total) {
+        int roll = new Random().nextInt(total);
+
+        if (roll < w1) return Tierify.CONFIG.tier_1_qualities;
+        roll -= w1;
+
+        if (roll < w2) return Tierify.CONFIG.tier_2_qualities;
+        roll -= w2;
+
+        if (roll < w3) return Tierify.CONFIG.tier_3_qualities;
+        roll -= w3;
+
+        if (roll < w4) return Tierify.CONFIG.tier_4_qualities;
+        roll -= w4;
+
+        if (roll < w5) return Tierify.CONFIG.tier_5_qualities;
+        roll -= w5;
+
+        return Tierify.CONFIG.tier_6_qualities;
+    }
+
     public static void setItemStackAttribute(Identifier potentialAttributeID, ItemStack stack) {
         if (potentialAttributeID != null) {
 
