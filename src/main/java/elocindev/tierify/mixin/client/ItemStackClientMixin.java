@@ -142,7 +142,19 @@ public abstract class ItemStackClientMixin {
                 MutableText text = Text.translatable(potentialAttribute.getID() + ".label");
                 String tierKey = TierGradientAnimator.getTierFromId(potentialAttribute.getID());
                 text = TierGradientAnimator.animate(text, tierKey);
-                MutableText vanilla = info.getReturnValue().copy();
+                Text baseName = info.getReturnValue();
+                // If we stashed a custom name during reforge, use it as the base name (with italics/style preserved)
+                NbtCompound extra = this.getSubNbt(Tierify.NBT_SUBTAG_EXTRA_KEY);
+                if (extra != null && extra.contains("StoredCustomName", 8 /* STRING */)) {
+                    String json = extra.getString("StoredCustomName");
+                    try {
+                        Text parsed = Text.Serialization.fromJson(json);
+                        if (parsed != null) baseName = parsed;
+                    } catch (Exception ignored) {
+                        // If parsing fails, fall back to default return value
+                    }
+                }
+                MutableText vanilla = baseName.copy();
                 info.setReturnValue(text.append(" ").append(vanilla));
                 return;
             }
