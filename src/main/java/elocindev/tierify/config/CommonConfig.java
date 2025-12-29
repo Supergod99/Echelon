@@ -32,7 +32,7 @@ public class CommonConfig {
     public int entityTier6Weight = 1;  // Mythic
     
     @Comment("If true, use dimension-specific tier weights for mob-equipped items and loot container rolls.")
-    public boolean useDimensionTierWeights = false;
+    public boolean useDimensionTierWeights = true;
     
     @Comment("When useDimensionTierWeights=true and the selected dimension profile has ALL weights set to 0, no modifier is applied (instead of falling back to random).")
     public boolean dimensionTierWeightsZeroMeansNoModifier = true;
