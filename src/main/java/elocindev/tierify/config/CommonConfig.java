@@ -66,17 +66,6 @@ public class CommonConfig {
     @Comment("You can also use '*=overworld|nether|end|global' as a wildcard default for any modded dimension.")
     @Comment("And you can use 'modid:*=...' to target all dimensions from a given namespace.")
     public ArrayList<String> moddedDimensionTierWeightOverrides = new ArrayList<>();
-    
-    "moddedDimensionTierWeightOverrides": [
-      "*=overworld",
-      "ad_astra:*=overworld",
-      "alex_caves_dimensions:*=global",
-      "undergarden:*=overworld",
-      "sgjourney:*=global",
-      "deeperanddarker:*=end",
-      "foolish:*=global"
-    ]
-    
     @Comment("Crafted items get modifiers")
     public boolean craftingModifier = false;
     @Comment("Merchant items get modifiers")
