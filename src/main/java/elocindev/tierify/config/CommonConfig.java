@@ -24,8 +24,8 @@ public class CommonConfig {
     public boolean entityItemModifier = false;
     @Comment("Tier weights for mob-equipped items/chests when entityItemModifier=true OR lootContainerModifier=true. Higher = more common. These are relative weights, not %.")
     @Comment("Set all to 0 to disable weighting and fall back to the old fully-random behavior.")
-    public int entityTier1Weight = 130; // Common
-    public int entityTier2Weight = 60; // Uncomon
+    public int entityTier1Weight = 500; // Common
+    public int entityTier2Weight = 125; // Uncomon
     public int entityTier3Weight = 20; // Rare
     public int entityTier4Weight = 6;  // Epic
     public int entityTier5Weight = 3;  // Legendary
