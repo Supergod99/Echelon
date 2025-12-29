@@ -24,26 +24,60 @@ import net.minecraft.util.math.random.Random;
 @Mixin(LootTable.class)
 public class LootTableMixin {
 
+    private static boolean tierify$rollLootContainerChance(Random random) {
+        float chance = Tierify.CONFIG.lootContainerModifierChance;
+
+        // clamp defensively
+        if (chance >= 1.0f) return true;
+        if (chance <= 0.0f) return false;
+
+        return random.nextFloat() < chance;
+    }
+
     // lambda injection
     @Inject(method = "method_331", at = @At(value = "INVOKE", target = "Ljava/util/function/Consumer;accept(Ljava/lang/Object;)V", ordinal = 0))
     private static void processStacksMixin(ServerWorld world, Consumer<ItemStack> lootConsumer, ItemStack itemStack, CallbackInfo info) {
-        if (!world.isClient() && Tierify.CONFIG.lootContainerModifier) {
-            ModifierUtils.setItemStackAttributeEntityWeighted(null, itemStack);
-        }
+        if (world.isClient() || !Tierify.CONFIG.lootContainerModifier) return;
+
+        // use a local RNG safely.
+        if (!tierify$rollLootContainerChance(Random.create())) return;
+
+        ModifierUtils.setItemStackAttributeEntityWeighted(null, itemStack);
     }
 
-    @Inject(method = "method_331", at = @At(value = "INVOKE", target = "Ljava/util/function/Consumer;accept(Ljava/lang/Object;)V", ordinal = 1), locals = LocalCapture.CAPTURE_FAILSOFT)
+    @Inject(
+        method = "method_331",
+        at = @At(value = "INVOKE", target = "Ljava/util/function/Consumer;accept(Ljava/lang/Object;)V", ordinal = 1),
+        locals = LocalCapture.CAPTURE_FAILSOFT
+    )
     private static void processStacksMixin(ServerWorld world, Consumer<ItemStack> lootConsumer, ItemStack itemStack, CallbackInfo info, int i, ItemStack itemStack2) {
-        if (!world.isClient() && Tierify.CONFIG.lootContainerModifier) {
-            ModifierUtils.setItemStackAttributeEntityWeighted(null, itemStack2);
-        }
+        if (world.isClient() || !Tierify.CONFIG.lootContainerModifier) return;
+
+        if (!tierify$rollLootContainerChance(Random.create())) return;
+
+        ModifierUtils.setItemStackAttributeEntityWeighted(null, itemStack2);
     }
 
-    @Inject(method = "supplyInventory", at = @At(value = "INVOKE", target = "Lnet/minecraft/inventory/Inventory;setStack(ILnet/minecraft/item/ItemStack;)V", ordinal = 1), locals = LocalCapture.CAPTURE_FAILSOFT)
-    private void supplyInventoryMixin(Inventory inventory, LootContextParameterSet parameters, long seed, CallbackInfo info, LootContext lootContext, ObjectArrayList<ItemStack> objectArrayList,
-            Random random, List<Integer> list, ObjectListIterator<ItemStack> var9, ItemStack itemStack) {
-        if (!lootContext.getWorld().isClient() && Tierify.CONFIG.lootContainerModifier) {
-            ModifierUtils.setItemStackAttributeEntityWeighted(null, itemStack);
-        }
+    @Inject(
+        method = "supplyInventory",
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/inventory/Inventory;setStack(ILnet/minecraft/item/ItemStack;)V", ordinal = 1),
+        locals = LocalCapture.CAPTURE_FAILSOFT
+    )
+    private void supplyInventoryMixin(
+        Inventory inventory,
+        LootContextParameterSet parameters,
+        long seed,
+        CallbackInfo info,
+        LootContext lootContext,
+        ObjectArrayList<ItemStack> objectArrayList,
+        Random random,
+        List<Integer> list,
+        ObjectListIterator<ItemStack> var9,
+        ItemStack itemStack
+    ) {
+        if (lootContext.getWorld().isClient() || !Tierify.CONFIG.lootContainerModifier) return;
+        // we do have the loot RNG already
+        if (!tierify$rollLootContainerChance(random)) return;
+        ModifierUtils.setItemStackAttributeEntityWeighted(null, itemStack);
     }
 }
