@@ -17,6 +17,9 @@ public class CommonConfig {
 
     @Comment("Items in for example mineshaft chests get modifiers")
     public boolean lootContainerModifier = false;
+    @Comment("Chance for loot-container items to receive a modifier when lootContainerModifier is true.")
+    @Comment("0.0 = never, 0.5 = 50%, 1.0 = always.")
+    public float lootContainerModifierChance = 0.5F;
     @Comment("Equipped items on entities get modifiers")
     public boolean entityItemModifier = true;
     @Comment("Tier weights for mob-equipped items/chests when entityItemModifier=true OR lootContainerModifier=true. Higher = more common. These are relative weights, not %.")
