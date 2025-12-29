@@ -19,15 +19,15 @@ public class CommonConfig {
     public boolean lootContainerModifier = true;
     @Comment("Chance for loot-container items to receive a modifier when lootContainerModifier is true.")
     @Comment("0.0 = never, 0.5 = 50%, 1.0 = always.")
-    public float lootContainerModifierChance = 0.5F;
+    public float lootContainerModifierChance = 0.1F;
     @Comment("Equipped items on entities get modifiers")
     public boolean entityItemModifier = false;
     @Comment("Tier weights for mob-equipped items/chests when entityItemModifier=true OR lootContainerModifier=true. Higher = more common. These are relative weights, not %.")
     @Comment("Set all to 0 to disable weighting and fall back to the old fully-random behavior.")
-    public int entityTier1Weight = 500; // Common
-    public int entityTier2Weight = 125; // Uncomon
-    public int entityTier3Weight = 20; // Rare
-    public int entityTier4Weight = 6;  // Epic
+    public int entityTier1Weight = 2000; // Common
+    public int entityTier2Weight = 200; // Uncomon
+    public int entityTier3Weight = 27; // Rare
+    public int entityTier4Weight = 9;  // Epic
     public int entityTier5Weight = 3;  // Legendary
     public int entityTier6Weight = 1;  // Mythic
     
@@ -38,27 +38,27 @@ public class CommonConfig {
     public boolean dimensionTierWeightsZeroMeansNoModifier = true;
     
     @Comment("Overworld tier weights (1=Common ... 6=Mythic). Set a tier weight to 0 to disable that tier in the Overworld.")
-    public int overworldTier1Weight = 1; // Common
-    public int overworldTier2Weight = 1; // Uncomon
-    public int overworldTier3Weight = 0;   // Rare
+    public int overworldTier1Weight = 100; // Common
+    public int overworldTier2Weight = 10; // Uncomon
+    public int overworldTier3Weight = 1;   // Rare
     public int overworldTier4Weight = 0;   // Epic
     public int overworldTier5Weight = 0;   // Legendary
     public int overworldTier6Weight = 0;   // Mythic
     
     @Comment("Nether tier weights (1=Common ... 6=Mythic).")
-    public int netherTier1Weight = 0; // Common
-    public int netherTier2Weight = 0; // Uncomon
-    public int netherTier3Weight = 1;  // Rare
+    public int netherTier1Weight = 10; // Common
+    public int netherTier2Weight = 100; // Uncomon
+    public int netherTier3Weight = 10;  // Rare
     public int netherTier4Weight = 1;   // Epic
     public int netherTier5Weight = 0;   // Legendary
     public int netherTier6Weight = 0;   // Mythic
     
     @Comment("End tier weights (1=Common ... 6=Mythic).")
-    public int endTier1Weight = 0; // Common
-    public int endTier2Weight = 0; // Uncomon
-    public int endTier3Weight = 0;  // Rare
-    public int endTier4Weight = 0;   // Epic
-    public int endTier5Weight = 1;   // Legendary
+    public int endTier1Weight = 10; // Common
+    public int endTier2Weight = 100; // Uncomon
+    public int endTier3Weight = 1000;  // Rare
+    public int endTier4Weight = 100;   // Epic
+    public int endTier5Weight = 10;   // Legendary
     public int endTier6Weight = 1;   // Mythic
 
     @Comment("Optional overrides for modded dimensions when useDimensionTierWeights=true.")
