@@ -42,7 +42,7 @@ public class LootTableMixin {
         // use a local RNG safely.
         if (!tierify$rollLootContainerChance(Random.create())) return;
 
-        ModifierUtils.setItemStackAttributeEntityWeighted(null, itemStack);
+        ModifierUtils.setItemStackAttributeEntityWeighted(null, itemStack, world.getRegistryKey());
     }
 
     @Inject(
@@ -55,7 +55,7 @@ public class LootTableMixin {
 
         if (!tierify$rollLootContainerChance(Random.create())) return;
 
-        ModifierUtils.setItemStackAttributeEntityWeighted(null, itemStack2);
+        ModifierUtils.setItemStackAttributeEntityWeighted(null, itemStack2, world.getRegistryKey());
     }
 
     @Inject(
@@ -78,6 +78,6 @@ public class LootTableMixin {
         if (lootContext.getWorld().isClient() || !Tierify.CONFIG.lootContainerModifier) return;
         // we do have the loot RNG already
         if (!tierify$rollLootContainerChance(random)) return;
-        ModifierUtils.setItemStackAttributeEntityWeighted(null, itemStack);
+        ModifierUtils.setItemStackAttributeEntityWeighted(null, itemStack, lootContext.getWorld().getRegistryKey());
     }
 }
