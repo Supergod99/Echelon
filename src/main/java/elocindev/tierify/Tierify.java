@@ -42,6 +42,7 @@ import elocindev.necronomicon.api.config.v1.NecConfigAPI;
 import elocindev.tierify.command.CommandInit;
 import elocindev.tierify.config.ClientConfig;
 import elocindev.tierify.config.CommonConfig;
+import elocindev.tierify.config.CommonConfigAutoSync;
 import elocindev.tierify.Tierify;
 import elocindev.tierify.data.AttributeDataLoader;
 import elocindev.tierify.data.ReforgeDataLoader;
@@ -111,6 +112,7 @@ public class Tierify implements ModInitializer {
         AutoConfig.register(ClientConfig.class, JanksonConfigSerializer::new);
 
         CONFIG = CommonConfig.INSTANCE;
+        CommonConfigAutoSync.ensureCommonConfigHasAllKeys();
         CLIENT_CONFIG = AutoConfig.getConfigHolder(ClientConfig.class).getConfig();
         elocindev.tierify.config.EntityLootDropProfiles.reload();
 
