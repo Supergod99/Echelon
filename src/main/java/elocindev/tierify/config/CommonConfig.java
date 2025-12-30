@@ -36,7 +36,7 @@ public class CommonConfig {
 
     @Comment("If true, items dropped from entity equipment slots (dropEquipment path) can be reforged using the entity loot-drop profiles file.")
     @Comment("Whitelist behavior: only entities with a matching profile entry (or wildcard entry) will affect equipment drops.")
-    public boolean entityEquipmentDropModifier = false;
+    public boolean entityEquipmentDropModifier = true;
 
     @Comment("Tier weights for mob-equipped items/chests when entityItemModifier=true OR lootContainerModifier=true. Higher = more common. These are relative weights, not %.")
     @Comment("Set all to 0 to disable weighting and fall back to the old fully-random behavior.")
