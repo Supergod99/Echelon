@@ -26,6 +26,9 @@ public abstract class EntityEquipmentDropMixin {
         index = 0,
         require = 0
     )
+    private ItemStack echelon$maybeReforgeEquipmentDrop_noYOffset(ItemStack stack) {
+        return echelon$maybeReforgeEquipmentDrop(stack);
+    }
 
     @ModifyArg(
         method = "dropEquipment",
@@ -36,10 +39,10 @@ public abstract class EntityEquipmentDropMixin {
         index = 0,
         require = 0
     )
-    
     private ItemStack echelon$maybeReforgeEquipmentDrop_withYOffset(ItemStack stack) {
         return echelon$maybeReforgeEquipmentDrop(stack);
     }
+
     
     private ItemStack echelon$maybeReforgeEquipmentDrop(ItemStack stack) {
         LivingEntity self = (LivingEntity) (Object) this;
