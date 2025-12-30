@@ -14,6 +14,8 @@
 
 **7. Changed textures of Pyrite, Limestone, Galena to not infringe on ElocinDev's amazing work.**
 
+**8. Adds in 3 new reforge materials: Charoite, Crown Topaz, and Painite**
+
 The current config has each tier by itself, meaning you will only roll that specific tier. For example, limestone will only ever roll common.
 
 # Tierify
