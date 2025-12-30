@@ -23,7 +23,7 @@ public class CommonConfig {
     public float lootContainerModifierChance = 0.1F;
     
     @Comment("Equipped items on entities get modifiers")
-    public boolean entityItemModifier = false;
+    public boolean entityItemModifier = true;
     
     @Comment("If true, entity loot-table drops can receive modifiers based on a whitelist profile file.")
     @Comment("This affects loot generated from an entity's loot table (e.g., bosses), not only worn equipment.")
@@ -33,7 +33,11 @@ public class CommonConfig {
     @Comment("Format per line: 'modid:entity=0.50|0,0,5,10,5,2' or 'modid:entity=0.50|overworld' (presets: overworld|nether|end|global).")
     @Comment("You can also use '*=...' as a global default and 'modid:*=...' as a namespace wildcard.")
     public String entityLootDropProfilesFile = "echelon-entity-drop-profiles.txt";
-    
+
+    @Comment("If true, items dropped from entity equipment slots (dropEquipment path) can be reforged using the entity loot-drop profiles file.")
+    @Comment("Whitelist behavior: only entities with a matching profile entry (or wildcard entry) will affect equipment drops.")
+    public boolean entityEquipmentDropModifier = false;
+
     @Comment("Tier weights for mob-equipped items/chests when entityItemModifier=true OR lootContainerModifier=true. Higher = more common. These are relative weights, not %.")
     @Comment("Set all to 0 to disable weighting and fall back to the old fully-random behavior.")
     public int entityTier1Weight = 2000; // Common
