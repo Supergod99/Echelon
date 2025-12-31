@@ -17,6 +17,9 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 @Mixin(LivingEntity.class)
 public abstract class EntityEquipmentDropMixin {
 
+    private static final org.apache.logging.log4j.Logger LOGGER =
+            org.apache.logging.log4j.LogManager.getLogger("Echelon-EquipDrops");
+
     @ModifyArg(
         method = "dropEquipment",
         at = @At(
@@ -85,31 +88,50 @@ public abstract class EntityEquipmentDropMixin {
 
     private ItemStack echelon$maybeReforgeEquipmentDrop(ItemStack stack) {
         LivingEntity self = (LivingEntity) (Object) this;
-
+    
         if (stack == null || stack.isEmpty()) return stack;
         if (self.getWorld().isClient()) return stack;
-
-        // mobs only (avoid players or other LivingEntity implementors)
+    
         if (!(self instanceof MobEntity)) return stack;
-
         if (!Tierify.CONFIG.entityEquipmentDropModifier) return stack;
-
-        // Don't overwrite an already-tiered item (covers entityItemModifier path too)
+    
         NbtCompound tierTag = stack.getSubNbt(Tierify.NBT_SUBTAG_KEY);
         if (tierTag != null && tierTag.contains(Tierify.NBT_SUBTAG_DATA_KEY)) {
             return stack;
         }
-
+    
         Identifier entityId = Registries.ENTITY_TYPE.getId(self.getType());
         EntityLootDropProfiles.Entry profile = EntityLootDropProfiles.get(entityId);
         if (profile == null) return stack;
-
-        // Use a local RNG without consuming vanilla RNG streams (non-sticky per-mob).
+    
         Random rng = Random.create();
-
         if (rng.nextFloat() > profile.chance()) return stack;
-
+    
+        Identifier itemId = Registries.ITEM.getId(stack.getItem());
+    
+        boolean hadTierBefore = false;
+        NbtCompound beforeTag = stack.getSubNbt(Tierify.NBT_SUBTAG_KEY);
+        if (beforeTag != null && beforeTag.contains(Tierify.NBT_SUBTAG_DATA_KEY)) hadTierBefore = true;
+    
+        LOGGER.info("[EquipDrop] entity={} item={} chance={} weights={},{},{},{},{},{} hadTierBefore={}",
+                entityId,
+                itemId,
+                profile.chance(),
+                profile.weights()[0], profile.weights()[1], profile.weights()[2],
+                profile.weights()[3], profile.weights()[4], profile.weights()[5],
+                hadTierBefore
+        );
+    
         ModifierUtils.setItemStackAttributeEntityWeightedWithCustomWeights(null, stack, profile.weights());
+    
+        boolean hasTierAfter = false;
+        NbtCompound afterTag = stack.getSubNbt(Tierify.NBT_SUBTAG_KEY);
+        if (afterTag != null && afterTag.contains(Tierify.NBT_SUBTAG_DATA_KEY)) hasTierAfter = true;
+    
+        LOGGER.info("[EquipDrop] entity={} item={} applied=true hasTierAfter={}",
+                entityId, itemId, hasTierAfter
+        );
+    
         return stack;
     }
 }
