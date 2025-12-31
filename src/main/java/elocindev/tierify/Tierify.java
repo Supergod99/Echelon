@@ -43,6 +43,7 @@ import elocindev.tierify.command.CommandInit;
 import elocindev.tierify.config.ClientConfig;
 import elocindev.tierify.config.CommonConfig;
 import elocindev.tierify.config.CommonConfigAutoSync;
+import elocindev.tierify.config.TreasureBagProfiles;
 import elocindev.tierify.Tierify;
 import elocindev.tierify.data.AttributeDataLoader;
 import elocindev.tierify.data.ReforgeDataLoader;
