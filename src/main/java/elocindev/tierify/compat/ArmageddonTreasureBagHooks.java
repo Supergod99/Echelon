@@ -33,8 +33,7 @@ public final class ArmageddonTreasureBagHooks {
         // Per-spawned-item chance roll (as requested)
         if (Math.random() > profile.chance()) return spawned;
 
-        LivingEntity living = (player instanceof LivingEntity le) ? le : null;
-        ModifierUtils.setItemStackAttributeEntityWeightedWithCustomWeights(living, spawned, profile.weights());
+        ModifierUtils.setItemStackAttributeEntityWeightedWithCustomWeights(player, spawned, profile.weights());
         return spawned;
     }
 
