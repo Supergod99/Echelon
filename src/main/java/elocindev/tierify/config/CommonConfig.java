@@ -21,6 +21,9 @@ public class CommonConfig {
     @Comment("Chance for loot-container items to receive a modifier when lootContainerModifier is true.")
     @Comment("0.0 = never, 0.5 = 50%, 1.0 = always.")
     public float lootContainerModifierChance = 0.1F;
+
+    public boolean treasureBagDropModifier = true;
+    public String treasureBagProfilesFile = "echelon-treasure-bag-profiles.txt";
     
     @Comment("Equipped items on entities get modifiers")
     public boolean entityItemModifier = false;
