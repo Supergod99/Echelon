@@ -21,25 +21,29 @@ public final class ArmageddonTreasureBagHooks {
     public static ItemStack maybeReforgeFromHeldBag(ItemStack spawned, Entity entity) {
         if (spawned == null || spawned.isEmpty()) return spawned;
         if (!Tierify.CONFIG.treasureBagDropModifier) return spawned;
-
-        // Don’t overwrite already-tiered items
+    
         NbtCompound tierTag = spawned.getSubNbt(Tierify.NBT_SUBTAG_KEY);
         if (tierTag != null && tierTag.contains(Tierify.NBT_SUBTAG_DATA_KEY)) return spawned;
-
+    
         if (!(entity instanceof PlayerEntity player)) return spawned;
-        if (player.getWorld().isClient()) return spawned; // safety
-
+    
         Identifier bagId = resolveBagIdFromHands(player);
         if (bagId == null) return spawned;
-
+    
         TreasureBagProfiles.Entry profile = TreasureBagProfiles.get(bagId);
         if (profile == null) return spawned;
-
-        // Per-spawned-item chance roll (local RNG)
-        if (Random.create().nextFloat() > profile.chance()) return spawned;
-
-        // IMPORTANT: this API expects PlayerEntity (see ModifierUtils signature)
-        ModifierUtils.setItemStackAttributeEntityWeightedWithCustomWeights(player, spawned, profile.weights());
+    
+        if (Math.random() > profile.chance()) return spawned;
+    
+        try {
+            var weights = profile.weights();
+            if (weights == null || weights.isEmpty()) return spawned;
+    
+            ModifierUtils.setItemStackAttributeEntityWeightedWithCustomWeights(player, spawned, weights);
+        } catch (Throwable t) {
+            return spawned;
+        }
+    
         return spawned;
     }
 
