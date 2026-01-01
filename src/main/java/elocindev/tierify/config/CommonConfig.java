@@ -22,6 +22,7 @@ public class CommonConfig {
     @Comment("0.0 = never, 0.5 = 50%, 1.0 = always.")
     public float lootContainerModifierChance = 0.1F;
 
+    @Comment("Armageddon treasure bags gear can get modifiers")
     public boolean treasureBagDropModifier = true;
     public String treasureBagProfilesFile = "echelon-treasure-bag-profiles.txt";
     
