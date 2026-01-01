@@ -106,7 +106,16 @@ public final class TreasureBagProfiles {
                 "#   *=chance|weights\n" +
                 "#   modid:*=chance|weights\n\n" +
                 "armageddon_mod:iron_colossus_treasure_bag=0.35|end\n" +
-                "armageddon_mod:arion_treasurebag=0.50|0,0,8,10,6,2\n",
+                "armageddon_mod:arion_treasurebag=0.50|0,0,8,10,6,2\n" +
+                "armageddon_mod:iron_colossus_treasure_bag=1.0|5,1,0,0,0,0\n" +
+                "armageddon_mod:arion_treasurebag=1.0|5,1,0,0,0,0\n" +
+                "armageddon_mod:eldorath_treasure_bag=1.0|5,1,0,0,0,0\n" +
+                "armageddon_mod:zoranth_treasure_bag=1.0|3,5,1,0,0,0\n" +
+                "armageddon_mod:ender_dragon_treasurebag=0.5|3,5,3,1,0,0\n" +
+                "armageddon_mod:elvenite_paladin_treasure_bag=1.0|1,3,5,3,1,0\n" +
+                "armageddon_mod:vaedric_treasure_bag=1.0|1,3,5,3,1,0\n" +
+                "armageddon_mod:zoranth_newborn_of_the_zenith_treasure_bag=1.0|1,3,5,3,1,0\n" +
+                "armageddon_mod:nyxaris_the_veil_of_oblivion_treasure_bag=1.0|3,5,7,5,3,1\n",
                 StandardCharsets.UTF_8
             );
         } catch (IOException ignored) {}
