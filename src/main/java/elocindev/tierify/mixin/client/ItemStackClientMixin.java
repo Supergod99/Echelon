@@ -269,13 +269,15 @@ public abstract class ItemStackClientMixin {
                     double value = mod.getValue();
                     boolean isTiered = tierifyModifierIds.contains(mod.getId());
                     if (isTiered) hasTiered = true;
-    
+                
                     totalBase += value;
-    
+                
+                    // totalWithBonus should represent the final displayed total (base + bonus), not the bonus delta.
+                    totalWithBonus += value;
+                
+                    // Only scale tiered-positive contributions
                     if (isTiered && hasSetBonus && value > 0) {
                         totalWithBonus += (value * setBonusFactor);
-                    } else {
-                        totalWithBonus += value;
                     }
                 }
 
