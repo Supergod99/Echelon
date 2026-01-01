@@ -261,7 +261,7 @@ public abstract class ItemStackClientMixin {
                     String oldString = MODIFIER_FORMAT.format(displayBase);
                     String newString = MODIFIER_FORMAT.format(displayBonus);
 
-                    updateTooltipRecursive(tooltip, oldString, newString, true);
+                    updateTooltipRecursiveForAttribute(tooltip, attribute, oldString, newString, true);
                 }
             }
         }
@@ -545,6 +545,39 @@ public abstract class ItemStackClientMixin {
             if (!(trimmed.startsWith("+") || trimmed.startsWith("-"))) {
                 continue;
             }
+    
+            Text newLine = processNodeRecursive(originalLine, target, replacement);
+    
+            if (applyGold && newLine instanceof MutableText mutable) {
+                forceColorRecursive(mutable, Formatting.GOLD);
+            }
+    
+            tooltip.set(i, newLine);
+        }
+    }
+
+    private void updateTooltipRecursiveForAttribute(
+            List<Text> tooltip,
+            EntityAttribute attribute,
+            String target,
+            String replacement,
+            boolean applyGold
+    ) {
+        // This is the text that appears at the end of vanilla attribute modifier lines
+        String attrName = Text.translatable(attribute.getTranslationKey()).getString();
+    
+        for (int i = 0; i < tooltip.size(); i++) {
+            Text originalLine = tooltip.get(i);
+            if (originalLine == null) continue;
+    
+            String plain = originalLine.getString();
+    
+            // Must match BOTH: the number token and the attribute name
+            if (!plain.contains(target) || !plain.contains(attrName)) continue;
+    
+            // Only touch attribute modifier lines
+            String trimmed = plain.trim();
+            if (!(trimmed.startsWith("+") || trimmed.startsWith("-"))) continue;
     
             Text newLine = processNodeRecursive(originalLine, target, replacement);
     
