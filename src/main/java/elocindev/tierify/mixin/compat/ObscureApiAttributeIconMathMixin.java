@@ -16,9 +16,9 @@ import net.minecraft.util.Identifier;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.lang.reflect.Method;
 import java.text.DecimalFormat;
@@ -68,26 +68,27 @@ public class ObscureApiAttributeIconMathMixin {
         if (icon == null || modifiers == null || modifiers.isEmpty()) return original;
 
         // Compute correct vanilla-like value from the modifier collection
-        VanillaSums sums = tierify$sumModifiers(modifiers);
+        double[] sums = tierify$sumModifiers(modifiers);
+        double add = sums[0];
+        double multBase = sums[1];
+        double multTotal = sums[2];
 
         // Apply set bonus delta ONLY for the three attributes Obscure shows on armor summary line
-        SetBonusDelta delta = tierify$computeSetBonusDelta(icon, isPercent);
+        double[] delta = tierify$computeSetBonusDelta(icon, isPercent);
         if (delta != null) {
-            sums.add += delta.add;
-            sums.multBase += delta.multBase;
-            sums.multTotal *= delta.multTotalFactor;
+            add += delta[0];
+            multBase += delta[1];
+            multTotal *= delta[2];
         }
 
-        double value = tierify$computeVanillaLikeValue(base, sums.add, sums.multBase, sums.multTotal);
+        double value = tierify$computeVanillaLikeValue(base, add, multBase, multTotal);
 
         // If Obscure would have hidden it, keep original behavior
         if (Math.abs(value) < 1.0e-9) return "";
 
         // Rebuild the string in the same general shape Obscure uses: "<icon><number><optional %> "
         // (Obscure’s icon itself already contains styling codes)
-        String rendered = tierify$render(icon, value, isPercent);
-
-        return rendered;
+        return tierify$render(icon, value, isPercent);
     }
 
     @Unique
@@ -114,32 +115,37 @@ public class ObscureApiAttributeIconMathMixin {
         return d1 * multTotal;
     }
 
+    /**
+     * Returns {add, multBase, multTotal} where multTotal starts at 1.0 and compounds (1+amount).
+     * Implemented as an array to avoid generating nested helper classes inside a mixin package.
+     */
     @Unique
-    private static VanillaSums tierify$sumModifiers(Collection<?> modifiers) {
-        VanillaSums sums = new VanillaSums();
-    
+    private static double[] tierify$sumModifiers(Collection<?> modifiers) {
+        double add = 0.0;
+        double multBase = 0.0;
+        double multTotal = 1.0;
+
         for (Object o : modifiers) {
             if (o == null) continue;
-    
+
             double amount = tierify$readModifierAmount(o);
             int op = tierify$readModifierOperationOrdinal(o);
-    
+
             switch (op) {
-                case 0 -> sums.add += amount;                 // ADDITION
-                case 1 -> sums.multBase += amount;            // MULTIPLY_BASE
-                case 2 -> sums.multTotal *= (1.0 + amount);   // MULTIPLY_TOTAL
+                case 0 -> add += amount;                 // ADDITION
+                case 1 -> multBase += amount;            // MULTIPLY_BASE
+                case 2 -> multTotal *= (1.0 + amount);   // MULTIPLY_TOTAL
                 default -> { /* ignore unknown */ }
             }
         }
-    
-        return sums;
+
+        return new double[] { add, multBase, multTotal };
     }
 
     @Unique
     private static double tierify$readModifierAmount(Object mod) {
         // Works across mappings by trying common method names
-        Double v =
-                (Double) tierify$invokeFirst(mod, "getValue", "getAmount", "m_22218_");
+        Double v = (Double) tierify$invokeFirst(mod, "getValue", "getAmount", "m_22218_");
         return v != null ? v : 0.0;
     }
 
@@ -177,6 +183,7 @@ public class ObscureApiAttributeIconMathMixin {
     }
 
     @Unique
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private static String tierify$resolveObscureIcon(String enumName) {
         try {
             Class<?> icons = Class.forName("com.obscuria.obscureapi.api.utils.Icons");
@@ -192,9 +199,12 @@ public class ObscureApiAttributeIconMathMixin {
     /**
      * Computes the *per-piece* extra contribution caused by the set bonus for THIS stack,
      * for the attribute represented by the Obscure icon string.
+     *
+     * Returns {addDelta, multBaseDelta, multTotalFactor} OR null.
+     * Implemented as an array to avoid generating nested helper classes inside a mixin package.
      */
     @Unique
-    private static SetBonusDelta tierify$computeSetBonusDelta(String icon, boolean isPercent) {
+    private static double[] tierify$computeSetBonusDelta(String icon, boolean isPercent) {
         // Fast rejects
         if (!Tierify.CONFIG.enableArmorSetBonuses) return null;
 
@@ -210,7 +220,7 @@ public class ObscureApiAttributeIconMathMixin {
 
         tierify$ensureIconsResolved();
 
-        String attributeId = null;
+        String attributeId;
         if (TIERIFY$ICON_ARMOR != null && TIERIFY$ICON_ARMOR.equals(icon)) {
             attributeId = "minecraft:generic.armor";
         } else if (TIERIFY$ICON_TOUGHNESS != null && TIERIFY$ICON_TOUGHNESS.equals(icon)) {
@@ -244,7 +254,7 @@ public class ObscureApiAttributeIconMathMixin {
             EntityAttributeModifier m = t.getEntityAttributeModifier();
             double baseValue = m.getValue();
 
-            // Only boost positive stats (matches your set-bonus rules)
+            // Only boost positive stats 
             if (!(baseValue > 0.0)) continue;
 
             double extra = baseValue * pct;
@@ -260,22 +270,6 @@ public class ObscureApiAttributeIconMathMixin {
             return null;
         }
 
-        return new SetBonusDelta(add, multBase, multTotalFactor);
+        return new double[] { add, multBase, multTotalFactor };
     }
-
-    @Unique
-    private static final class VanillaSums {
-        double add;
-        double multBase;
-        double multTotal;
-    
-        VanillaSums() {
-            this.add = 0.0;
-            this.multBase = 0.0;
-            this.multTotal = 1.0; // multiplicative identity
-        }
-    }
-
-    @Unique
-    private record SetBonusDelta(double add, double multBase, double multTotalFactor) {}
 }
