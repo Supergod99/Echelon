@@ -189,7 +189,11 @@ public class ObscureApiAttributeIconMathMixin {
 
         ItemStack equippedSameSlot = player.getEquippedStack(armor.getSlotType());
         if (equippedSameSlot == null || equippedSameSlot.isEmpty()) return null;
+        // This prevents inventory duplicates / same-tier items from inheriting the active set bonus visually.
+        if (hovered != equippedSameSlot) return null;
+        // keep this as a sanity check; it should always be true if identity matches.
         if (!hoveredTier.equals(tierify$getTierId(equippedSameSlot))) return null;
+
 
         if (!tierify$hasFullTierSetEquipped(player, hoveredTier)) return null;
 
