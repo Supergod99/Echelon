@@ -5,13 +5,14 @@ import draylar.tiered.api.AttributeTemplate;
 import draylar.tiered.api.ModifierUtils;
 import draylar.tiered.api.PotentialAttribute;
 import elocindev.tierify.Tierify;
-import elocindev.tierify.util.SetBonusUtils;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.attribute.EntityAttributeModifier;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.ArmorItem;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.Identifier;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -207,19 +208,32 @@ public class ObscureApiAttributeIconMathMixin {
     private static double[] tierify$computeSetBonusDelta(String icon, boolean isPercent) {
         // Fast rejects
         if (!Tierify.CONFIG.enableArmorSetBonuses) return null;
-
-        ItemStack stack = TIERIFY$CURRENT_STACK.get();
-        if (stack == null || stack.isEmpty()) return null;
-
+    
+        ItemStack hovered = TIERIFY$CURRENT_STACK.get();
+        if (hovered == null || hovered.isEmpty()) return null;
+        if (!(hovered.getItem() instanceof ArmorItem armor)) return null;
+    
         MinecraftClient mc = MinecraftClient.getInstance();
         PlayerEntity player = mc.player;
         if (player == null) return null;
-
-        // Only apply when the set bonus is active for this piece
-        if (!SetBonusUtils.hasSetBonus(player, stack)) return null;
-
+    
+        // Determine hovered tier id from NBT (works even if Obscure passed a copy)
+        String targetTier = tierify$getTierId(hovered);
+        if (targetTier.isEmpty()) return null;
+    
+        // Only apply when THIS tooltip corresponds to the currently equipped piece in the same slot (by tier id)
+        ItemStack equippedSameSlot = player.getEquippedStack(armor.getSlotType());
+        if (equippedSameSlot == null || equippedSameSlot.isEmpty()) return null;
+        if (!targetTier.equals(tierify$getTierId(equippedSameSlot))) return null;
+    
+        // Must have a full matching set equipped (again: by tier id, not object identity)
+        boolean fullSet = tierify$hasFullTierSetEquipped(player, targetTier);
+        if (!fullSet) return null;
+    
+        boolean perfectSet = tierify$hasPerfectFullTierSetEquipped(player, targetTier);
+    
         tierify$ensureIconsResolved();
-
+    
         String attributeId;
         if (TIERIFY$ICON_ARMOR != null && TIERIFY$ICON_ARMOR.equals(icon)) {
             attributeId = "minecraft:generic.armor";
@@ -228,48 +242,92 @@ public class ObscureApiAttributeIconMathMixin {
         } else if (TIERIFY$ICON_KNOCKBACK != null && TIERIFY$ICON_KNOCKBACK.equals(icon)) {
             attributeId = "minecraft:generic.knockback_resistance";
         } else {
-            return null; // Not one of the summary-line attributes we need to correct
+            return null; // not one of the summary-line attributes we correct
         }
-
-        // Determine bonus percent (0.20) used by the set
-        double pct = SetBonusUtils.hasPerfectSetBonus(player, stack)
+    
+        double pct = perfectSet
                 ? Tierify.CONFIG.armorSetPerfectBonusPercent
                 : Tierify.CONFIG.armorSetBonusMultiplier;
-
+    
         if (pct <= 0.0) return null;
-
-        Identifier tierId = ModifierUtils.getAttributeID(stack);
+    
+        Identifier tierId = ModifierUtils.getAttributeID(hovered);
         if (tierId == null) return null;
-
+    
         PotentialAttribute pa = Tierify.ATTRIBUTE_DATA_LOADER.getItemAttributes().get(tierId);
         if (pa == null) return null;
-
+    
         double add = 0.0;
         double multBase = 0.0;
         double multTotalFactor = 1.0;
-
+    
         for (AttributeTemplate t : pa.getAttributes()) {
             if (!attributeId.equals(t.getAttributeTypeID())) continue;
-
+    
             EntityAttributeModifier m = t.getEntityAttributeModifier();
             double baseValue = m.getValue();
-
-            // Only boost positive stats 
+    
+            // Only boost positive stats
             if (!(baseValue > 0.0)) continue;
-
+    
             double extra = baseValue * pct;
-
+    
             switch (m.getOperation()) {
                 case ADDITION -> add += extra;
                 case MULTIPLY_BASE -> multBase += extra;
                 case MULTIPLY_TOTAL -> multTotalFactor *= (1.0 + extra);
             }
         }
-
-        if (Math.abs(add) < 1.0e-9 && Math.abs(multBase) < 1.0e-9 && Math.abs(multTotalFactor - 1.0) < 1.0e-9) {
+    
+        if (Math.abs(add) < 1.0e-9
+                && Math.abs(multBase) < 1.0e-9
+                && Math.abs(multTotalFactor - 1.0) < 1.0e-9) {
             return null;
         }
-
+    
         return new double[] { add, multBase, multTotalFactor };
+    }
+    
+    @Unique
+    private static String tierify$getTierId(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return "";
+        NbtCompound nbt = stack.getSubNbt(Tierify.NBT_SUBTAG_KEY);
+        if (nbt == null) return "";
+        return nbt.getString(Tierify.NBT_SUBTAG_DATA_KEY);
+    }
+    
+    @Unique
+    private static boolean tierify$hasFullTierSetEquipped(PlayerEntity player, String targetTier) {
+        if (player == null || targetTier == null || targetTier.isEmpty()) return false;
+    
+        int matchCount = 0;
+        for (ItemStack armorPiece : player.getInventory().armor) {
+            if (armorPiece == null || armorPiece.isEmpty()) return false;
+    
+            String pieceTier = tierify$getTierId(armorPiece);
+            if (targetTier.equals(pieceTier)) {
+                matchCount++;
+            }
+        }
+        return matchCount >= 4;
+    }
+    
+    @Unique
+    private static boolean tierify$hasPerfectFullTierSetEquipped(PlayerEntity player, String targetTier) {
+        if (!tierify$hasFullTierSetEquipped(player, targetTier)) return false;
+    
+        for (ItemStack armorPiece : player.getInventory().armor) {
+            if (armorPiece == null || armorPiece.isEmpty()) return false;
+    
+            NbtCompound nbt = armorPiece.getSubNbt(Tierify.NBT_SUBTAG_KEY);
+            if (nbt == null) return false;
+    
+            if (!targetTier.equals(nbt.getString(Tierify.NBT_SUBTAG_DATA_KEY))) return false;
+    
+            // Your project uses "Perfect" boolean in the Tier subtag. :contentReference[oaicite:3]{index=3}
+            if (!nbt.getBoolean("Perfect")) return false;
+        }
+
+        return true;
     }
 }
