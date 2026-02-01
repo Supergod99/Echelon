@@ -205,15 +205,10 @@ public class ObscureApiAttributeIconMathMixin {
 
         ItemStack equippedSameSlot = player.getItemBySlot(armor.getEquipmentSlot());
         if (equippedSameSlot == null || equippedSameSlot.isEmpty()) return null;
-        if (hovered != equippedSameSlot) {
-            UUID hoveredUuid = getTierUuid(hovered);
-            UUID equippedUuid = getTierUuid(equippedSameSlot);
-            if (hoveredUuid != null && equippedUuid != null) {
-                if (!hoveredUuid.equals(equippedUuid)) return null;
-            } else if (!ItemStack.isSameItemSameTags(hovered, equippedSameSlot)) {
-                return null;
-            }
-        }
+        UUID hoveredUuid = getTierUuid(hovered);
+        UUID equippedUuid = getTierUuid(equippedSameSlot);
+        if (hoveredUuid != null && equippedUuid != null && !hoveredUuid.equals(equippedUuid)) return null;
+        if (hovered.getItem() != equippedSameSlot.getItem()) return null;
         if (!hoveredTier.equals(getTierId(equippedSameSlot))) return null;
 
         if (!hasFullTierSetEquipped(player, hoveredTier)) return null;
