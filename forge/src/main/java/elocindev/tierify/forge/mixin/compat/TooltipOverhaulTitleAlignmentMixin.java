@@ -26,17 +26,61 @@ import java.util.List;
 @Mixin(targets = "dev.xylonity.tooltipoverhaul.client.style.text.DefaultText", remap = false)
 public class TooltipOverhaulTitleAlignmentMixin {
 
-    @Unique private static int tierify$titleLineIndex;
     @Unique private static int tierify$titleLineCount;
     @Unique private static int tierify$titleBaseX;
     @Unique private static int tierify$titleOffset;
     @Unique private static Point tierify$titleSize;
     @Unique private static Object tierify$titleCtx;
     @Unique private static boolean tierify$applyTitleCentering;
-    @Unique private static List<?> tierify$titleComponents;
     @Unique private static int tierify$titleTargetY;
     @Unique private static boolean tierify$titleDeltaSet;
     @Unique private static int tierify$titleDeltaY;
+
+    @Unique
+    private static final class TierifyCenteredTitleComponent implements ClientTooltipComponent {
+        private final ClientTooltipComponent delegate;
+        private final boolean firstLine;
+
+        private TierifyCenteredTitleComponent(ClientTooltipComponent delegate, boolean firstLine) {
+            this.delegate = delegate;
+            this.firstLine = firstLine;
+        }
+
+        @Override
+        public int getHeight() {
+            return delegate.getHeight();
+        }
+
+        @Override
+        public int getWidth(Font font) {
+            return delegate.getWidth(font);
+        }
+
+        @Override
+        public void renderText(Font font, int x, int y, org.joml.Matrix4f matrix, net.minecraft.client.renderer.MultiBufferSource.BufferSource buffer) {
+            int drawX = x;
+            int drawY = y;
+            if (tierify$applyTitleCentering) {
+                Integer centeredX = callTitleAlignmentX(tierify$titleBaseX, tierify$titleOffset, tierify$titleSize, delegate, font, tierify$titleCtx);
+                if (centeredX != null) {
+                    drawX = centeredX;
+                }
+                if (tierify$titleTargetY != Integer.MIN_VALUE) {
+                    if (!tierify$titleDeltaSet && firstLine) {
+                        tierify$titleDeltaY = tierify$titleTargetY - y;
+                        tierify$titleDeltaSet = true;
+                    }
+                    drawY = y + tierify$titleDeltaY;
+                }
+            }
+            delegate.renderText(font, drawX, drawY, matrix, buffer);
+        }
+
+        @Override
+        public void renderImage(Font font, int x, int y, net.minecraft.client.gui.GuiGraphics graphics) {
+            delegate.renderImage(font, x, y, graphics);
+        }
+    }
 
     @Inject(method = "lambda$render$0", at = @At("HEAD"), remap = false)
     private static void tierify$prepareTitleAlignment(@Coerce Object ctx,
@@ -46,14 +90,12 @@ public class TooltipOverhaulTitleAlignmentMixin {
                                                       Point size,
                                                       Font font,
                                                       CallbackInfo ci) {
-        tierify$titleLineIndex = 0;
         tierify$titleLineCount = 1;
         tierify$titleBaseX = 0;
         tierify$titleOffset = 0;
         tierify$titleSize = size;
         tierify$titleCtx = ctx;
         tierify$applyTitleCentering = false;
-        tierify$titleComponents = null;
         tierify$titleTargetY = Integer.MIN_VALUE;
         tierify$titleDeltaSet = false;
         tierify$titleDeltaY = 0;
@@ -108,55 +150,19 @@ public class TooltipOverhaulTitleAlignmentMixin {
         List<?> components = readComponents(ctx);
         if (components != null && !components.isEmpty()) {
             int count = Math.min(tierify$titleLineCount, components.size());
-            tierify$titleComponents = components.subList(0, count);
-        }
-    }
-
-    @Redirect(
-            method = "lambda$render$0",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipComponent;renderText(Lnet/minecraft/client/gui/Font;IILorg/joml/Matrix4f;Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;)V"
-            ),
-            remap = false
-    )
-    private static void tierify$centerWrappedTitle(ClientTooltipComponent component,
-                                                   Font font,
-                                                   int x,
-                                                   int y,
-                                                   org.joml.Matrix4f matrix,
-                                                   net.minecraft.client.renderer.MultiBufferSource.BufferSource buffer) {
-        boolean isTitle = isTitleComponent(component);
-        if (tierify$applyTitleCentering && isTitle) {
-            Integer centeredX = callTitleAlignmentX(tierify$titleBaseX, tierify$titleOffset, tierify$titleSize, component, font, tierify$titleCtx);
-            if (centeredX != null) {
-                int adjustedY = y;
-                if (tierify$titleTargetY != Integer.MIN_VALUE) {
-                    if (!tierify$titleDeltaSet) {
-                        tierify$titleDeltaY = tierify$titleTargetY - y;
-                        tierify$titleDeltaSet = true;
-                    }
-                    adjustedY = y + tierify$titleDeltaY;
+            @SuppressWarnings("unchecked")
+            List<Object> mutable = (List<Object>) components;
+            for (int i = 0; i < count; i++) {
+                Object obj = mutable.get(i);
+                if (!(obj instanceof ClientTooltipComponent component)) continue;
+                if (component instanceof TierifyCenteredTitleComponent) continue;
+                try {
+                    mutable.set(i, new TierifyCenteredTitleComponent(component, i == 0));
+                } catch (UnsupportedOperationException ignored) {
+                    break;
                 }
-                component.renderText(font, centeredX, adjustedY, matrix, buffer);
-                return;
             }
         }
-        component.renderText(font, x, y, matrix, buffer);
-    }
-
-    @Unique
-    private static boolean isTitleComponent(Object component) {
-        if (component == null) return false;
-        if (tierify$titleComponents != null && !tierify$titleComponents.isEmpty()) {
-            for (Object obj : tierify$titleComponents) {
-                if (obj == component) return true;
-            }
-            return false;
-        }
-
-        int index = tierify$titleLineIndex++;
-        return index < tierify$titleLineCount;
     }
 
     @Unique
