@@ -203,11 +203,13 @@ public class ObscureApiAttributeIconMathMixin {
         Player player = mc.player;
         if (player == null) return null;
 
-        String hoveredTier = getTierId(hovered);
-        if (hoveredTier.isEmpty()) return null;
-
         ItemStack equippedSameSlot = player.getItemBySlot(armor.getEquipmentSlot());
         if (equippedSameSlot == null || equippedSameSlot.isEmpty()) return null;
+        String hoveredTier = getTierId(hovered);
+        if (hoveredTier.isEmpty()) {
+            hoveredTier = getTierId(equippedSameSlot);
+        }
+        if (hoveredTier.isEmpty()) return null;
         UUID hoveredUuid = getTierUuid(hovered);
         UUID equippedUuid = getTierUuid(equippedSameSlot);
         if (hoveredUuid != null && equippedUuid != null && !hoveredUuid.equals(equippedUuid)) return null;
@@ -232,7 +234,7 @@ public class ObscureApiAttributeIconMathMixin {
         } else {
             return null;
         }
-        Set<UUID> expectedTierUuids = expectedTierModifierUuidsForIcon(icon, hovered);
+        Set<UUID> expectedTierUuids = expectedTierModifierUuidsForIcon(icon, hovered, equippedSameSlot);
 
         double add = 0.0;
         double multBase = 0.0;
@@ -272,7 +274,7 @@ public class ObscureApiAttributeIconMathMixin {
     }
 
     @Unique
-    private static Set<UUID> expectedTierModifierUuidsForIcon(String icon, ItemStack hovered) {
+    private static Set<UUID> expectedTierModifierUuidsForIcon(String icon, ItemStack hovered, ItemStack equipped) {
         if (hovered == null || hovered.isEmpty()) return Set.of();
         if (!(hovered.getItem() instanceof ArmorItem armor)) return Set.of();
         if (icon == null || icon.isEmpty()) return Set.of();
@@ -280,19 +282,19 @@ public class ObscureApiAttributeIconMathMixin {
         String attrId = attributeIdForIcon(icon);
         if (attrId == null) return Set.of();
 
-        String salt;
-        UUID tierUuid = getTierUuid(hovered);
-        if (tierUuid != null) {
-            salt = tierUuid.toString();
-        } else {
-            salt = hovered.getDescriptionId();
-        }
         Set<UUID> ids = new HashSet<>();
-        ids.add(tierModifierUuid(attrId, armor.getEquipmentSlot().getName(), salt));
-        ids.add(tierModifierUuid(attrId, "head", salt));
-        ids.add(tierModifierUuid(attrId, "chest", salt));
-        ids.add(tierModifierUuid(attrId, "legs", salt));
-        ids.add(tierModifierUuid(attrId, "feet", salt));
+        addExpectedUuids(ids, attrId, armor.getEquipmentSlot().getName(), hovered);
+        addExpectedUuids(ids, attrId, "head", hovered);
+        addExpectedUuids(ids, attrId, "chest", hovered);
+        addExpectedUuids(ids, attrId, "legs", hovered);
+        addExpectedUuids(ids, attrId, "feet", hovered);
+        if (equipped != null && !equipped.isEmpty()) {
+            addExpectedUuids(ids, attrId, armor.getEquipmentSlot().getName(), equipped);
+            addExpectedUuids(ids, attrId, "head", equipped);
+            addExpectedUuids(ids, attrId, "chest", equipped);
+            addExpectedUuids(ids, attrId, "legs", equipped);
+            addExpectedUuids(ids, attrId, "feet", equipped);
+        }
         return ids;
     }
 
@@ -300,6 +302,16 @@ public class ObscureApiAttributeIconMathMixin {
     private static UUID tierModifierUuid(String attrId, String slotName, String salt) {
         String key = attrId + "_" + slotName + "_" + salt;
         return UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Unique
+    private static void addExpectedUuids(Set<UUID> ids, String attrId, String slotName, ItemStack stack) {
+        if (ids == null || stack == null || stack.isEmpty()) return;
+        UUID tierUuid = getTierUuid(stack);
+        if (tierUuid != null) {
+            ids.add(tierModifierUuid(attrId, slotName, tierUuid.toString()));
+        }
+        ids.add(tierModifierUuid(attrId, slotName, stack.getDescriptionId()));
     }
 
     @Unique
