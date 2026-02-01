@@ -2,8 +2,10 @@ package elocindev.tierify.forge.event;
 
 import elocindev.tierify.TierifyCommon;
 import elocindev.tierify.forge.ForgeTieredAttributeSubscriber;
+import elocindev.tierify.forge.apex.ApexActiveEffects;
 import elocindev.tierify.forge.config.ForgeTierifyConfig;
 import elocindev.tierify.forge.util.ForgeAttributeHelper;
+import elocindev.tierify.server.SetBonusTickHandler;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundSetHealthPacket;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,6 +22,7 @@ import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.living.MobSpawnEvent;
 import net.minecraftforge.event.entity.player.CriticalHitEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -98,8 +101,16 @@ public final class ForgeGameplayEventSubscriber {
     }
 
     @SubscribeEvent
+    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) return;
+        if (!(event.player instanceof ServerPlayer player)) return;
+        ApexActiveEffects.tick(player);
+    }
+
+    @SubscribeEvent
     public static void onLivingEquipmentChange(LivingEquipmentChangeEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        SetBonusTickHandler.markDirty(player);
 
         ItemStack from = event.getFrom();
         if (from.isEmpty()) return;

@@ -1,11 +1,12 @@
 package elocindev.tierify.forge.mixin.compat;
 
+import com.obscuria.obscureapi.api.utils.Icons;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(targets = "com.obscuria.obscureapi.api.utils.Icons", remap = false)
+@Mixin(value = Icons.class, remap = false)
 public abstract class ObscureApiIconsMixin {
 
     @Inject(method = "get", at = @At("RETURN"), cancellable = true)

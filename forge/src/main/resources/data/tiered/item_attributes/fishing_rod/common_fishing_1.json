@@ -1,10 +1,5 @@
 {
   "id": "tiered:common_fishing_1",
-  "verifiers": [
-    {
-      "id": "minecraft:fishing_rod"
-    }
-  ],
   "weight": 50,
   "style": {
     "color": "gray"

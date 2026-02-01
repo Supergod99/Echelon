@@ -1,0 +1,11 @@
+{
+  "providers": [
+    {
+      "type": "ttf",
+      "file": "tiered:apex_effect.ttf",
+      "shift": [0, 0.8],
+      "size": 6,
+      "oversample": 10.0
+    }
+  ]
+}

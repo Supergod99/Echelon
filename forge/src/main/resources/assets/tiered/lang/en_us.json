@@ -6,6 +6,16 @@
   "generic.fortune": "Fortune",
   
   "tiered.perfect.label": "Perfect",
+  "tooltip.tiered.apex_effect": "Apex Effect",
+  "tooltip.tiered.apex_effect_shift": "[SHIFT]",
+  "tooltip.tiered.apex_effect.mythic_armor_1.line1": "Double armor on all pieces for 10 seconds.",
+  "tooltip.tiered.apex_effect.mythic_armor_1.line2": "Requires full Apex set. Cooldown 60s.",
+  "tooltip.tiered.stellar_core.title": "Star Upgrade:",
+  "tooltip.tiered.stellar_core.desc": "Adds a star to Mythic gear, increasing reforge strength (max 5).",
+  "tooltip.tiered.stardust.title": "Core Reagent:",
+  "tooltip.tiered.stardust.desc": "Used to craft Stellar Cores.",
+  "tooltip.tiered.apex_crux.title": "Apex Upgrade:",
+  "tooltip.tiered.apex_crux.desc": "Upgrades 5-star Mythic gear to Apex, boosting reforge strength and granting an Apex effect.",
 
   "tiered:common_melee_1.label": "Brutal",
   "tiered:common_melee_2.label": "Cruel",
@@ -58,6 +68,10 @@
   "tiered:uncomon_armor_4.label": "Heartforged",
   "tiered:uncomon_armor_5.label": "Icebound",
   "tiered:uncomon_armor_6.label": "Sanguine",
+  "key.categories.tiered": "Echelon",
+  "key.tiered.apex_armor_active": "Apex Armor Active",
+  "key.tiered.apex_mainhand_active": "Apex Mainhand Active",
+  "key.tiered.apex_offhand_active": "Apex Offhand Active",
   "tiered:uncomon_armor_7.label": "Mindbent",
   "tiered:uncomon_armor_8.label": "Desolate",
   "tiered:uncomon_armor_9.label": "Summoner's Touch",
@@ -339,8 +353,17 @@
 
   "container.reforge": "Reforge Gear",
   "screen.tiered.reforging_screen": "Reforge Gear",
+  "screen.tiered.salvaging_screen": "Salvaging",
   "screen.tiered.reforge_ingredient": "Requires Ingredient",
   "screen.tiered.reforge_damaged": "Requires Full Durability",
+  "screen.tiered.salvage_level": "Salvage Tier: %s",
+  "screen.tiered.salvage_tier": "Tier: ",
+  "screen.tiered.salvage_action": "Salvage Item",
+  "screen.tiered.salvage_upgrade": "Upgrade Salvaging to Tier %s",
+  "screen.tiered.salvage_upgrade_action": "Upgrade Salvaging",
+  "screen.tiered.salvage_upgrades": "Upgrades",
+  "screen.tiered.salvage_back": "Back",
+  "screen.tiered.salvage_upgrading_screen": "Salvage Upgrades",
 
   "text.tiered.smithing_info_1_1": "Each skill point increases luck",
   "text.tiered.smithing_info_1_2": "of reforging by %d%%",
@@ -364,6 +387,9 @@
   "commands.tiered.untier": "Untiered %s from %s",
   "commands.tiered.tiering_failed": "Nothing changed. %s from %s has no given tier",
   "commands.tiered.tier": "Tiered %s from %s",
+  "commands.tiered.stars.set": "Set stars to %s for %s",
+  "commands.tiered.apex.set": "Set apex to %s for %s",
+  "commands.tiered.salvage.reset": "Reset salvage tier for %s",
 
   "item.tiered.cleansing_stone": "Cleansing Stone",
   "item.tiered.limestone_chunk": "Limestone Chunk",
@@ -371,5 +397,8 @@
   "item.tiered.galena_chunk": "Galena Chunk",
   "item.tiered.charoite": "Charoite",
   "item.tiered.crown_topaz": "Crown Topaz",
-  "item.tiered.painite": "Painite"
+  "item.tiered.painite": "Painite",
+  "item.tiered.stardust": "Stardust",
+  "item.tiered.stellar_core": "Stellar Core",
+  "item.tiered.apex_crux": "Apex Crux"
 }

@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " S ",
+    "S S",
+    " S "
+  ],
+  "key": {
+    "S": {
+      "item": "tiered:stardust"
+    }
+  },
+  "result": {
+    "item": "tiered:stellar_core",
+    "count": 1
+  }
+}

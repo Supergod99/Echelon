@@ -4,6 +4,7 @@ import elocindev.tierify.TierifyConstants;
 import elocindev.tierify.forge.client.TierifyTooltipBorderRendererForge;
 import elocindev.tierify.forge.config.ForgeTierifyConfig;
 import elocindev.tierify.forge.item.ReforgeAddition;
+import elocindev.tierify.util.StarApexUtils;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.nbt.CompoundTag;
@@ -19,6 +20,7 @@ import java.lang.reflect.Constructor;
 import java.util.List;
 import java.util.Optional;
 
+@SuppressWarnings("unchecked")
 @Pseudo
 @Mixin(targets = "dev.xylonity.tooltipoverhaul.client.frame.CustomFrameManager", remap = false)
 public class TooltipOverhaulFrameMixin {
@@ -29,13 +31,27 @@ public class TooltipOverhaulFrameMixin {
 
         String lookupKey;
         boolean isPerfect = false;
+        boolean usePerfectStarBorder = false;
+        boolean isApex = false;
 
         CompoundTag nbt = stack.getTagElement(TierifyConstants.NBT_SUBTAG_KEY);
         if (nbt != null && nbt.contains(TierifyConstants.NBT_SUBTAG_DATA_KEY)) {
             isPerfect = nbt.getBoolean("Perfect");
             String tierId = nbt.getString(TierifyConstants.NBT_SUBTAG_DATA_KEY);
             if ((tierId == null || tierId.isEmpty()) && !isPerfect) return;
-            lookupKey = isPerfect ? "tiered:perfect" : tierId;
+            isApex = StarApexUtils.isApex(stack);
+            int stars = StarApexUtils.getStars(stack);
+            boolean mythicStars = tierId != null && tierId.startsWith("tiered:mythic") && stars > 0;
+            usePerfectStarBorder = isPerfect && mythicStars;
+            if (usePerfectStarBorder) {
+                lookupKey = "tiered:perfect_star_border";
+            } else if (isPerfect) {
+                lookupKey = "tiered:perfect";
+            } else if (isApex) {
+                lookupKey = "tiered:apex_border";
+            } else {
+                lookupKey = tierId;
+            }
         } else if (stack.getItem() instanceof ReforgeAddition) {
             ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
             if (id == null) return;
@@ -44,17 +60,18 @@ public class TooltipOverhaulFrameMixin {
             return;
         }
 
-        TierifyTooltipBorderRendererForge.Template match = TierifyTooltipBorderRendererForge.findTemplate(lookupKey, isPerfect);
+        boolean usePerfectBorder = isPerfect && !usePerfectStarBorder;
+        TierifyTooltipBorderRendererForge.Template match = TierifyTooltipBorderRendererForge.findTemplate(lookupKey, usePerfectBorder);
         if (match == null) return;
 
-        Object frameData = buildFrameData(match, isPerfect);
+        Object frameData = buildFrameData(match, isPerfect, isApex);
         if (frameData == null) return;
 
         cir.setReturnValue(Optional.of(frameData));
     }
 
     @Unique
-    private static Object buildFrameData(TierifyTooltipBorderRendererForge.Template match, boolean isPerfect) {
+    private static Object buildFrameData(TierifyTooltipBorderRendererForge.Template match, boolean isPerfect, boolean isApex) {
         try {
             Class<?> dataClass = Class.forName("dev.xylonity.tooltipoverhaul.client.frame.CustomFrameData");
 
@@ -99,7 +116,7 @@ public class TooltipOverhaulFrameMixin {
                     dividerNormal == null ? Optional.empty() : Optional.of(dividerNormal),
                     Optional.of(startHex),
                     Optional.empty(),
-                    isPerfect ? Optional.of("stars") : Optional.empty(),
+                    (isPerfect || isApex) ? Optional.of("stars") : Optional.empty(),
                     Optional.empty(),
                     Optional.empty(),
                     Optional.empty(),

@@ -6,5 +6,5 @@
 #   modid:*=weights
 
 minecraft:overworld=100,10,1,0,0,0
-minecraft:the_nether=10,100,10,3,1,0
-minecraft:the_end=0,10,100,10,3,1
+minecraft:the_nether=1,10,100,10,1,0
+minecraft:the_end=0,1,10,100,3,1

@@ -10,6 +10,7 @@ import elocindev.tierify.forge.registry.ForgeAttributeRegistry;
 import elocindev.tierify.forge.registry.ForgeItemRegistry;
 import elocindev.tierify.forge.registry.ForgeMenuTypes;
 import elocindev.tierify.forge.registry.ForgeSoundRegistry;
+import elocindev.tierify.forge.apex.ApexEffectsBootstrap;
 import elocindev.tierify.platform.ForgePlatformHelper;
 import elocindev.tierify.platform.Platform;
 import com.mojang.serialization.Codec;
@@ -64,6 +65,7 @@ public final class TierifyForge {
         LOOT_MODIFIERS.register(modBus);
 
         ForgeNetwork.init();
+        ApexEffectsBootstrap.init();
 
         modBus.addListener(TierifyForge::onConfigLoad);
         modBus.addListener(TierifyForge::onConfigReload);

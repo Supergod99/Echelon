@@ -7,3 +7,6 @@ The following assets are Copyright Supergod99 2025, All Rights Reserved.
 - painite_chunk.png
 - charorite.png
 - crown_topaz.png
+- stellar_core.png
+- stardust.png
+- apex_crux.png

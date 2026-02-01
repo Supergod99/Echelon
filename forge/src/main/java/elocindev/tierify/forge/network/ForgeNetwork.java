@@ -3,7 +3,12 @@ package elocindev.tierify.forge.network;
 import elocindev.tierify.TierifyCommon;
 import elocindev.tierify.forge.network.c2s.OpenAnvilFromReforgeC2S;
 import elocindev.tierify.forge.network.c2s.OpenReforgeFromAnvilC2S;
+import elocindev.tierify.forge.network.c2s.OpenSalvageFromAnvilC2S;
+import elocindev.tierify.forge.network.c2s.OpenSalvageUpgradeC2S;
+import elocindev.tierify.forge.network.c2s.ApexActiveEffectC2S;
 import elocindev.tierify.forge.network.c2s.TryReforgeC2S;
+import elocindev.tierify.forge.network.c2s.TrySalvageC2S;
+import elocindev.tierify.forge.network.c2s.TrySalvageUpgradeC2S;
 import elocindev.tierify.forge.network.s2c.AttributeSyncS2C;
 import elocindev.tierify.forge.network.s2c.ConfigSyncS2C;
 import elocindev.tierify.forge.network.s2c.ReforgeItemsSyncS2C;
@@ -34,10 +39,40 @@ public final class ForgeNetwork {
                 .consumerMainThread(OpenAnvilFromReforgeC2S::handle)
                 .add();
 
+        CHANNEL.messageBuilder(OpenSalvageFromAnvilC2S.class, id++, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(OpenSalvageFromAnvilC2S::encode)
+                .decoder(OpenSalvageFromAnvilC2S::decode)
+                .consumerMainThread(OpenSalvageFromAnvilC2S::handle)
+                .add();
+
+        CHANNEL.messageBuilder(OpenSalvageUpgradeC2S.class, id++, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(OpenSalvageUpgradeC2S::encode)
+                .decoder(OpenSalvageUpgradeC2S::decode)
+                .consumerMainThread(OpenSalvageUpgradeC2S::handle)
+                .add();
+
+        CHANNEL.messageBuilder(ApexActiveEffectC2S.class, id++, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(ApexActiveEffectC2S::encode)
+                .decoder(ApexActiveEffectC2S::decode)
+                .consumerMainThread(ApexActiveEffectC2S::handle)
+                .add();
+
         CHANNEL.messageBuilder(TryReforgeC2S.class, id++, NetworkDirection.PLAY_TO_SERVER)
                 .encoder(TryReforgeC2S::encode)
                 .decoder(TryReforgeC2S::decode)
                 .consumerMainThread(TryReforgeC2S::handle)
+                .add();
+
+        CHANNEL.messageBuilder(TrySalvageC2S.class, id++, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(TrySalvageC2S::encode)
+                .decoder(TrySalvageC2S::decode)
+                .consumerMainThread(TrySalvageC2S::handle)
+                .add();
+
+        CHANNEL.messageBuilder(TrySalvageUpgradeC2S.class, id++, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(TrySalvageUpgradeC2S::encode)
+                .decoder(TrySalvageUpgradeC2S::decode)
+                .consumerMainThread(TrySalvageUpgradeC2S::handle)
                 .add();
 
         CHANNEL.messageBuilder(AttributeSyncS2C.class, id++, NetworkDirection.PLAY_TO_CLIENT)

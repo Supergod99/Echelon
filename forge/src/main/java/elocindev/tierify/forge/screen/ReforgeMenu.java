@@ -1,12 +1,17 @@
 package elocindev.tierify.forge.screen;
 
 import elocindev.tierify.TierifyCommon;
+import elocindev.tierify.TierifyConstants;
 import elocindev.tierify.forge.ForgeTieredAttributeSubscriber;
 import elocindev.tierify.forge.config.ForgeTierifyConfig;
 import elocindev.tierify.forge.reforge.ForgeReforgeData;
+import elocindev.tierify.forge.registry.ForgeItemRegistry;
+import elocindev.tierify.util.StarApexUtils;
 import elocindev.tierify.forge.registry.ForgeMenuTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -134,6 +139,21 @@ public class ReforgeMenu extends AbstractContainerMenu {
         ItemStack target = inputs.getItem(1);
         ItemStack add = inputs.getItem(2);
 
+        if (isStarCore(add)) {
+            if (target.isEmpty()) return false;
+            if (base.isEmpty()) return false;
+            if (!ForgeTierifyConfig.allowReforgingDamaged() && target.isDamaged()) return false;
+            if (!matchesRepairIngredient(target, base)) return false;
+            return StarApexUtils.canApplyStar(target);
+        }
+        if (isApexCrux(add)) {
+            if (target.isEmpty()) return false;
+            if (base.isEmpty()) return false;
+            if (!ForgeTierifyConfig.allowReforgingDamaged() && target.isDamaged()) return false;
+            if (!matchesRepairIngredient(target, base)) return false;
+            return StarApexUtils.canApplyApex(target);
+        }
+
         if (base.isEmpty() || target.isEmpty() || add.isEmpty()) return false;
         if (!ForgeTierifyConfig.allowReforgingDamaged() && target.isDamaged()) return false;
         if (!ForgeTieredAttributeSubscriber.hasAnyValidTier(target)) return false;
@@ -146,6 +166,8 @@ public class ReforgeMenu extends AbstractContainerMenu {
     private static boolean isValidAddition(ItemStack stack) {
         if (stack.isEmpty()) return false;
         if (stack.is(TAG_REFORGE_TIER_CLEANSE)) return true;
+        if (isStarCore(stack)) return true;
+        if (isApexCrux(stack)) return true;
 
         return stack.is(TAG_REFORGE_TIER_1)
                 || stack.is(TAG_REFORGE_TIER_2)
@@ -183,6 +205,23 @@ public class ReforgeMenu extends AbstractContainerMenu {
         return stack.is(TAG_REFORGE_TIER_CLEANSE);
     }
 
+    private static boolean isStarCore(ItemStack stack) {
+        return !stack.isEmpty() && stack.is(ForgeItemRegistry.STELLAR_CORE.get());
+    }
+
+    private static boolean isApexCrux(ItemStack stack) {
+        return !stack.isEmpty() && stack.is(ForgeItemRegistry.APEX_CRUX.get());
+    }
+
+    private static ResourceLocation getTierId(ItemStack stack) {
+        CompoundTag tierTag = stack.getTagElement(TierifyConstants.NBT_SUBTAG_KEY);
+        if (tierTag == null) return null;
+        if (!tierTag.contains(TierifyConstants.NBT_SUBTAG_DATA_KEY, Tag.TAG_STRING)) return null;
+        String tierStr = tierTag.getString(TierifyConstants.NBT_SUBTAG_DATA_KEY);
+        if (tierStr == null || tierStr.isEmpty()) return null;
+        return ResourceLocation.tryParse(tierStr);
+    }
+
     public void doReforge(ServerPlayer sp) {
         if (!computeReady()) return;
 
@@ -190,9 +229,50 @@ public class ReforgeMenu extends AbstractContainerMenu {
         ItemStack base = inputs.getItem(0);
         ItemStack add = inputs.getItem(2);
 
-        ForgeTieredAttributeSubscriber.clearTieredData(target);
+        boolean starApply = isStarCore(add);
+        if (starApply) {
+            if (!StarApexUtils.canApplyStar(target)) return;
+            if (base.isEmpty() || !matchesRepairIngredient(target, base)) return;
 
-        if (isCleansing(add)) {
+            StarApexUtils.setStars(target, StarApexUtils.getStars(target) + 1);
+            ResourceLocation tierId = getTierId(target);
+            add.shrink(1);
+            base.shrink(1);
+
+            slotsChanged(inputs);
+            broadcastChanges();
+
+            access.execute((level, pos) -> {
+                playReforgeSound(level, pos, tierId);
+                playAnvilEvent(level, pos);
+            });
+            return;
+        }
+
+        boolean apexApply = isApexCrux(add);
+        if (apexApply) {
+            if (!StarApexUtils.canApplyApex(target)) return;
+            if (base.isEmpty() || !matchesRepairIngredient(target, base)) return;
+
+            StarApexUtils.setApex(target, true);
+            ResourceLocation tierId = getTierId(target);
+            add.shrink(1);
+            base.shrink(1);
+
+            slotsChanged(inputs);
+            broadcastChanges();
+
+            access.execute((level, pos) -> {
+                playReforgeSound(level, pos, tierId);
+                playAnvilEvent(level, pos);
+            });
+            return;
+        }
+
+        boolean cleansing = isCleansing(add);
+        ForgeTieredAttributeSubscriber.clearTieredData(target, !cleansing);
+
+        if (cleansing) {
             add.shrink(1);
             base.shrink(1);
             slotsChanged(inputs);

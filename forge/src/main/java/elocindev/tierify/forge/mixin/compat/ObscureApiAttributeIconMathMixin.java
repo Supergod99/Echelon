@@ -67,6 +67,7 @@ public class ObscureApiAttributeIconMathMixin {
                                                             Collection<?> modifiers,
                                                             CallbackInfoReturnable<String> cir) {
         if (icon == null || modifiers == null || modifiers.isEmpty()) return;
+        String original = cir.getReturnValue();
 
         double[] sums = sumModifiers(modifiers);
         double add = sums[0];
@@ -82,6 +83,9 @@ public class ObscureApiAttributeIconMathMixin {
 
         double value = computeVanillaLikeValue(base, add, multBase, multTotal);
         if (Math.abs(value) < 1.0e-9) {
+            if (original != null && !original.isEmpty()) {
+                return;
+            }
             cir.setReturnValue("");
             return;
         }

@@ -1,6 +1,5 @@
 package draylar.tiered.api;
 
-import com.google.common.collect.Multimap;
 import elocindev.tierify.TierifyCommon;
 import elocindev.tierify.TierifyConstants;
 import elocindev.tierify.forge.ForgeTieredAttributeSubscriber;
@@ -18,7 +17,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 public class SetBonusLogic {
@@ -26,7 +24,8 @@ public class SetBonusLogic {
     private static final UUID SET_BONUS_ID = UUID.fromString("98765432-1234-1234-1234-987654321012");
     private static final String BONUS_NAME = "Tierify Set Bonus";
     private static final String DURABLE_SB_KEY = "durable_set_bonus";
-    private static final ResourceLocation DURABLE_ID = new ResourceLocation(TierifyCommon.MODID, "generic.durable");
+    private static final ResourceLocation DURABLE_ID =
+            ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "generic.durable");
 
     public static void updatePlayerSetBonus(ServerPlayer player) {
         if (!ForgeTierifyConfig.enableArmorSetBonuses()) {
@@ -55,37 +54,6 @@ public class SetBonusLogic {
 
         applySetBonus(player, tierId, pct);
         applyDurableSetBonus(player, pct);
-    }
-
-    private static void applySetBonusFromEquippedItem(ServerPlayer player, ItemStack stack, EquipmentSlot slot, float setBonusPercent) {
-        Multimap<Attribute, AttributeModifier> mods = stack.getAttributeModifiers(slot);
-
-        UUID expectedTierUuid = TierifyConstants.MODIFIERS[armorStandSlotId(slot)];
-
-        for (Map.Entry<Attribute, AttributeModifier> e : mods.entries()) {
-            Attribute attr = e.getKey();
-            AttributeModifier base = e.getValue();
-
-            // Only boost positive stats
-            if (base.getAmount() <= 0.0D) continue;
-
-            // Only boost Tierify/Tiered tier modifiers (not vanilla armor/toughness, etc.)
-            if (!expectedTierUuid.equals(base.getId())) continue;
-
-            AttributeInstance inst = player.getAttribute(attr);
-            if (inst == null) continue;
-
-            double bonusAmount = base.getAmount() * (double) setBonusPercent * 4.0D;
-
-            AttributeModifier bonus = new AttributeModifier(
-                    SET_BONUS_ID,
-                    BONUS_NAME,
-                    bonusAmount,
-                    base.getOperation()
-            );
-
-            inst.addTransientModifier(bonus);
-        }
     }
 
     private static void applySetBonus(ServerPlayer player, ResourceLocation tierId, float setBonusPercent) {

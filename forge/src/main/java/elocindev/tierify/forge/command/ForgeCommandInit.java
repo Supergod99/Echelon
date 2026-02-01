@@ -1,9 +1,13 @@
 package elocindev.tierify.forge.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.BoolArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import elocindev.tierify.TierifyCommon;
 import elocindev.tierify.TierifyConstants;
 import elocindev.tierify.forge.ForgeTieredAttributeSubscriber;
+import elocindev.tierify.forge.screen.SalvageMenu;
+import elocindev.tierify.util.StarApexUtils;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
@@ -71,7 +75,34 @@ public final class ForgeCommandInit {
                                 .executes(ctx -> executeCommand(
                                         ctx.getSource(),
                                         EntityArgument.getPlayers(ctx, "targets"),
-                                        -1)))));
+                                        -1))))
+                .then(Commands.literal("stars")
+                        .then(Commands.argument("value", IntegerArgumentType.integer(0, 5))
+                                .executes(ctx -> executeStarsSelf(
+                                        ctx.getSource(),
+                                        IntegerArgumentType.getInteger(ctx, "value")))
+                                .then(Commands.argument("targets", EntityArgument.players())
+                                        .executes(ctx -> executeStars(
+                                                ctx.getSource(),
+                                                EntityArgument.getPlayers(ctx, "targets"),
+                                                IntegerArgumentType.getInteger(ctx, "value"))))))
+                .then(Commands.literal("apex")
+                        .then(Commands.argument("value", BoolArgumentType.bool())
+                                .executes(ctx -> executeApexSelf(
+                                        ctx.getSource(),
+                                        BoolArgumentType.getBool(ctx, "value")))
+                                .then(Commands.argument("targets", EntityArgument.players())
+                                        .executes(ctx -> executeApex(
+                                                ctx.getSource(),
+                                                EntityArgument.getPlayers(ctx, "targets"),
+                                                BoolArgumentType.getBool(ctx, "value"))))))
+                .then(Commands.literal("salvage")
+                        .then(Commands.literal("reset")
+                                .executes(ctx -> executeSalvageResetSelf(ctx.getSource()))
+                                .then(Commands.argument("targets", EntityArgument.players())
+                                        .executes(ctx -> executeSalvageReset(
+                                                ctx.getSource(),
+                                                EntityArgument.getPlayers(ctx, "targets")))))));
     }
 
     private static int executeCommand(CommandSourceStack source, Collection<ServerPlayer> targets, int tier) {
@@ -137,6 +168,78 @@ public final class ForgeCommandInit {
             }
         }
 
+        return 1;
+    }
+
+    private static int executeSalvageResetSelf(CommandSourceStack source) {
+        ServerPlayer player = source.getPlayer();
+        if (player == null) {
+            source.sendFailure(Component.literal("Command can only be used by a player."));
+            return 0;
+        }
+        return executeSalvageReset(source, List.of(player));
+    }
+
+    private static int executeSalvageReset(CommandSourceStack source, Collection<ServerPlayer> targets) {
+        for (ServerPlayer player : targets) {
+            SalvageMenu.setSalvageLevel(player, 0);
+            source.sendSuccess(
+                    () -> Component.translatable("commands.tiered.salvage.reset", player.getDisplayName()),
+                    true);
+        }
+        return 1;
+    }
+
+    private static int executeStarsSelf(CommandSourceStack source, int stars) {
+        ServerPlayer player = source.getPlayer();
+        if (player == null) {
+            source.sendFailure(Component.literal("Command can only be used by a player."));
+            return 0;
+        }
+        return executeStars(source, List.of(player), stars);
+    }
+
+    private static int executeStars(CommandSourceStack source, Collection<ServerPlayer> targets, int stars) {
+        for (ServerPlayer player : targets) {
+            ItemStack itemStack = player.getMainHandItem();
+            if (itemStack.isEmpty()) {
+                source.sendSuccess(
+                        () -> Component.translatable("commands.tiered.failed", player.getDisplayName()),
+                        true);
+                continue;
+            }
+            StarApexUtils.setStars(itemStack, stars);
+            source.sendSuccess(
+                    () -> Component.translatable("commands.tiered.stars.set", stars, player.getDisplayName()),
+                    true);
+        }
+        return 1;
+    }
+
+    private static int executeApexSelf(CommandSourceStack source, boolean apex) {
+        ServerPlayer player = source.getPlayer();
+        if (player == null) {
+            source.sendFailure(Component.literal("Command can only be used by a player."));
+            return 0;
+        }
+        return executeApex(source, List.of(player), apex);
+    }
+
+    private static int executeApex(CommandSourceStack source, Collection<ServerPlayer> targets, boolean apex) {
+        String state = apex ? "true" : "false";
+        for (ServerPlayer player : targets) {
+            ItemStack itemStack = player.getMainHandItem();
+            if (itemStack.isEmpty()) {
+                source.sendSuccess(
+                        () -> Component.translatable("commands.tiered.failed", player.getDisplayName()),
+                        true);
+                continue;
+            }
+            StarApexUtils.setApex(itemStack, apex);
+            source.sendSuccess(
+                    () -> Component.translatable("commands.tiered.apex.set", state, player.getDisplayName()),
+                    true);
+        }
         return 1;
     }
 }

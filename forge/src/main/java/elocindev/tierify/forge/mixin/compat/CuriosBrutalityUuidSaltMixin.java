@@ -23,7 +23,8 @@ import java.util.UUID;
 @Mixin(targets = "top.theillusivec4.curios.mixin.CuriosImplMixinHooks", remap = false)
 public abstract class CuriosBrutalityUuidSaltMixin {
 
-    private static final ResourceLocation BRUTALITY_LETHALITY = new ResourceLocation("brutality", "lethality");
+    private static final ResourceLocation BRUTALITY_LETHALITY =
+            ResourceLocation.fromNamespaceAndPath("brutality", "lethality");
 
     @Inject(
             method = "getAttributeModifiers",

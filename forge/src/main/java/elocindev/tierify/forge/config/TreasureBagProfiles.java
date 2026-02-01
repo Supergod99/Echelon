@@ -72,9 +72,9 @@ public final class TreasureBagProfiles {
                 continue;
             }
 
-            try {
-                EXACT.put(new ResourceLocation(left), entry);
-            } catch (Exception ignored) {
+            ResourceLocation id = ResourceLocation.tryParse(left);
+            if (id != null) {
+                EXACT.put(id, entry);
             }
         }
     }

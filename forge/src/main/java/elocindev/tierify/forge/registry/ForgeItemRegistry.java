@@ -1,6 +1,7 @@
 package elocindev.tierify.forge.registry;
 
 import elocindev.tierify.TierifyCommon;
+import elocindev.tierify.forge.item.DescribedItem;
 import elocindev.tierify.forge.item.ReforgeAddition;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.CreativeModeTabs;
@@ -30,6 +31,24 @@ public final class ForgeItemRegistry {
             ITEMS.register("crown_topaz", () -> new ReforgeAddition(new Item.Properties(), 5));
     public static final RegistryObject<Item> PAINITE =
             ITEMS.register("painite", () -> new ReforgeAddition(new Item.Properties(), 6));
+    public static final RegistryObject<Item> STARDUST =
+            ITEMS.register("stardust", () -> new DescribedItem(
+                    new Item.Properties(),
+                    "tooltip.tiered.stardust.title",
+                    "tooltip.tiered.stardust.desc"
+            ));
+    public static final RegistryObject<Item> STELLAR_CORE =
+            ITEMS.register("stellar_core", () -> new DescribedItem(
+                    new Item.Properties(),
+                    "tooltip.tiered.stellar_core.title",
+                    "tooltip.tiered.stellar_core.desc"
+            ));
+    public static final RegistryObject<Item> APEX_CRUX =
+            ITEMS.register("apex_crux", () -> new DescribedItem(
+                    new Item.Properties(),
+                    "tooltip.tiered.apex_crux.title",
+                    "tooltip.tiered.apex_crux.desc"
+            ));
 
     // Optional: put them into a creative tab for testing (safe, removable later)
     @SubscribeEvent
@@ -42,6 +61,9 @@ public final class ForgeItemRegistry {
             e.accept(CHAROITE);
             e.accept(CROWN_TOPAZ);
             e.accept(PAINITE);
+            e.accept(STARDUST);
+            e.accept(STELLAR_CORE);
+            e.accept(APEX_CRUX);
         }
     }
 

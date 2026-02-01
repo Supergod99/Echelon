@@ -4,6 +4,8 @@ import elocindev.tierify.TierifyCommon;
 import elocindev.tierify.forge.compat.TooltipOverhaulCompatForge;
 import elocindev.tierify.forge.registry.ForgeMenuTypes;
 import elocindev.tierify.forge.screen.client.ReforgeScreen;
+import elocindev.tierify.forge.screen.client.SalvageScreen;
+import elocindev.tierify.forge.screen.client.SalvageUpgradeScreen;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -19,6 +21,8 @@ public final class ForgeClientSetup {
     public static void onClientSetup(FMLClientSetupEvent e) {
         e.enqueueWork(() -> {
             MenuScreens.register(ForgeMenuTypes.REFORGE.get(), ReforgeScreen::new);
+            MenuScreens.register(ForgeMenuTypes.SALVAGE.get(), SalvageScreen::new);
+            MenuScreens.register(ForgeMenuTypes.SALVAGE_UPGRADE.get(), SalvageUpgradeScreen::new);
             TooltipOverhaulCompatForge.init();
         });
     }

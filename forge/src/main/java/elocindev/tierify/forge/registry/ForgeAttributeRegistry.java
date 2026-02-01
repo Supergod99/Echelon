@@ -24,7 +24,7 @@ public final class ForgeAttributeRegistry {
             register("generic.fortune", 0.0D, 0.0D, 100.0D);
 
     private static RegistryObject<Attribute> register(String path, double base, double min, double max) {
-        ResourceLocation id = new ResourceLocation(TierifyCommon.MODID, path);
+        ResourceLocation id = ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, path);
         return ATTRIBUTES.register(id.getPath(),
                 () -> new RangedAttribute(path, base, min, max).setSyncable(true));
     }

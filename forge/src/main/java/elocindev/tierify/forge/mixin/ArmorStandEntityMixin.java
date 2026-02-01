@@ -43,7 +43,8 @@ public class ArmorStandEntityMixin {
 
     @Inject(method = "setItemSlot(Lnet/minecraft/world/entity/EquipmentSlot;Lnet/minecraft/world/item/ItemStack;)V", at = @At("HEAD"))
     private void tierify$setItemSlot(EquipmentSlot slot, ItemStack stack, CallbackInfo ci) {
-        if (!this.tierify$isClient && this.tierify$isGenerated && ForgeTierifyConfig.lootContainerModifier()) {
+        boolean isClient = ((ArmorStand) (Object) this).level().isClientSide();
+        if (!isClient && this.tierify$isGenerated && ForgeTierifyConfig.lootContainerModifier()) {
             ForgeTieredAttributeSubscriber.applyRandomTierIfAbsent(stack);
         }
     }

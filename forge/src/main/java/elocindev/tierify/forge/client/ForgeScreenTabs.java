@@ -6,7 +6,10 @@ import elocindev.tierify.forge.mixin.client.AbstractContainerScreenAccessor;
 import elocindev.tierify.forge.network.ForgeNetwork;
 import elocindev.tierify.forge.network.c2s.OpenAnvilFromReforgeC2S;
 import elocindev.tierify.forge.network.c2s.OpenReforgeFromAnvilC2S;
+import elocindev.tierify.forge.network.c2s.OpenSalvageFromAnvilC2S;
 import elocindev.tierify.forge.screen.client.ReforgeScreen;
+import elocindev.tierify.forge.screen.client.SalvageScreen;
+import elocindev.tierify.forge.screen.client.SalvageUpgradeScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -25,6 +28,8 @@ public final class ForgeScreenTabs {
             ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "textures/gui/anvil_tab_icon.png");
     private static final ResourceLocation REFORGE_ICON =
             ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "textures/gui/reforge_tab_icon.png");
+    private static final ResourceLocation SALVAGE_ICON =
+            ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "textures/gui/reforge_tab_icon.png");
     private static final ResourceLocation TAB_TEXTURE =
             ResourceLocation.fromNamespaceAndPath("libz", "textures/gui/icons.png");
 
@@ -34,6 +39,7 @@ public final class ForgeScreenTabs {
     private static final int TAB_HEIGHT_OTHER = 21;
     private static final int TAB_SPACING = 25;
     private static final int ICON_SIZE = 14;
+    private record TabBounds(int x, int y, int width, int height) {}
 
     @SubscribeEvent
     public static void onRender(ScreenEvent.Render.Post e) {
@@ -44,7 +50,9 @@ public final class ForgeScreenTabs {
 
         boolean isAnvil = e.getScreen() instanceof AnvilScreen || isModAnvilScreen(e.getScreen());
         boolean isReforge = e.getScreen() instanceof ReforgeScreen;
-        if (!isAnvil && !isReforge) return;
+        boolean isSalvage = e.getScreen() instanceof SalvageScreen;
+        boolean isSalvageUpgrade = e.getScreen() instanceof SalvageUpgradeScreen;
+        if (!isAnvil && !isReforge && !isSalvage && !isSalvageUpgrade) return;
 
         boolean showReforgeTab = ForgeTierifyConfig.showReforgingTab();
         var acc = (AbstractContainerScreenAccessor) acs;
@@ -61,7 +69,11 @@ public final class ForgeScreenTabs {
         if (showReforgeTab) {
             hoverTitle = renderTab(e.getGuiGraphics(), left, top, x, false, isReforge,
                     REFORGE_ICON, Component.translatable("screen.tiered.reforging_screen"), e.getMouseX(), e.getMouseY(), hoverTitle);
+            x += TAB_SPACING;
         }
+
+        hoverTitle = renderTab(e.getGuiGraphics(), left, top, x, false, isSalvage,
+                SALVAGE_ICON, Component.translatable("screen.tiered.salvaging_screen"), e.getMouseX(), e.getMouseY(), hoverTitle);
 
         if (hoverTitle != null) {
             e.getGuiGraphics().renderTooltip(mc.font, hoverTitle, e.getMouseX(), e.getMouseY());
@@ -77,7 +89,9 @@ public final class ForgeScreenTabs {
 
         boolean isAnvil = e.getScreen() instanceof AnvilScreen || isModAnvilScreen(e.getScreen());
         boolean isReforge = e.getScreen() instanceof ReforgeScreen;
-        if (!isAnvil && !isReforge) return;
+        boolean isSalvage = e.getScreen() instanceof SalvageScreen;
+        boolean isSalvageUpgrade = e.getScreen() instanceof SalvageUpgradeScreen;
+        if (!isAnvil && !isReforge && !isSalvage && !isSalvageUpgrade) return;
 
         boolean showReforgeTab = ForgeTierifyConfig.showReforgingTab();
         var acc = (AbstractContainerScreenAccessor) acs;
@@ -87,15 +101,24 @@ public final class ForgeScreenTabs {
         int x = left;
         boolean clicked = false;
 
-        if (!isAnvil && isPointWithinBounds(left, top, x - left + 1, -20, 22, 19, e.getMouseX(), e.getMouseY())) {
+        if (!isAnvil && isMouseOverTab(tabBounds(top, x, true, isAnvil), e.getMouseX(), e.getMouseY())) {
             ForgeNetwork.CHANNEL.sendToServer(new OpenAnvilFromReforgeC2S());
             clicked = true;
         }
         x += TAB_SPACING;
 
         if (showReforgeTab && !isReforge
-                && isPointWithinBounds(left, top, x - left + 1, -20, 22, 19, e.getMouseX(), e.getMouseY())) {
+                && isMouseOverTab(tabBounds(top, x, false, isReforge), e.getMouseX(), e.getMouseY())) {
             ForgeNetwork.CHANNEL.sendToServer(new OpenReforgeFromAnvilC2S());
+            clicked = true;
+        }
+        if (showReforgeTab) {
+            x += TAB_SPACING;
+        }
+
+        if (!isSalvage
+                && isMouseOverTab(tabBounds(top, x, false, isSalvage), e.getMouseX(), e.getMouseY())) {
+            ForgeNetwork.CHANNEL.sendToServer(new OpenSalvageFromAnvilC2S());
             clicked = true;
         }
 
@@ -122,36 +145,29 @@ public final class ForgeScreenTabs {
             u -= 24;
         }
 
-        int drawY = selected ? (top - 23) : (top - 21);
-        int height = selected ? TAB_HEIGHT_SELECTED : (first ? TAB_HEIGHT_FIRST : TAB_HEIGHT_OTHER);
+        TabBounds bounds = tabBounds(top, x, first, selected);
 
-        gg.blit(TAB_TEXTURE, x, drawY, u, 0, TAB_WIDTH, height, 256, 256);
+        gg.blit(TAB_TEXTURE, bounds.x, bounds.y, u, 0, bounds.width, bounds.height, 256, 256);
         gg.blit(icon, x + 5, top - 16, 0, 0, ICON_SIZE, ICON_SIZE, ICON_SIZE, ICON_SIZE);
 
-        if (!selected && hoverTitle == null
-                && isPointWithinBounds(left, top, x - left + 1, -20, 22, 19, mouseX, mouseY)) {
+        if (!selected && hoverTitle == null && isMouseOverTab(bounds, mouseX, mouseY)) {
             return title;
         }
 
         return hoverTitle;
     }
 
-    private static boolean isPointWithinBounds(
-            int left,
-            int top,
-            int x,
-            int y,
-            int width,
-            int height,
-            double mouseX,
-            double mouseY
-    ) {
-        int leftEdge = left + x;
-        int topEdge = top + y;
-        return mouseX >= (double) leftEdge
-                && mouseX < (double) (leftEdge + width)
-                && mouseY >= (double) topEdge
-                && mouseY < (double) (topEdge + height);
+    private static TabBounds tabBounds(int top, int x, boolean first, boolean selected) {
+        int drawY = selected ? (top - 23) : (top - 21);
+        int height = selected ? TAB_HEIGHT_SELECTED : (first ? TAB_HEIGHT_FIRST : TAB_HEIGHT_OTHER);
+        return new TabBounds(x, drawY, TAB_WIDTH, height);
+    }
+
+    private static boolean isMouseOverTab(TabBounds bounds, double mouseX, double mouseY) {
+        return mouseX >= (double) bounds.x
+                && mouseX < (double) (bounds.x + bounds.width)
+                && mouseY >= (double) bounds.y
+                && mouseY < (double) (bounds.y + bounds.height);
     }
 
     private static boolean isModAnvilScreen(Object screen) {

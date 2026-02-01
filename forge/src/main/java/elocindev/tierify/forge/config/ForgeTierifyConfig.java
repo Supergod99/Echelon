@@ -60,6 +60,10 @@ public final class ForgeTierifyConfig {
     public static final ForgeConfigSpec.DoubleValue REFORGE_MODIFIER;
     public static final ForgeConfigSpec.DoubleValue LEVELZ_REFORGE_MODIFIER;
     public static final ForgeConfigSpec.DoubleValue LUCK_REFORGE_MODIFIER;
+    public static final ForgeConfigSpec.IntValue SALVAGE_MAX_TIER;
+    public static final ForgeConfigSpec.DoubleValue SALVAGE_CHANCE_NONE;
+    public static final ForgeConfigSpec.DoubleValue SALVAGE_CHANCE_LOWER;
+    public static final ForgeConfigSpec.DoubleValue SALVAGE_CHANCE_HIGHER;
 
     public static final ForgeConfigSpec.BooleanValue SHOW_REFORGING_TAB;
     public static final ForgeConfigSpec.IntValue X_ICON_POSITION;
@@ -278,6 +282,22 @@ public final class ForgeTierifyConfig {
         LUCK_REFORGE_MODIFIER = builder
                 .comment("Modify the biggest weights by this modifier per luck")
                 .defineInRange("luckReforgeModifier", 0.0d, 0.0d, 10.0d);
+
+        SALVAGE_MAX_TIER = builder
+                .comment("Maximum salvage tier that can be unlocked. 1=Common ... 6=Mythic, 7-10=Mythic+1..+4.")
+                .defineInRange("salvageMaxTier", 10, 1, 10);
+
+        SALVAGE_CHANCE_NONE = builder
+                .comment("Chance that salvaging yields no material.")
+                .defineInRange("salvageChanceNone", 0.05d, 0.0d, 1.0d);
+
+        SALVAGE_CHANCE_LOWER = builder
+                .comment("Chance that salvaging yields one tier lower material.")
+                .defineInRange("salvageChanceLower", 0.10d, 0.0d, 1.0d);
+
+        SALVAGE_CHANCE_HIGHER = builder
+                .comment("Chance that salvaging yields one tier higher material.")
+                .defineInRange("salvageChanceHigher", 0.10d, 0.0d, 1.0d);
 
         TIER_1_QUALITIES = builder
                 .comment("Tier 1 of Reforging (Limestone)")
@@ -645,6 +665,22 @@ public final class ForgeTierifyConfig {
     public static float luckReforgeModifier() {
         SyncedConfig sc = syncedConfig;
         return sc != null ? sc.luckReforgeModifier() : LUCK_REFORGE_MODIFIER.get().floatValue();
+    }
+
+    public static int salvageMaxTier() {
+        return SALVAGE_MAX_TIER.get();
+    }
+
+    public static double salvageChanceNone() {
+        return SALVAGE_CHANCE_NONE.get();
+    }
+
+    public static double salvageChanceLower() {
+        return SALVAGE_CHANCE_LOWER.get();
+    }
+
+    public static double salvageChanceHigher() {
+        return SALVAGE_CHANCE_HIGHER.get();
     }
 
     public static boolean showReforgingTab() {

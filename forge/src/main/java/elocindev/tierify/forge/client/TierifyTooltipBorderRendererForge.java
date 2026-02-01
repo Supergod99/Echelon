@@ -64,6 +64,57 @@ public final class TierifyTooltipBorderRendererForge {
         }
     }
 
+    public static void renderPieces(
+            GuiGraphics gg,
+            int x, int y,
+            int width, int height,
+            Template t
+    ) {
+        if (t == null || t.texture() == null) return;
+        drawTieredBorderPieces(gg, t.texture(), x, y, width, height, t.index());
+    }
+
+    public static void renderPerimeterSweep(
+            GuiGraphics gg,
+            int x, int y,
+            int width, int height,
+            int rgbCenter,
+            int rgbEdge,
+            int alphaMax,
+            int thickness,
+            float progress,
+            float sweepFrac
+    ) {
+        if (width <= 0 || height <= 0) return;
+
+        int i = x - 3;
+        int j = y - 3;
+        int k = width + 6;
+        int l = height + 6;
+
+        int perimeter = Math.max(1, (k + l) * 2);
+        int sweepLen = Math.max(6, Math.round(perimeter * Math.max(0.05f, Math.min(0.5f, sweepFrac))));
+        int start = Math.floorMod(Math.round(progress * perimeter), perimeter);
+        int thick = Math.max(1, thickness);
+
+        for (int step = 0; step <= sweepLen; step++) {
+            float t = step / (float) sweepLen;
+            float distFromCenter = Math.abs((t * 2.0f) - 1.0f);
+            float intensity = 1.0f - distFromCenter;
+            float eased = intensity * intensity;
+            int alphaMain = Math.max(0, Math.min(255, Math.round(alphaMax * eased)));
+            int alphaSoft = Math.max(0, Math.min(255, Math.round(alphaMain * 0.5f)));
+            int rgb = lerpRgb(rgbCenter, rgbEdge, distFromCenter);
+            int colorMain = (alphaMain << 24) | (rgb & 0x00FFFFFF);
+            int colorSoft = (alphaSoft << 24) | (rgb & 0x00FFFFFF);
+            int pos = start + step;
+            if (pos >= perimeter) pos -= perimeter;
+            drawPerimeterPoint(gg, i, j, k, l, pos, thick + 1, colorSoft);
+            drawPerimeterPoint(gg, i, j, k, l, pos, thick, colorMain);
+        }
+
+    }
+
     /**
      * Draws Tiered-style "border pieces" from a 128x128 sheet row = index*16:
      * - 4 corners (8x8) at u: 0/56, v: 0/8
@@ -117,6 +168,7 @@ public final class TierifyTooltipBorderRendererForge {
         gg.blit(texture, x, y, u, v, w, h, texW, texH);
     }
 
+
     private static void renderTooltipBackground(GuiGraphics gg, int x, int y, int width, int height, int backgroundColor, int startColor, int endColor) {
         int i = x - 3;
         int j = y - 3;
@@ -136,6 +188,51 @@ public final class TierifyTooltipBorderRendererForge {
         renderVerticalLine(gg, x + width - 1, y, height - 2, startColor, endColor);
         renderHorizontalLine(gg, x, y - 1, width, startColor);
         renderHorizontalLine(gg, x, y - 1 + height - 1, width, endColor);
+    }
+
+    private static void drawPerimeterPoint(GuiGraphics gg, int x, int y, int width, int height, int pos, int thickness, int color) {
+        int topLen = width;
+        int rightLen = height;
+        int bottomLen = width;
+        int leftLen = height;
+        int total = topLen + rightLen + bottomLen + leftLen;
+        if (total <= 0) return;
+        int p = pos % total;
+
+        if (p < topLen) {
+            int px = x + p;
+            gg.fill(px, y, px + 1, y + thickness, color);
+            return;
+        }
+        p -= topLen;
+        if (p < rightLen) {
+            int py = y + p;
+            gg.fill(x + width - thickness, py, x + width, py + 1, color);
+            return;
+        }
+        p -= rightLen;
+        if (p < bottomLen) {
+            int px = x + (width - 1 - p);
+            gg.fill(px, y + height - thickness, px + 1, y + height, color);
+            return;
+        }
+        p -= bottomLen;
+        int py = y + (height - 1 - p);
+        gg.fill(x, py, x + thickness, py + 1, color);
+    }
+
+    private static int lerpRgb(int from, int to, float t) {
+        float clamped = Math.max(0.0f, Math.min(1.0f, t));
+        int fr = (from >> 16) & 0xFF;
+        int fg = (from >> 8) & 0xFF;
+        int fb = from & 0xFF;
+        int tr = (to >> 16) & 0xFF;
+        int tg = (to >> 8) & 0xFF;
+        int tb = to & 0xFF;
+        int r = Math.round(fr + (tr - fr) * clamped);
+        int g = Math.round(fg + (tg - fg) * clamped);
+        int b = Math.round(fb + (tb - fb) * clamped);
+        return (r << 16) | (g << 8) | b;
     }
 
     private static void renderVerticalLine(GuiGraphics gg, int x, int y, int height, int color) {

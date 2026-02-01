@@ -21,11 +21,15 @@ import java.lang.reflect.Method;
 @Mixin(value = LivingEntity.class, priority = 1)
 public abstract class LethalityScalingFixMixin {
 
-    @Unique private static final ResourceLocation BRUTALITY_LETHALITY_ID = new ResourceLocation("brutality", "lethality");
-    @Unique private static final ResourceLocation BRUTALITY_ARMOR_PEN_ID = new ResourceLocation("brutality", "armor_penetration");
+    @Unique private static final ResourceLocation BRUTALITY_LETHALITY_ID =
+            ResourceLocation.fromNamespaceAndPath("brutality", "lethality");
+    @Unique private static final ResourceLocation BRUTALITY_ARMOR_PEN_ID =
+            ResourceLocation.fromNamespaceAndPath("brutality", "armor_penetration");
 
-    @Unique private static final ResourceLocation ATTRIBLIB_ARMOR_PIERCE_ID = new ResourceLocation("attributeslib", "armor_pierce");
-    @Unique private static final ResourceLocation ATTRIBLIB_ARMOR_SHRED_ID = new ResourceLocation("attributeslib", "armor_shred");
+    @Unique private static final ResourceLocation ATTRIBLIB_ARMOR_PIERCE_ID =
+            ResourceLocation.fromNamespaceAndPath("attributeslib", "armor_pierce");
+    @Unique private static final ResourceLocation ATTRIBLIB_ARMOR_SHRED_ID =
+            ResourceLocation.fromNamespaceAndPath("attributeslib", "armor_shred");
 
     @Unique private static final double EPS = 1.0e-6;
     @Unique private static final float ARMOR_BYPASS_EPS = 0.001F;

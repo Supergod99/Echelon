@@ -2,15 +2,22 @@ package elocindev.tierify.forge.mixin.client;
 
 import com.google.common.collect.Multimap;
 import elocindev.tierify.TierifyConstants;
+import elocindev.tierify.forge.apex.ApexEffect;
+import elocindev.tierify.forge.apex.ApexEffectRegistry;
+import elocindev.tierify.forge.client.ApexEffectGradientAnimatorForge;
 import elocindev.tierify.forge.client.TierGradientAnimatorForge;
 import elocindev.tierify.forge.config.ForgeTierifyConfig;
+import elocindev.tierify.util.StarApexUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -21,6 +28,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import elocindev.tierify.forge.compat.TooltipOverhaulCompatForge;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -30,6 +38,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * Forge client mixin that:
@@ -48,6 +57,8 @@ public abstract class ItemStackClientMixin {
         s.setDecimalSeparator('.');
         MODIFIER_FORMAT.setDecimalFormatSymbols(s);
     }
+    private static final Pattern DISPLAYED_ZERO_PATTERN =
+            Pattern.compile("^[+\\-]\\s*([0-9]+(?:[\\.,][0-9]+)?)%?.*");
 
     @Shadow public abstract Multimap<Attribute, AttributeModifier> getAttributeModifiers(EquipmentSlot slot);
 
@@ -131,7 +142,6 @@ public abstract class ItemStackClientMixin {
      */
     @Inject(method = "getTooltipLines", at = @At("RETURN"), cancellable = true)
     private void tierify$mutateTooltip(Player player, TooltipFlag flag, CallbackInfoReturnable<List<Component>> cir) {
-        if (Boolean.TRUE.equals(TIERIFY_BASELINE_PASS.get())) return;
         ItemStack self = (ItemStack)(Object)this;
 
         CompoundTag data = self.getTagElement(TierifyConstants.NBT_SUBTAG_KEY);
@@ -156,6 +166,10 @@ public abstract class ItemStackClientMixin {
 
         fixRedPlusLines(tooltip);
         stripDisplayedZeros(tooltip);
+        if (StarApexUtils.isApex(self)) {
+            applyApexGradientToAttributeLines(self, tooltip);
+        }
+        appendApexEffectTooltip(self, tooltip);
 
         cir.setReturnValue(tooltip);
     }
@@ -428,12 +442,6 @@ public abstract class ItemStackClientMixin {
         }
     }
 
-
-
-    private static final ThreadLocal<Boolean> TIERIFY_BASELINE_PASS =
-        ThreadLocal.withInitial(() -> Boolean.FALSE);
-
-
     private static Double parseDisplayedNumber(Object arg0) {
         if (arg0 == null) return null;
         String s = (arg0 instanceof Component c) ? c.getString() : arg0.toString();
@@ -502,6 +510,47 @@ public abstract class ItemStackClientMixin {
         }
     }
 
+    private static void applyApexGradientToAttributeLines(ItemStack self, List<Component> tooltip) {
+        if (tooltip == null || tooltip.isEmpty()) return;
+
+        for (EquipmentSlot slot : EquipmentSlot.values()) {
+            Multimap<Attribute, AttributeModifier> modifiers = self.getAttributeModifiers(slot);
+            if (modifiers == null || modifiers.isEmpty()) continue;
+
+            for (var group : modifiers.asMap().entrySet()) {
+                Attribute attribute = group.getKey();
+                var modsCollection = group.getValue();
+                if (modsCollection == null || modsCollection.isEmpty()) continue;
+
+                AttributeModifier.Operation op = modsCollection.iterator().next().getOperation();
+                boolean isMultiplier = op != AttributeModifier.Operation.ADDITION;
+
+                double totalBase = 0.0D;
+                boolean hasTieredPositive = false;
+
+                for (AttributeModifier mod : modsCollection) {
+                    double value = mod.getAmount();
+                    boolean isTiered = mod.getName() != null && mod.getName().contains("tiered:");
+                    if (isTiered && value > 0.0D) {
+                        hasTieredPositive = true;
+                    }
+                    totalBase += value;
+                }
+
+                if (!hasTieredPositive) continue;
+
+                double displayBase = totalBase;
+                if (isMultiplier) {
+                    displayBase *= 100.0D;
+                } else if (attribute == Attributes.KNOCKBACK_RESISTANCE) {
+                    displayBase *= 10.0D;
+                }
+
+                updateTooltipRecursiveForAttributeGradient(tooltip, attribute, 4);
+            }
+        }
+    }
+
     private static void updateTooltipRecursiveForAttribute(
             List<Component> tooltip,
             Attribute attribute,
@@ -533,6 +582,41 @@ public abstract class ItemStackClientMixin {
 
             tooltip.set(i, newLine);
         }
+    }
+
+    private static void updateTooltipRecursiveForAttributeGradient(
+            List<Component> tooltip,
+            Attribute attribute,
+            int tierIndex
+    ) {
+        String attrName = Component.translatable(attribute.getDescriptionId()).getString();
+
+        for (int i = 0; i < tooltip.size(); i++) {
+            Component originalLine = tooltip.get(i);
+            if (originalLine == null) continue;
+
+            String plain = originalLine.getString();
+            if (plain == null) continue;
+
+            String trimmed = plain.trim();
+            if (!trimmed.endsWith(attrName)) continue;
+
+            if (!(trimmed.startsWith("+") || trimmed.startsWith("-"))) continue;
+
+            MutableComponent gradient = TierGradientAnimatorForge.animate(Component.literal(plain), tierIndex);
+            gradient = stripBoldRecursive(gradient);
+            tooltip.set(i, gradient);
+        }
+    }
+
+    private static MutableComponent stripBoldRecursive(MutableComponent root) {
+        root.setStyle(root.getStyle().withBold(false));
+        for (Component sib : root.getSiblings()) {
+            if (sib instanceof MutableComponent mc) {
+                stripBoldRecursive(mc);
+            }
+        }
+        return root;
     }
 
     private static boolean isRedLike(net.minecraft.network.chat.TextColor color) {
@@ -632,14 +716,117 @@ public abstract class ItemStackClientMixin {
     }
 
     private static boolean isDisplayedNumericZero(String trimmed) {
-        var m = java.util.regex.Pattern
-                .compile("^[+\\-]\\s*([0-9]+(?:[\\.,][0-9]+)?)%?.*")
-                .matcher(trimmed);
+        var m = DISPLAYED_ZERO_PATTERN.matcher(trimmed);
         if (!m.matches()) return false;
 
         String num = m.group(1);
         String digitsOnly = num.replace(".", "").replace(",", "");
         return !digitsOnly.isEmpty() && digitsOnly.chars().allMatch(ch -> ch == '0');
+    }
+
+    private static final int APEX_HINT_RGB = 0xDCC79A; // warm, slightly subdued gold
+
+    private static Component buildApexHintLine() {
+        return Component.literal("Hold Shift for details").setStyle(
+                Style.EMPTY
+                        .withColor(TextColor.fromRgb(APEX_HINT_RGB))
+                        .withFont(ApexEffectGradientAnimatorForge.FONT_SMALL)
+                        .withItalic(true)
+        );
+    }
+
+    private static Component styleApexBody(Component raw) {
+        if (raw == null) return Component.empty();
+        String s = raw.getString();
+        if (s == null || s.isEmpty()) return Component.empty();
+
+        // Strip legacy requirement text; all Apex effects are full-set now.
+        s = s.replaceAll("(?i)\\s*Requires full Apex set\\.?\\s*", " ").trim();
+        if (s.isEmpty()) return Component.empty();
+
+        // Apply a subtle gold gradient to the description (NOT the hint).
+        MutableComponent out = ApexEffectGradientAnimatorForge.animateBody(Component.literal(s));
+        return stripBoldRecursive(out);
+    }
+
+
+    private static void appendApexEffectTooltip(ItemStack stack, List<Component> tooltip) {
+        if (stack == null || stack.isEmpty() || tooltip == null) return;
+        if (!StarApexUtils.isApex(stack)) return;
+
+        ApexEffect effect = ApexEffectRegistry.resolveFor(stack);
+        if (effect == null || effect.triggerType() != ApexEffect.ApexTriggerType.ACTIVE_USE) return;
+
+        int insertAt = tooltip.size();
+
+        stripApexEffectLabel(tooltip);
+        boolean toh = TooltipOverhaulCompatForge.isLoaded();
+
+        // TooltipOverhaul present: add a marker line only.
+        // Wrapper swaps it to ApexEffectTooltipComponent (title + hint).
+        if (toh) {
+            tooltip.add(insertAt++, Component.literal("Apex Effect"));
+        } else {
+            // Vanilla fallback: render title + hint here.
+            tooltip.add(insertAt++, ApexEffectGradientAnimatorForge.animate(Component.literal("Apex Effect")));
+            tooltip.add(insertAt++, buildApexHintLine()); // flat hint (NOT animated gradient)
+        }
+
+        if (Screen.hasShiftDown()) {
+            // IMPORTANT: remove spacer line to eliminate the “too much space” problem.
+            // tooltip.add(insertAt++, Component.literal(" "));  <-- DELETE THIS
+
+            ResourceLocation reforgeId = ApexEffectRegistry.getReforgeId(stack);
+            for (Component desc : getApexEffectDescription(reforgeId)) {
+                tooltip.add(insertAt++, styleApexBody(desc)); // gradient description
+            }
+        }
+    }
+
+    private static void stripApexEffectLabel(List<Component> tooltip) {
+        if (tooltip == null || tooltip.isEmpty()) return;
+        String key = "tooltip.tiered.apex_effect";
+        tooltip.removeIf(line -> {
+            return hasTranslatableKey(line, key);
+        });
+    }
+
+    private static boolean hasTranslatableKey(Component component, String key) {
+        if (component == null || key == null || key.isEmpty()) return false;
+        if (component.getContents() instanceof TranslatableContents tc) {
+            if (key.equals(tc.getKey())) return true;
+            for (Object arg : tc.getArgs()) {
+                if (arg instanceof Component c && hasTranslatableKey(c, key)) return true;
+            }
+        }
+        for (Component sib : component.getSiblings()) {
+            if (hasTranslatableKey(sib, key)) return true;
+        }
+        return false;
+    }
+
+    private static int findAttributeHeaderIndex(List<Component> tooltip) {
+        for (int i = 0; i < tooltip.size(); i++) {
+            Component c = tooltip.get(i);
+            if (c != null && c.getContents() instanceof TranslatableContents tc) {
+                String key = tc.getKey();
+                if (key != null && key.startsWith("item.modifiers.")) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    private static List<Component> getApexEffectDescription(ResourceLocation reforgeId) {
+        if (reforgeId != null && reforgeId.getNamespace().equals("tiered")
+                && reforgeId.getPath().equals("mythic_armor_1")) {
+            return List.of(
+                    Component.translatable("tooltip.tiered.apex_effect.mythic_armor_1.line1"),
+                    Component.translatable("tooltip.tiered.apex_effect.mythic_armor_1.line2")
+            );
+        }
+        return List.of();
     }
 
     /**

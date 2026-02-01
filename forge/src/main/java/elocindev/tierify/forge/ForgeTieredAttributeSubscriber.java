@@ -15,6 +15,7 @@ import elocindev.tierify.forge.network.s2c.AttributeSyncS2C;
 import elocindev.tierify.forge.network.s2c.ReforgeItemsSyncS2C;
 import elocindev.tierify.forge.reforge.ForgeReforgeData;
 import elocindev.tierify.util.TagFallbackMatcher;
+import elocindev.tierify.util.StarApexUtils;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -70,7 +71,7 @@ public final class ForgeTieredAttributeSubscriber {
     );
 
     private static final ResourceLocation DURABLE_ID =
-            new ResourceLocation(TierifyCommon.MODID, "generic.durable");
+            ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "generic.durable");
     private static final String STORED_CUSTOM_NAME_KEY = "StoredCustomName";
 
     private ForgeTieredAttributeSubscriber() {}
@@ -101,7 +102,11 @@ public final class ForgeTieredAttributeSubscriber {
     }
 
     public static void clearTieredData(ItemStack stack) {
-        RELOADER.clearTieredData(stack);
+        RELOADER.clearTieredData(stack, false);
+    }
+
+    public static void clearTieredData(ItemStack stack, boolean keepStars) {
+        RELOADER.clearTieredData(stack, keepStars);
     }
 
     public static boolean applyTier(ItemStack stack, ResourceLocation tierId, boolean perfect) {
@@ -371,7 +376,7 @@ public final class ForgeTieredAttributeSubscriber {
             TierData data = tierId == null ? null : RELOADER.getTier(tierId);
 
             if (data == null || !data.isValidFor(stack)) {
-                RELOADER.clearTieredData(stack);
+                RELOADER.clearTieredData(stack, true);
                 ResourceLocation newTier = RELOADER.pickRandomTierNoBonus(stack, null, RandomSource.create());
                 if (newTier != null) {
                     RELOADER.applyTier(stack, newTier, false);
@@ -436,6 +441,10 @@ public final class ForgeTieredAttributeSubscriber {
         String salt = tierTag.hasUUID("TierUUID")
                 ? tierTag.getUUID("TierUUID").toString()
                 : stack.getDescriptionId();
+        double starMult = 1.0 + (0.05 * StarApexUtils.getStars(stack));
+        if (StarApexUtils.isApex(stack)) {
+            starMult += 0.25;
+        }
 
         for (TierAttributeEntry entry : tier.attributes) {
             if (!entry.appliesTo(stack, slot)) continue;
@@ -449,7 +458,7 @@ public final class ForgeTieredAttributeSubscriber {
             AttributeModifier mod = new AttributeModifier(
                     tierUuid,
                     entry.name,
-                    entry.amount,
+                    entry.amount * starMult,
                     entry.operation
             );
 
@@ -755,7 +764,7 @@ public final class ForgeTieredAttributeSubscriber {
             return candidates.get(candidates.size() - 1).getKey();
         }
 
-        public void clearTieredData(ItemStack stack) {
+        public void clearTieredData(ItemStack stack, boolean keepStars) {
             if (stack == null || stack.isEmpty()) return;
 
             CompoundTag tierTag = stack.getTagElement(TierifyConstants.NBT_SUBTAG_KEY);
@@ -775,6 +784,11 @@ public final class ForgeTieredAttributeSubscriber {
 
             stack.removeTagKey(TierifyConstants.NBT_SUBTAG_KEY);
             restoreStoredCustomName(stack);
+
+            if (!keepStars) {
+                StarApexUtils.setStars(stack, 0);
+                StarApexUtils.setApex(stack, false);
+            }
         }
 
         public boolean applyTier(ItemStack stack, ResourceLocation tierId, boolean perfect) {

@@ -410,6 +410,25 @@
 			"decider": [
 				"tiered:perfect_border"
 			]
+		},
+		{
+			"index": 7,
+			"start_border_gradient": "FFA81616",
+			"end_border_gradient": "FFA81616",
+			"texture": "tiered_borders",
+			"decider": [
+				"tiered:apex_border"
+			]
+		},
+		{
+			"index": 8,
+			"start_border_gradient": "FF00C8C8",
+			"end_border_gradient": "FF00C8C8",
+			"background_gradient": "FF001818",
+			"texture": "tiered_borders",
+			"decider": [
+				"tiered:perfect_star_border"
+			]
 		}
     ]
 }

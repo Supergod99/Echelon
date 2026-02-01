@@ -2,6 +2,7 @@ package elocindev.tierify.forge.network.c2s;
 
 import elocindev.tierify.forge.mixin.ItemCombinerMenuAccessor;
 import elocindev.tierify.forge.screen.ReforgeMenu;
+import elocindev.tierify.forge.screen.SalvageMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -32,9 +33,14 @@ public class OpenReforgeFromAnvilC2S {
         ServerPlayer sp = ctx.getSender();
         ctx.enqueueWork(() -> {
             if (sp == null) return;
-            if (!(sp.containerMenu instanceof AnvilMenu anvil)) return;
-
-            ContainerLevelAccess access = ((ItemCombinerMenuAccessor) anvil).tierify$getAccess();
+            ContainerLevelAccess access;
+            if (sp.containerMenu instanceof AnvilMenu anvil) {
+                access = ((ItemCombinerMenuAccessor) anvil).tierify$getAccess();
+            } else if (sp.containerMenu instanceof SalvageMenu salvage) {
+                access = salvage.getAccess();
+            } else {
+                return;
+            }
 
             // Extract pos from ContainerLevelAccess
             AtomicReference<BlockPos> posRef = new AtomicReference<>(BlockPos.ZERO);
