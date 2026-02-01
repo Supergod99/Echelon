@@ -140,7 +140,6 @@ public abstract class GuiGraphicsTooltipBorderMixin {
     @Unique private static final int APEX_CREST_TEX_W = 36;
     @Unique private static final int APEX_CREST_TEX_H = 36;
 
-    @Unique private int tierify$textRenderIndex;
     @Unique private int tierify$tooltipX;
     @Unique private int tierify$tooltipWidth;
     @Unique private int tierify$renderX;
@@ -148,7 +147,6 @@ public abstract class GuiGraphicsTooltipBorderMixin {
     @Unique private int tierify$renderW;
     @Unique private int tierify$renderH;
     @Unique private int tierify$centerTitleIndex = -1;
-    @Unique private int tierify$titleComponentIndex = -1;
     @Unique private int tierify$titleTextY = Integer.MIN_VALUE;
     @Unique private int tierify$titleLineCount = 1;
 
@@ -199,6 +197,44 @@ public abstract class GuiGraphicsTooltipBorderMixin {
 
         @Override
         public void renderImage(Font font, int x, int y, GuiGraphics graphics) {
+        }
+    }
+
+    private final class TierifyCenteredTitleComponent implements ClientTooltipComponent {
+        private final ClientTooltipComponent delegate;
+        private final boolean firstLine;
+
+        private TierifyCenteredTitleComponent(ClientTooltipComponent delegate, boolean firstLine) {
+            this.delegate = delegate;
+            this.firstLine = firstLine;
+        }
+
+        @Override
+        public int getHeight() {
+            return delegate.getHeight();
+        }
+
+        @Override
+        public int getWidth(Font font) {
+            return delegate.getWidth(font);
+        }
+
+        @Override
+        public void renderText(Font font, int x, int y, Matrix4f matrix, MultiBufferSource.BufferSource buffer) {
+            if (firstLine) {
+                tierify$titleTextY = y;
+            }
+            int drawX = x;
+            if (tierify$centerTitleIndex >= 0) {
+                int textW = delegate.getWidth(font);
+                drawX = tierify$tooltipX + (tierify$tooltipWidth - textW) / 2;
+            }
+            delegate.renderText(font, drawX, y, matrix, buffer);
+        }
+
+        @Override
+        public void renderImage(Font font, int x, int y, GuiGraphics graphics) {
+            delegate.renderImage(font, x, y, graphics);
         }
     }
 
@@ -272,6 +308,15 @@ public abstract class GuiGraphicsTooltipBorderMixin {
             copy.add(new TierifyWidthComponent(maxWidth + 8));
         }
 
+        // Wrap title lines to allow centering and capture title Y without a @Redirect.
+        int wrapTitleIndex = (copy.get(0) instanceof TierifySpacerComponent) ? 1 : 0;
+        int wrapTitleEnd = Math.min(copy.size(), wrapTitleIndex + Math.max(1, titleLineCount));
+        for (int i = wrapTitleIndex; i < wrapTitleEnd; i++) {
+            ClientTooltipComponent component = copy.get(i);
+            if (component instanceof TierifySpacerComponent || component instanceof TierifyWidthComponent) continue;
+            copy.set(i, new TierifyCenteredTitleComponent(component, i == wrapTitleIndex));
+        }
+
         return copy;
     }
 
@@ -285,9 +330,7 @@ public abstract class GuiGraphicsTooltipBorderMixin {
                                                int mouseY,
                                                ClientTooltipPositioner positioner,
                                                CallbackInfo ci) {
-        tierify$textRenderIndex = 0;
         tierify$centerTitleIndex = -1;
-        tierify$titleComponentIndex = -1;
         tierify$titleTextY = Integer.MIN_VALUE;
         tierify$titleLineCount = 1;
         tierify$renderX = 0;
@@ -311,7 +354,6 @@ public abstract class GuiGraphicsTooltipBorderMixin {
         int titleIndex = (components.get(0) instanceof TierifySpacerComponent) ? 1 : 0;
         if (titleIndex >= components.size()) return;
 
-        tierify$titleComponentIndex = titleIndex;
         tierify$titleLineCount = computeTitleLineCount(font, components, stack);
 
         if (!ForgeTierifyConfig.centerName()) return;
@@ -355,34 +397,6 @@ public abstract class GuiGraphicsTooltipBorderMixin {
         tierify$renderW = width;
         tierify$renderH = height;
         return pos;
-    }
-
-    @Redirect(
-            method = "renderTooltipInternal(Lnet/minecraft/client/gui/Font;Ljava/util/List;IILnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipPositioner;)V",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipComponent;renderText(Lnet/minecraft/client/gui/Font;IILorg/joml/Matrix4f;Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;)V"
-            )
-    )
-    private void tierify$centerTitleText(ClientTooltipComponent component,
-                                         Font font,
-                                         int x,
-                                         int y,
-                                         Matrix4f matrix,
-                                         MultiBufferSource.BufferSource buffer) {
-        int index = tierify$textRenderIndex++;
-        if (index == tierify$titleComponentIndex && tierify$titleComponentIndex >= 0) {
-            tierify$titleTextY = y;
-        }
-        boolean isTitleLine = index >= tierify$titleComponentIndex
-                && index < tierify$titleComponentIndex + Math.max(1, tierify$titleLineCount);
-        int drawX = x;
-        if (tierify$centerTitleIndex >= 0 && isTitleLine) {
-            int textW = component.getWidth(font);
-            drawX = tierify$tooltipX + (tierify$tooltipWidth - textW) / 2;
-        }
-
-        component.renderText(font, drawX, y, matrix, buffer);
     }
 
     @Inject(
