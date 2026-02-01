@@ -170,7 +170,7 @@ The addition slot can only contain items which are stated in each tier item tag 
 ### Credits
 - **Draylar1** for making **Tiered**, the original mod.
 - **Globox_Z** for making **TieredZ**, a fork of Tiered which Tierify is based upon.
-- **ElocinDev** for making **Tierify**, which is based off of Echelon, now a fork of a fork. 
+- **ElocinDev** for making **Tierify**, which is what Echelon is based off of, now a fork of a fork. 
 
 ### License
 Echelon's code is licensed under MIT. You are free to use the code inside this repo as you want as long as you meet the license's conditions.
