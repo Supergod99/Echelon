@@ -40,6 +40,9 @@ public class TieredForgeMixinPlugin implements IMixinConfigPlugin {
         if (mixinClassName.equals("elocindev.tierify.forge.mixin.compat.LethalityScalingFixMixin")) {
             return isModLoaded("brutality") || isModLoaded("attributeslib") || isModLoaded("apothic_attributes");
         }
+        if (mixinClassName.equals("elocindev.tierify.forge.mixin.client.FontTextureSwizzleMixin")) {
+            return false;
+        }
         return true;
     }
 

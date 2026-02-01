@@ -62,6 +62,8 @@ dependencies {
     runtimeOnly fg.deobf("curse.maven:tooltipoverhaul-1327508:7096296")
     runtimeOnly fg.deobf("curse.maven:obscureAPI-638417:7171906")
     runtimeOnly fg.deobf("curse.maven:fancy-toasts-1326436:7302363")
+    runtimeOnly fg.deobf("curse.maven:terramity-1084134:6054971")
+    runtimeOnly fg.deobf("curse.maven:lethality-a-terramity-addon-1282036:7332696")
     compileOnly fg.deobf("curse.maven:tooltipoverhaul-1327508:7096296")
     compileOnly fg.deobf("curse.maven:obscureAPI-638417:7171906")
     runtimeOnly fg.deobf("curse.maven:playerAnimator-658587:4587214")

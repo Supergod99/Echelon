@@ -21,6 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.util.Collection;
 import java.util.List;
@@ -229,6 +230,7 @@ public class ObscureApiAttributeIconMathMixin {
         } else {
             return null;
         }
+        UUID expectedTierUuid = expectedTierModifierUuidForIcon(icon, hovered);
 
         double add = 0.0;
         double multBase = 0.0;
@@ -236,7 +238,7 @@ public class ObscureApiAttributeIconMathMixin {
 
         for (Object mod : modifiers) {
             if (mod == null) continue;
-            if (!isTieredModifier(mod)) continue;
+            if (!isTieredModifier(mod) && !matchesExpectedTieredModifier(mod, expectedTierUuid)) continue;
 
             double amount = readModifierAmount(mod);
             if (amount <= 0.0) continue;
@@ -258,6 +260,41 @@ public class ObscureApiAttributeIconMathMixin {
         }
 
         return new double[] { add, multBase, multTotalFactor };
+    }
+
+    @Unique
+    private static boolean matchesExpectedTieredModifier(Object mod, UUID expected) {
+        if (expected == null || mod == null) return false;
+        Object out = invokeFirst(mod, "getId", "m_19437_");
+        return out instanceof UUID id && expected.equals(id);
+    }
+
+    @Unique
+    private static UUID expectedTierModifierUuidForIcon(String icon, ItemStack hovered) {
+        if (hovered == null || hovered.isEmpty()) return null;
+        if (!(hovered.getItem() instanceof ArmorItem armor)) return null;
+        if (icon == null || icon.isEmpty()) return null;
+
+        String attrId = attributeIdForIcon(icon);
+        if (attrId == null) return null;
+
+        String salt;
+        UUID tierUuid = getTierUuid(hovered);
+        if (tierUuid != null) {
+            salt = tierUuid.toString();
+        } else {
+            salt = hovered.getDescriptionId();
+        }
+        String key = attrId + "_" + armor.getEquipmentSlot().getName() + "_" + salt;
+        return UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Unique
+    private static String attributeIdForIcon(String icon) {
+        if (iconEquals(icon, ICON_ARMOR)) return "generic.armor";
+        if (iconEquals(icon, ICON_TOUGHNESS)) return "generic.armor_toughness";
+        if (iconEquals(icon, ICON_KNOCKBACK)) return "generic.knockback_resistance";
+        return null;
     }
 
     @Unique
