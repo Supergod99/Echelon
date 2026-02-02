@@ -264,6 +264,10 @@ public final class TooltipOverhaulCompatForge {
             debugTooltipRenderSummary("skip_no_ctx_stack", ItemStack.EMPTY, ItemStack.EMPTY, null, null);
             return;
         }
+        if (isMainTooltipInCompareMode(ctx)) {
+            debugTooltipRenderSummary("skip_main_compare_tooltip", ctxStack, ItemStack.EMPTY, null, null);
+            return;
+        }
         List<ClientTooltipComponent> components = findTooltipComponents(ctx);
         List<Component> textLines = findTooltipTextLines(ctx);
         String tooltipTitle = findTooltipTitleText(components, textLines);
@@ -404,6 +408,21 @@ public final class TooltipOverhaulCompatForge {
         if (stack instanceof ItemStack itemStack) return itemStack;
         stack = readField(ctx, "stack");
         return (stack instanceof ItemStack itemStack) ? itemStack : null;
+    }
+
+    private static boolean isMainTooltipInCompareMode(Object ctx) {
+        if (ctx == null) return false;
+        Object other = callNoArg(ctx, "getOtherTooltipContext", "otherTooltipContext", "getOther");
+        if (other == null) {
+            other = readField(ctx, "otherTooltipContext");
+        }
+        if (other == null) return false;
+
+        Object main = callNoArg(ctx, "isMainTooltip", "mainTooltip", "getIsMainTooltip");
+        if (main instanceof Boolean b) return b;
+
+        Object fromField = readField(ctx, "isMainTooltip");
+        return fromField instanceof Boolean b && b;
     }
 
     private static ItemStack resolveStackForRenderedTooltip(ItemStack ctxStack,
