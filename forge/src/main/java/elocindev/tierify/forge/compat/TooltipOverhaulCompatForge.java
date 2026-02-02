@@ -412,6 +412,7 @@ public final class TooltipOverhaulCompatForge {
         if (ctxStack == null || ctxStack.isEmpty()) return ctxStack;
         String tooltipTitle = findTooltipTitleText(components, textLines);
         if (tooltipTitle == null || tooltipTitle.isEmpty()) return ctxStack;
+        if (isLikelyStatLine(tooltipTitle)) return ctxStack;
         if (tooltipTitleMatchesStack(tooltipTitle, ctxStack)) return ctxStack;
         ItemStack equipped = findMatchingEquippedArmorStack(tooltipTitle);
         if (equipped != null && !equipped.isEmpty()) {
@@ -425,6 +426,11 @@ public final class TooltipOverhaulCompatForge {
                 tooltipTitle,
                 safeName(ctxStack));
         return ItemStack.EMPTY;
+    }
+
+    private static boolean isLikelyStatLine(String text) {
+        if (text == null || text.isEmpty()) return false;
+        return text.contains("/") || text.matches(".*\\d.*");
     }
 
     private static String findTooltipTitleText(List<ClientTooltipComponent> components, List<Component> textLines) {

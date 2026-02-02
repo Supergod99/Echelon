@@ -327,6 +327,7 @@ public class ObscureApiAttributeIconMathMixin {
 
         Set<UUID> expectedTierUuids = expectedTierModifierUuidsForIcon(icon, hovered, equipped);
         Set<String> attrIds = attributeIdVariants(attrId);
+        Set<Attribute> seenAttributes = new HashSet<>();
         EquipmentSlot slot = armor.getEquipmentSlot();
 
         double add = 0.0;
@@ -338,6 +339,7 @@ public class ObscureApiAttributeIconMathMixin {
             if (attrRl == null) continue;
             Attribute attr = ForgeRegistries.ATTRIBUTES.getValue(attrRl);
             if (attr == null) continue;
+            if (!seenAttributes.add(attr)) continue;
 
             Collection<AttributeModifier> mods = hovered.getAttributeModifiers(slot).get(attr);
             if (mods == null || mods.isEmpty()) continue;
