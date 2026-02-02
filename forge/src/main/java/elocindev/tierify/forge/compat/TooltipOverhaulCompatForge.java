@@ -28,6 +28,8 @@ import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraftforge.fml.ModList;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.awt.Point;
 import java.lang.reflect.Field;
@@ -37,8 +39,12 @@ import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 public final class TooltipOverhaulCompatForge {
+    private static final Logger LOGGER = LogManager.getLogger("tiered");
+    private static final boolean DEBUG_TOOLTIP_COMPARE =
+            Boolean.parseBoolean(System.getProperty("tierify.debug.tooltip_compare", "false"));
     private static final String MOD_ID = "tooltipoverhaul";
     private static final float SET_BONUS_LABEL_NUDGE_Y = 4.0f;
     private static final ResourceLocation SET_BONUS_CREST =
@@ -253,11 +259,19 @@ public final class TooltipOverhaulCompatForge {
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
         ItemStack stack = getItemStack(ctx);
-        if (stack == null || stack.isEmpty()) return;
+        ItemStack ctxStack = stack;
+        if (stack == null || stack.isEmpty()) {
+            debugTooltipRenderSummary("skip_no_ctx_stack", ItemStack.EMPTY, ItemStack.EMPTY, null, null);
+            return;
+        }
         List<ClientTooltipComponent> components = findTooltipComponents(ctx);
         List<Component> textLines = findTooltipTextLines(ctx);
+        String tooltipTitle = findTooltipTitleText(components, textLines);
         stack = resolveStackForRenderedTooltip(stack, components, textLines);
-        if (stack == null || stack.isEmpty()) return;
+        if (stack == null || stack.isEmpty()) {
+            debugTooltipRenderSummary("skip_unresolved_stack", ctxStack, ItemStack.EMPTY, tooltipTitle, null);
+            return;
+        }
 
         CompoundTag tiered = stack.getTagElement(TierifyConstants.NBT_SUBTAG_KEY);
         String tierId = null;
@@ -269,7 +283,10 @@ public final class TooltipOverhaulCompatForge {
         if (tiered != null && tiered.contains(TierifyConstants.NBT_SUBTAG_DATA_KEY)) {
             tierId = tiered.getString(TierifyConstants.NBT_SUBTAG_DATA_KEY);
             isPerfect = tiered.getBoolean("Perfect");
-            if ((tierId == null || tierId.isEmpty()) && !isPerfect) return;
+            if ((tierId == null || tierId.isEmpty()) && !isPerfect) {
+                debugTooltipRenderSummary("skip_missing_tier_id", ctxStack, stack, tooltipTitle, null);
+                return;
+            }
             isApex = StarApexUtils.isApex(stack);
             int stars = StarApexUtils.getStars(stack);
             boolean mythicStars = tierId != null && tierId.startsWith("tiered:mythic") && stars > 0;
@@ -284,18 +301,28 @@ public final class TooltipOverhaulCompatForge {
             hasTieredTag = true;
         } else if (stack.getItem() instanceof ReforgeAddition) {
             ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
-            if (id == null) return;
+            if (id == null) {
+                debugTooltipRenderSummary("skip_reforge_without_id", ctxStack, stack, tooltipTitle, null);
+                return;
+            }
             lookupKey = id.toString();
         } else {
+            debugTooltipRenderSummary("skip_not_tiered_or_reforge", ctxStack, stack, tooltipTitle, null);
             return;
         }
 
         boolean usePerfectBorder = isPerfect;
         TierifyTooltipBorderRendererForge.Template template = TierifyTooltipBorderRendererForge.findTemplate(lookupKey, usePerfectBorder);
-        if (template == null) return;
+        if (template == null) {
+            debugTooltipRenderSummary("skip_no_template", ctxStack, stack, tooltipTitle, lookupKey);
+            return;
+        }
 
         GuiGraphics gg = getGuiGraphics(ctx);
-        if (gg == null) return;
+        if (gg == null) {
+            debugTooltipRenderSummary("skip_no_guigraphics", ctxStack, stack, tooltipTitle, lookupKey);
+            return;
+        }
 
         int width = readPointValue(size, "x", "getX", "field_1343", "width", "getWidth");
         int height = readPointValue(size, "y", "getY", "field_1342", "height", "getHeight");
@@ -309,12 +336,16 @@ public final class TooltipOverhaulCompatForge {
             y = Math.round(posY);
         } else {
             int[] fallback = fallbackPosFromContext(ctx, width, height);
-            if (fallback == null) return;
+            if (fallback == null) {
+                debugTooltipRenderSummary("skip_no_position", ctxStack, stack, tooltipTitle, lookupKey);
+                return;
+            }
             x = fallback[0];
             y = fallback[1];
         }
 
         if (width <= 0 || height <= 0) {
+            debugTooltipRenderSummary("skip_non_positive_size", ctxStack, stack, tooltipTitle, lookupKey);
             return;
         }
 
@@ -360,6 +391,7 @@ public final class TooltipOverhaulCompatForge {
                 renderPerfectLabel(gg, font, x, y, width, baseZ);
             }
         }
+        debugTooltipRenderSummary("rendered", ctxStack, stack, tooltipTitle, lookupKey);
     }
 
     private static ItemStack getItemStack(Object ctx) {
@@ -377,20 +409,30 @@ public final class TooltipOverhaulCompatForge {
         if (tooltipTitle == null || tooltipTitle.isEmpty()) return ctxStack;
         if (tooltipTitleMatchesStack(tooltipTitle, ctxStack)) return ctxStack;
         ItemStack equipped = findMatchingEquippedArmorStack(tooltipTitle);
-        return (equipped != null && !equipped.isEmpty()) ? equipped : ctxStack;
+        if (equipped != null && !equipped.isEmpty()) {
+            debugTooltipCompare("resolved equipped tooltip stack: title='{}' ctx='{}' resolved='{}'",
+                    tooltipTitle,
+                    safeName(ctxStack),
+                    safeName(equipped));
+            return equipped;
+        }
+        debugTooltipCompare("unable to resolve tooltip stack; skipping overlay: title='{}' ctx='{}'",
+                tooltipTitle,
+                safeName(ctxStack));
+        return ItemStack.EMPTY;
     }
 
     private static String findTooltipTitleText(List<ClientTooltipComponent> components, List<Component> textLines) {
+        if (components != null && !components.isEmpty()) {
+            String s = getTooltipString(components.get(0));
+            if (s != null && !s.isEmpty()) return s;
+        }
         if (textLines != null && !textLines.isEmpty()) {
             Component first = textLines.get(0);
             if (first != null) {
                 String s = first.getString();
                 if (s != null && !s.isEmpty()) return s;
             }
-        }
-        if (components != null && !components.isEmpty()) {
-            String s = getTooltipString(components.get(0));
-            if (s != null && !s.isEmpty()) return s;
         }
         return null;
     }
@@ -410,7 +452,13 @@ public final class TooltipOverhaulCompatForge {
         for (EquipmentSlot slot : new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
             ItemStack armor = player.getItemBySlot(slot);
             if (armor.isEmpty()) continue;
-            if (tooltipTitleMatchesStack(title, armor)) return armor;
+            if (tooltipTitleMatchesStack(title, armor)) {
+                debugTooltipCompare("equipped match slot={} title='{}' item='{}'",
+                        slot.getName(),
+                        title,
+                        safeName(armor));
+                return armor;
+            }
         }
         return ItemStack.EMPTY;
     }
@@ -433,6 +481,48 @@ public final class TooltipOverhaulCompatForge {
             out.append(c);
         }
         return out.toString().trim();
+    }
+
+    private static void debugTooltipCompare(String message, Object... args) {
+        if (!DEBUG_TOOLTIP_COMPARE) return;
+        LOGGER.info("[Tierify/TOCompareDebug] " + message, args);
+    }
+
+    private static void debugTooltipRenderSummary(String outcome,
+                                                  ItemStack ctxStack,
+                                                  ItemStack renderStack,
+                                                  String tooltipTitle,
+                                                  String lookupKey) {
+        if (!DEBUG_TOOLTIP_COMPARE) return;
+        String tierId = "";
+        int stars = 0;
+        boolean apex = false;
+        if (renderStack != null && !renderStack.isEmpty()) {
+            CompoundTag tiered = renderStack.getTagElement(TierifyConstants.NBT_SUBTAG_KEY);
+            if (tiered != null) {
+                tierId = tiered.getString(TierifyConstants.NBT_SUBTAG_DATA_KEY);
+            }
+            stars = StarApexUtils.getStars(renderStack);
+            apex = StarApexUtils.isApex(renderStack);
+        }
+        LOGGER.info("[Tierify/TOCompareDebug] renderSummary outcome={} title='{}' ctx='{}' render='{}' tier='{}' stars={} apex={} lookup='{}'",
+                outcome,
+                tooltipTitle == null ? "" : tooltipTitle,
+                safeName(ctxStack),
+                safeName(renderStack),
+                tierId,
+                stars,
+                apex,
+                lookupKey == null ? "" : lookupKey);
+    }
+
+    private static String safeName(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return "<empty>";
+        try {
+            return stack.getHoverName().getString();
+        } catch (Throwable ignored) {
+            return "<name_error>";
+        }
     }
 
     private static void renderApexNameGlow(GuiGraphics gg,
@@ -1035,7 +1125,7 @@ public final class TooltipOverhaulCompatForge {
         if (player == null) return false;
 
         EquipmentSlot slot = armor.getEquipmentSlot();
-        return player.getItemBySlot(slot) == stack;
+        return isEquippedArmorStack(player, slot, stack);
     }
 
     private static boolean isSetBonusActive(ItemStack stack, String tierId) {
@@ -1574,7 +1664,7 @@ public final class TooltipOverhaulCompatForge {
         if (player == null) return null;
 
         EquipmentSlot slot = armor.getEquipmentSlot();
-        if (player.getItemBySlot(slot) != stack) return null;
+        if (!isEquippedArmorStack(player, slot, stack)) return null;
 
         if (hasPerfectSetBonus(player, tierId)) {
             int pct = Math.round(ForgeTierifyConfig.armorSetPerfectBonusPercent() * 100.0f);
@@ -1589,6 +1679,23 @@ public final class TooltipOverhaulCompatForge {
         }
 
         return null;
+    }
+
+    private static boolean isEquippedArmorStack(Player player, EquipmentSlot slot, ItemStack stack) {
+        if (player == null || slot == null || stack == null || stack.isEmpty()) return false;
+        ItemStack equipped = player.getItemBySlot(slot);
+        if (equipped.isEmpty()) return false;
+        if (equipped == stack) return true;
+        UUID equippedTierUuid = getTierUuid(equipped);
+        UUID stackTierUuid = getTierUuid(stack);
+        return equippedTierUuid != null && equippedTierUuid.equals(stackTierUuid);
+    }
+
+    private static UUID getTierUuid(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return null;
+        CompoundTag tiered = stack.getTagElement(TierifyConstants.NBT_SUBTAG_KEY);
+        if (tiered == null || !tiered.hasUUID("TierUUID")) return null;
+        return tiered.getUUID("TierUUID");
     }
 
     private static boolean hasSetBonus(Player player, String tierId) {

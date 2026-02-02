@@ -103,6 +103,8 @@ minecraft {
             // Optional but very useful while validating
             property 'mixin.debug.verbose', 'true'
             property 'mixin.debug.export', 'true'
+            property 'tierify.debug.tooltip_compare', 'true'
+            property 'tierify.debug.obscure_setbonus', 'true'
 
             property 'mixin.env.remapRefMap', 'true'
             property 'mixin.env.refMapRemappingFile', "${project.buildDir}/createSrgToMcp/output.srg"

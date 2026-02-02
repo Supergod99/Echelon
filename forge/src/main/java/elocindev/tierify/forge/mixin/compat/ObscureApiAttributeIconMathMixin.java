@@ -12,6 +12,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.registries.ForgeRegistries;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -31,6 +33,11 @@ import java.util.UUID;
 
 @Mixin(targets = "com.obscuria.obscureapi.client.TooltipBuilder$AttributeIcons", remap = false)
 public class ObscureApiAttributeIconMathMixin {
+    @Unique
+    private static final Logger LOGGER = LogManager.getLogger("tiered");
+    @Unique
+    private static final boolean DEBUG_OBSCURE_SETBONUS =
+            Boolean.parseBoolean(System.getProperty("tierify.debug.obscure_setbonus", "false"));
 
     @Unique
     private static final UUID TIERIFY_SET_BONUS_ID =
@@ -192,33 +199,67 @@ public class ObscureApiAttributeIconMathMixin {
 
     @Unique
     private static double[] computeSetBonusDelta(String icon, Collection<?> modifiers) {
-        if (!ForgeTierifyConfig.enableArmorSetBonuses()) return null;
-        if (modifiers == null || modifiers.isEmpty()) return null;
+        if (!ForgeTierifyConfig.enableArmorSetBonuses()) {
+            debugSetBonus("skip set bonus icon patch: armor set bonuses disabled");
+            return null;
+        }
+        if (modifiers == null || modifiers.isEmpty()) {
+            debugSetBonus("skip set bonus icon patch: no modifiers icon='{}'", icon);
+            return null;
+        }
 
         ItemStack hovered = CURRENT_STACK.get();
-        if (hovered == null || hovered.isEmpty()) return null;
-        if (!(hovered.getItem() instanceof ArmorItem armor)) return null;
+        if (hovered == null || hovered.isEmpty()) {
+            debugSetBonus("skip set bonus icon patch: no hovered stack icon='{}'", icon);
+            return null;
+        }
+        if (!(hovered.getItem() instanceof ArmorItem armor)) {
+            debugSetBonus("skip set bonus icon patch: hovered stack is not armor icon='{}' item='{}'",
+                    icon, hovered.getDescriptionId());
+            return null;
+        }
 
         Minecraft mc = Minecraft.getInstance();
         Player player = mc.player;
-        if (player == null) return null;
+        if (player == null) {
+            debugSetBonus("skip set bonus icon patch: no player icon='{}'", icon);
+            return null;
+        }
 
         ItemStack equippedSameSlot = player.getItemBySlot(armor.getEquipmentSlot());
-        if (equippedSameSlot == null || equippedSameSlot.isEmpty()) return null;
+        if (equippedSameSlot == null || equippedSameSlot.isEmpty()) {
+            debugSetBonus("skip set bonus icon patch: empty equipped slot='{}' icon='{}'",
+                    armor.getEquipmentSlot().getName(), icon);
+            return null;
+        }
         String hoveredTier = getTierId(hovered);
         if (hoveredTier.isEmpty()) {
             hoveredTier = getTierId(equippedSameSlot);
         }
-        if (hoveredTier.isEmpty()) return null;
+        if (hoveredTier.isEmpty()) {
+            debugSetBonus("skip set bonus icon patch: no tier id icon='{}' hovered='{}' equipped='{}'",
+                    icon, hovered.getDescriptionId(), equippedSameSlot.getDescriptionId());
+            return null;
+        }
         String equippedTier = getTierId(equippedSameSlot);
-        if (equippedTier.isEmpty() || !hoveredTier.equals(equippedTier)) return null;
+        if (equippedTier.isEmpty() || !hoveredTier.equals(equippedTier)) {
+            debugSetBonus("skip set bonus icon patch: tier mismatch icon='{}' hoveredTier='{}' equippedTier='{}'",
+                    icon, hoveredTier, equippedTier);
+            return null;
+        }
 
-        if (!hasFullTierSetEquipped(player, hoveredTier)) return null;
+        if (!hasFullTierSetEquipped(player, hoveredTier)) {
+            debugSetBonus("skip set bonus icon patch: no full set icon='{}' tier='{}'", icon, hoveredTier);
+            return null;
+        }
 
         double pct = hasPerfectTierSetEquipped(player, hoveredTier)
                 ? ForgeTierifyConfig.armorSetPerfectBonusPercent()
                 : ForgeTierifyConfig.armorSetBonusMultiplier();
-        if (pct <= 0.0) return null;
+        if (pct <= 0.0) {
+            debugSetBonus("skip set bonus icon patch: non-positive pct icon='{}' pct='{}'", icon, pct);
+            return null;
+        }
 
         ensureIconsResolved();
 
@@ -229,6 +270,7 @@ public class ObscureApiAttributeIconMathMixin {
         } else if (iconEquals(icon, ICON_KNOCKBACK)) {
             // ok
         } else {
+            debugSetBonus("skip set bonus icon patch: unsupported icon marker='{}'", icon);
             return null;
         }
         Set<UUID> expectedTierUuids = expectedTierModifierUuidsForIcon(icon, hovered, equippedSameSlot);
@@ -257,10 +299,20 @@ public class ObscureApiAttributeIconMathMixin {
         if (Math.abs(add) < 1.0e-9
                 && Math.abs(multBase) < 1.0e-9
                 && Math.abs(multTotalFactor - 1.0) < 1.0e-9) {
+            debugSetBonus("computed zero set bonus delta icon='{}' tier='{}' expectedIds='{}'",
+                    icon, hoveredTier, expectedTierUuids.size());
             return null;
         }
 
+        debugSetBonus("applied set bonus delta icon='{}' tier='{}' add='{}' multBase='{}' multTotal='{}'",
+                icon, hoveredTier, add, multBase, multTotalFactor);
         return new double[] { add, multBase, multTotalFactor };
+    }
+
+    @Unique
+    private static void debugSetBonus(String msg, Object... args) {
+        if (!DEBUG_OBSCURE_SETBONUS) return;
+        LOGGER.info("[Tierify/ObscureSetBonusDebug] " + msg, args);
     }
 
     @Unique
@@ -278,21 +330,40 @@ public class ObscureApiAttributeIconMathMixin {
 
         String attrId = attributeIdForIcon(icon);
         if (attrId == null) return Set.of();
+        Set<String> attrIds = attributeIdVariants(attrId);
 
         Set<UUID> ids = new HashSet<>();
-        addExpectedUuids(ids, attrId, armor.getEquipmentSlot().getName(), hovered);
-        addExpectedUuids(ids, attrId, "head", hovered);
-        addExpectedUuids(ids, attrId, "chest", hovered);
-        addExpectedUuids(ids, attrId, "legs", hovered);
-        addExpectedUuids(ids, attrId, "feet", hovered);
-        if (equipped != null && !equipped.isEmpty()) {
-            addExpectedUuids(ids, attrId, armor.getEquipmentSlot().getName(), equipped);
-            addExpectedUuids(ids, attrId, "head", equipped);
-            addExpectedUuids(ids, attrId, "chest", equipped);
-            addExpectedUuids(ids, attrId, "legs", equipped);
-            addExpectedUuids(ids, attrId, "feet", equipped);
+        for (String id : attrIds) {
+            addExpectedUuids(ids, id, armor.getEquipmentSlot().getName(), hovered);
+            addExpectedUuids(ids, id, "head", hovered);
+            addExpectedUuids(ids, id, "chest", hovered);
+            addExpectedUuids(ids, id, "legs", hovered);
+            addExpectedUuids(ids, id, "feet", hovered);
+            if (equipped != null && !equipped.isEmpty()) {
+                addExpectedUuids(ids, id, armor.getEquipmentSlot().getName(), equipped);
+                addExpectedUuids(ids, id, "head", equipped);
+                addExpectedUuids(ids, id, "chest", equipped);
+                addExpectedUuids(ids, id, "legs", equipped);
+                addExpectedUuids(ids, id, "feet", equipped);
+            }
         }
         return ids;
+    }
+
+    @Unique
+    private static Set<String> attributeIdVariants(String attrId) {
+        if (attrId == null || attrId.isEmpty()) return Set.of();
+        Set<String> out = new HashSet<>();
+        out.add(attrId);
+        if (attrId.indexOf(':') < 0) {
+            out.add("minecraft:" + attrId);
+        } else {
+            int split = attrId.indexOf(':');
+            if (split >= 0 && split + 1 < attrId.length()) {
+                out.add(attrId.substring(split + 1));
+            }
+        }
+        return out;
     }
 
     @Unique
