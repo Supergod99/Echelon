@@ -254,6 +254,10 @@ public final class TooltipOverhaulCompatForge {
 
         ItemStack stack = getItemStack(ctx);
         if (stack == null || stack.isEmpty()) return;
+        List<ClientTooltipComponent> components = findTooltipComponents(ctx);
+        List<Component> textLines = findTooltipTextLines(ctx);
+        stack = resolveStackForRenderedTooltip(stack, components, textLines);
+        if (stack == null || stack.isEmpty()) return;
 
         CompoundTag tiered = stack.getTagElement(TierifyConstants.NBT_SUBTAG_KEY);
         String tierId = null;
@@ -339,8 +343,6 @@ public final class TooltipOverhaulCompatForge {
         gg.pose().popPose();
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-        List<ClientTooltipComponent> components = findTooltipComponents(ctx);
-        List<Component> textLines = findTooltipTextLines(ctx);
         if (fontObj instanceof Font font && hasTieredTag) {
             int stars = StarApexUtils.getStars(stack);
             boolean mythicStars = tierId != null && tierId.startsWith("tiered:mythic");
@@ -365,6 +367,72 @@ public final class TooltipOverhaulCompatForge {
         if (stack instanceof ItemStack itemStack) return itemStack;
         stack = readField(ctx, "stack");
         return (stack instanceof ItemStack itemStack) ? itemStack : null;
+    }
+
+    private static ItemStack resolveStackForRenderedTooltip(ItemStack ctxStack,
+                                                            List<ClientTooltipComponent> components,
+                                                            List<Component> textLines) {
+        if (ctxStack == null || ctxStack.isEmpty()) return ctxStack;
+        String tooltipTitle = findTooltipTitleText(components, textLines);
+        if (tooltipTitle == null || tooltipTitle.isEmpty()) return ctxStack;
+        if (tooltipTitleMatchesStack(tooltipTitle, ctxStack)) return ctxStack;
+        ItemStack equipped = findMatchingEquippedArmorStack(tooltipTitle);
+        return (equipped != null && !equipped.isEmpty()) ? equipped : ctxStack;
+    }
+
+    private static String findTooltipTitleText(List<ClientTooltipComponent> components, List<Component> textLines) {
+        if (textLines != null && !textLines.isEmpty()) {
+            Component first = textLines.get(0);
+            if (first != null) {
+                String s = first.getString();
+                if (s != null && !s.isEmpty()) return s;
+            }
+        }
+        if (components != null && !components.isEmpty()) {
+            String s = getTooltipString(components.get(0));
+            if (s != null && !s.isEmpty()) return s;
+        }
+        return null;
+    }
+
+    private static boolean tooltipTitleMatchesStack(String title, ItemStack stack) {
+        if (title == null || title.isEmpty() || stack == null || stack.isEmpty()) return false;
+        String normalizedTitle = normalizeTooltipTitle(title);
+        if (normalizedTitle.isEmpty()) return false;
+        String hoverName = normalizeTooltipTitle(stack.getHoverName().getString());
+        if (hoverName.isEmpty()) return false;
+        return normalizedTitle.contains(hoverName) || hoverName.contains(normalizedTitle);
+    }
+
+    private static ItemStack findMatchingEquippedArmorStack(String title) {
+        Player player = Minecraft.getInstance().player;
+        if (player == null || title == null || title.isEmpty()) return ItemStack.EMPTY;
+        for (EquipmentSlot slot : new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
+            ItemStack armor = player.getItemBySlot(slot);
+            if (armor.isEmpty()) continue;
+            if (tooltipTitleMatchesStack(title, armor)) return armor;
+        }
+        return ItemStack.EMPTY;
+    }
+
+    private static String normalizeTooltipTitle(String value) {
+        if (value == null || value.isEmpty()) return "";
+        StringBuilder out = new StringBuilder(value.length());
+        boolean skipCode = false;
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (skipCode) {
+                skipCode = false;
+                continue;
+            }
+            if (c == '\u00A7') {
+                skipCode = true;
+                continue;
+            }
+            if (Character.isISOControl(c)) continue;
+            out.append(c);
+        }
+        return out.toString().trim();
     }
 
     private static void renderApexNameGlow(GuiGraphics gg,
