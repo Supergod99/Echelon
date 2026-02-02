@@ -708,6 +708,9 @@ public final class TooltipOverhaulCompatForge {
 
     private static Object findSizeArg(Object[] args) {
         if (args == null) return null;
+        if (args.length > 2 && args[2] instanceof Point) {
+            return args[2];
+        }
         for (Object arg : args) {
             if (arg instanceof Point) return arg;
         }
@@ -716,6 +719,9 @@ public final class TooltipOverhaulCompatForge {
 
     private static Object findPosArg(Object[] args, Object sizeArg) {
         if (args == null) return null;
+        if (args.length > 1 && args[1] != null && args[1] != sizeArg) {
+            return args[1];
+        }
         for (Object arg : args) {
             if (arg == null || arg == sizeArg || arg instanceof Point) continue;
             String name = arg.getClass().getName();
