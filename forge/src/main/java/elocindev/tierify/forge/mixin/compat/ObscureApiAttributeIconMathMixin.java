@@ -8,6 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
@@ -299,6 +300,12 @@ public class ObscureApiAttributeIconMathMixin {
         if (Math.abs(add) < 1.0e-9
                 && Math.abs(multBase) < 1.0e-9
                 && Math.abs(multTotalFactor - 1.0) < 1.0e-9) {
+            double[] fromStack = computeSetBonusDeltaFromStack(icon, hovered, equippedSameSlot, pct);
+            if (fromStack != null) {
+                debugSetBonus("applied set bonus delta from hovered stack icon='{}' tier='{}' add='{}' multBase='{}' multTotal='{}'",
+                        icon, hoveredTier, fromStack[0], fromStack[1], fromStack[2]);
+                return fromStack;
+            }
             debugSetBonus("computed zero set bonus delta icon='{}' tier='{}' expectedIds='{}'",
                     icon, hoveredTier, expectedTierUuids.size());
             return null;
@@ -306,6 +313,57 @@ public class ObscureApiAttributeIconMathMixin {
 
         debugSetBonus("applied set bonus delta icon='{}' tier='{}' add='{}' multBase='{}' multTotal='{}'",
                 icon, hoveredTier, add, multBase, multTotalFactor);
+        return new double[] { add, multBase, multTotalFactor };
+    }
+
+    @Unique
+    private static double[] computeSetBonusDeltaFromStack(String icon, ItemStack hovered, ItemStack equipped, double pct) {
+        if (hovered == null || hovered.isEmpty()) return null;
+        if (!(hovered.getItem() instanceof ArmorItem armor)) return null;
+        if (pct <= 0.0) return null;
+
+        String attrId = attributeIdForIcon(icon);
+        if (attrId == null || attrId.isEmpty()) return null;
+
+        Set<UUID> expectedTierUuids = expectedTierModifierUuidsForIcon(icon, hovered, equipped);
+        Set<String> attrIds = attributeIdVariants(attrId);
+        EquipmentSlot slot = armor.getEquipmentSlot();
+
+        double add = 0.0;
+        double multBase = 0.0;
+        double multTotalFactor = 1.0;
+
+        for (String attrKey : attrIds) {
+            ResourceLocation attrRl = ResourceLocation.tryParse(attrKey);
+            if (attrRl == null) continue;
+            Attribute attr = ForgeRegistries.ATTRIBUTES.getValue(attrRl);
+            if (attr == null) continue;
+
+            Collection<AttributeModifier> mods = hovered.getAttributeModifiers(slot).get(attr);
+            if (mods == null || mods.isEmpty()) continue;
+
+            for (AttributeModifier mod : mods) {
+                if (mod == null) continue;
+                boolean tieredByName = mod.getName() != null && mod.getName().contains("tiered:");
+                boolean tieredByUuid = expectedTierUuids.contains(mod.getId());
+                if (!tieredByName && !tieredByUuid) continue;
+
+                double amount = mod.getAmount();
+                if (amount <= 0.0) continue;
+
+                switch (mod.getOperation()) {
+                    case ADDITION -> add += (amount * pct);
+                    case MULTIPLY_BASE -> multBase += (amount * pct);
+                    case MULTIPLY_TOTAL -> multTotalFactor *= (1.0 + (amount * pct));
+                }
+            }
+        }
+
+        if (Math.abs(add) < 1.0e-9
+                && Math.abs(multBase) < 1.0e-9
+                && Math.abs(multTotalFactor - 1.0) < 1.0e-9) {
+            return null;
+        }
         return new double[] { add, multBase, multTotalFactor };
     }
 

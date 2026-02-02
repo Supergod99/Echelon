@@ -327,11 +327,16 @@ public final class TooltipOverhaulCompatForge {
         int width = readPointValue(size, "x", "getX", "field_1343", "width", "getWidth");
         int height = readPointValue(size, "y", "getY", "field_1342", "height", "getHeight");
 
+        Float ctxPosX = tryReadNumber(ctx, "x", "getX", "tooltipX", "getTooltipX");
+        Float ctxPosY = tryReadNumber(ctx, "y", "getY", "tooltipY", "getTooltipY");
         Float posX = tryReadNumber(pos, "x", "getX", "field_1343");
         Float posY = tryReadNumber(pos, "y", "getY", "field_1342");
         int x;
         int y;
-        if (posX != null && posY != null) {
+        if (ctxPosX != null && ctxPosY != null) {
+            x = Math.round(ctxPosX);
+            y = Math.round(ctxPosY);
+        } else if (posX != null && posY != null) {
             x = Math.round(posX);
             y = Math.round(posY);
         } else {
@@ -424,13 +429,15 @@ public final class TooltipOverhaulCompatForge {
 
     private static String findTooltipTitleText(List<ClientTooltipComponent> components, List<Component> textLines) {
         if (components != null && !components.isEmpty()) {
-            String s = getTooltipString(components.get(0));
-            if (s != null && !s.isEmpty()) return s;
+            for (ClientTooltipComponent component : components) {
+                String s = getTooltipString(component);
+                if (s != null && !s.isEmpty()) return s;
+            }
         }
         if (textLines != null && !textLines.isEmpty()) {
-            Component first = textLines.get(0);
-            if (first != null) {
-                String s = first.getString();
+            for (Component line : textLines) {
+                if (line == null) continue;
+                String s = line.getString();
                 if (s != null && !s.isEmpty()) return s;
             }
         }
