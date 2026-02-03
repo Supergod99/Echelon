@@ -366,6 +366,14 @@ public final class TooltipOverhaulCompatForge {
             debugTooltipRenderSummary("skip_non_positive_size", ctxStack, stack, tooltipTitle, lookupKey);
             return;
         }
+        debugTooltipCompare("resolvedPos ctxMain={} hasOther={} pos=({}, {}) size=({}, {}) lastMainRect={}",
+                readIsMainTooltip(ctx),
+                hasOtherTooltipContext(ctx),
+                x,
+                y,
+                width,
+                height,
+                resolveTooltipOverhaulLastMainRect());
 
         float baseZ = resolveLayerDepthZ();
 
@@ -432,6 +440,37 @@ public final class TooltipOverhaulCompatForge {
 
         Object fromField = readField(ctx, "isMainTooltip");
         return fromField instanceof Boolean b && b;
+    }
+
+    private static Boolean readIsMainTooltip(Object ctx) {
+        if (ctx == null) return null;
+        Object main = callNoArg(ctx, "isMainTooltip", "mainTooltip", "getIsMainTooltip");
+        if (main instanceof Boolean b) return b;
+        Object fromField = readField(ctx, "isMainTooltip");
+        return (fromField instanceof Boolean b) ? b : null;
+    }
+
+    private static boolean hasOtherTooltipContext(Object ctx) {
+        if (ctx == null) return false;
+        Object other = callNoArg(ctx, "getOtherTooltipContext", "otherTooltipContext", "getOther");
+        if (other == null) {
+            other = readField(ctx, "otherTooltipContext");
+        }
+        return other != null;
+    }
+
+    private static String resolveTooltipOverhaulLastMainRect() {
+        try {
+            Class<?> renderer = Class.forName("dev.xylonity.tooltipoverhaul.client.TooltipRenderer");
+            Field f = renderer.getDeclaredField("LAST_MAIN_RECT");
+            f.setAccessible(true);
+            Object value = f.get(null);
+            if (value instanceof java.awt.Rectangle rect) {
+                return rect.x + "," + rect.y + "," + rect.width + "," + rect.height;
+            }
+        } catch (Throwable ignored) {
+        }
+        return "null";
     }
 
     private static ItemStack resolveStackForRenderedTooltip(ItemStack ctxStack,
