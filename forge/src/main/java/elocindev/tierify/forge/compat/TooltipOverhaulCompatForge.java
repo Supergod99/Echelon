@@ -374,6 +374,20 @@ public final class TooltipOverhaulCompatForge {
                 width,
                 height,
                 resolveTooltipOverhaulLastMainRect());
+        Boolean isMain = readIsMainTooltip(ctx);
+        java.awt.Rectangle mainRect = resolveTooltipOverhaulLastMainRectRect();
+        if (Boolean.FALSE.equals(isMain) && mainRect != null) {
+            boolean samePos = Math.abs(x - mainRect.x) <= 1 && Math.abs(y - mainRect.y) <= 1;
+            if (samePos) {
+                int spacing = 16;
+                int margin = 4;
+                int newX = Math.max(margin, mainRect.x - spacing - width);
+                if (newX != x) {
+                    debugTooltipCompare("adjusting equipped pos from mainRect x={} -> {}", x, newX);
+                    x = newX;
+                }
+            }
+        }
 
         float baseZ = resolveLayerDepthZ();
 
@@ -471,6 +485,20 @@ public final class TooltipOverhaulCompatForge {
         } catch (Throwable ignored) {
         }
         return "null";
+    }
+
+    private static java.awt.Rectangle resolveTooltipOverhaulLastMainRectRect() {
+        try {
+            Class<?> renderer = Class.forName("dev.xylonity.tooltipoverhaul.client.TooltipRenderer");
+            Field f = renderer.getDeclaredField("LAST_MAIN_RECT");
+            f.setAccessible(true);
+            Object value = f.get(null);
+            if (value instanceof java.awt.Rectangle rect) {
+                return rect;
+            }
+        } catch (Throwable ignored) {
+        }
+        return null;
     }
 
     private static ItemStack resolveStackForRenderedTooltip(ItemStack ctxStack,
