@@ -250,8 +250,17 @@ public final class TooltipOverhaulCompatForge {
         if (!ForgeTierifyConfig.tieredTooltip()) return;
 
         Object ctx = args[0];
-        Object size = findSizeArg(args);
-        Object pos = findPosArg(args, size);
+        Object size = (args.length > 2) ? args[2] : null;
+        Object pos = (args.length > 1) ? args[1] : null;
+        if (size == null) {
+            size = findSizeArg(args);
+        }
+        if (pos == null) {
+            pos = findPosArg(args, size);
+        }
+        debugTooltipCompare("argsResolved posIdx=1 sizeIdx=2 posType='{}' sizeType='{}'",
+                (pos != null ? pos.getClass().getName() : "null"),
+                (size != null ? size.getClass().getName() : "null"));
         Object fontObj = (args.length > 5) ? args[5] : null;
         if (!(fontObj instanceof Font)) {
             fontObj = findFontArg(args);
