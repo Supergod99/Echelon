@@ -727,35 +727,33 @@ public final class TooltipOverhaulCompatForge {
 
     private static Object findSizeArg(Object[] args) {
         if (args == null) return null;
-        if (args.length > 2 && args[2] instanceof Point) {
-            return args[2];
-        }
-        for (Object arg : args) {
+        for (int i = 0; i < args.length; i++) {
+            Object arg = args[i];
             if (arg instanceof Point) return arg;
         }
-        return (args.length > 2) ? args[2] : null;
+        if (args.length > 2 && args[2] != null) return args[2];
+        return null;
     }
 
     private static Object findPosArg(Object[] args, Object sizeArg) {
         if (args == null) return null;
-        if (args.length > 1 && args[1] != null && args[1] != sizeArg) {
-            return args[1];
-        }
-        for (Object arg : args) {
+        Object fallback = null;
+        for (int i = 0; i < args.length; i++) {
+            Object arg = args[i];
             if (arg == null || arg == sizeArg || arg instanceof Point) continue;
+            if (arg instanceof Font) continue;
             String name = arg.getClass().getName();
             if (name.contains("Vec2") || name.contains("Vector2")) {
                 return arg;
             }
-        }
-        for (Object arg : args) {
-            if (arg == null || arg == sizeArg || arg instanceof Point) continue;
             if (tryReadNumber(arg, "x", "getX", "field_1343") != null
                     && tryReadNumber(arg, "y", "getY", "field_1342") != null) {
-                return arg;
+                if (fallback == null) fallback = arg;
             }
         }
-        return (args.length > 1) ? args[1] : null;
+        if (fallback != null) return fallback;
+        if (args.length > 1 && args[1] != null && args[1] != sizeArg) return args[1];
+        return null;
     }
 
     private static Object findFontArg(Object[] args) {
