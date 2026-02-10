@@ -150,7 +150,8 @@ public class ReforgeMenu extends AbstractContainerMenu {
             if (target.isEmpty()) return false;
             if (base.isEmpty()) return false;
             if (!ForgeTierifyConfig.allowReforgingDamaged() && target.isDamaged()) return false;
-            if (!matchesRepairIngredient(target, base)) return false;
+            if (!isValidBase(base, target)) return false;
+            if (StarApexUtils.isApex(target)) return true;
             return StarApexUtils.canApplyApex(target);
         }
 
@@ -159,6 +160,8 @@ public class ReforgeMenu extends AbstractContainerMenu {
         if (!ForgeTieredAttributeSubscriber.hasAnyValidTier(target)) return false;
         if (!isValidAddition(add)) return false;
         if (!isValidBase(base, target)) return false;
+        if (StarApexUtils.isApex(target) && !isCleansing(add) && !isApexCrux(add)) return false;
+        if (StarApexUtils.isApex(target) && isPainite(add)) return false;
 
         return true;
     }
@@ -213,6 +216,9 @@ public class ReforgeMenu extends AbstractContainerMenu {
         return !stack.isEmpty() && stack.is(ForgeItemRegistry.APEX_CRUX.get());
     }
 
+    private static boolean isPainite(ItemStack stack) {
+        return !stack.isEmpty() && stack.is(ForgeItemRegistry.PAINITE.get());
+    }
     private static ResourceLocation getTierId(ItemStack stack) {
         CompoundTag tierTag = stack.getTagElement(TierifyConstants.NBT_SUBTAG_KEY);
         if (tierTag == null) return null;
@@ -251,8 +257,38 @@ public class ReforgeMenu extends AbstractContainerMenu {
 
         boolean apexApply = isApexCrux(add);
         if (apexApply) {
+            if (StarApexUtils.isApex(target)) {
+                if (base.isEmpty() || !isValidBase(base, target)) return;
+
+                ForgeTieredAttributeSubscriber.clearTieredData(target, true);
+
+                List<String> qualities = ForgeTierifyConfig.getTierQualities(6);
+                ResourceLocation chosen = ForgeTieredAttributeSubscriber.pickRandomTierForReforge(target, qualities, sp.getRandom(), sp);
+                if (chosen == null && qualities != null) {
+                    chosen = ForgeTieredAttributeSubscriber.pickRandomTierForReforge(target, null, sp.getRandom(), sp);
+                }
+                if (chosen == null) return;
+
+                ForgeTieredAttributeSubscriber.stashCustomNameForReforge(target);
+
+                boolean isPerfect = sp.getRandom().nextDouble() < ForgeTierifyConfig.perfectRollChance();
+                ForgeTieredAttributeSubscriber.applyTier(target, chosen, isPerfect);
+                ResourceLocation chosenFinal = chosen;
+
+                base.shrink(1);
+                add.shrink(1);
+
+                slotsChanged(inputs);
+                broadcastChanges();
+
+                access.execute((level, pos) -> {
+                    playReforgeSound(level, pos, chosenFinal, isPerfect);
+                    playAnvilEvent(level, pos);
+                });
+                return;
+            }
             if (!StarApexUtils.canApplyApex(target)) return;
-            if (base.isEmpty() || !matchesRepairIngredient(target, base)) return;
+            if (base.isEmpty() || !isValidBase(base, target)) return;
 
             StarApexUtils.setApex(target, true);
             ResourceLocation tierId = getTierId(target);
@@ -304,7 +340,7 @@ public class ReforgeMenu extends AbstractContainerMenu {
         broadcastChanges();
 
         access.execute((level, pos) -> {
-            playReforgeSound(level, pos, chosenFinal);
+            playReforgeSound(level, pos, chosenFinal, isPerfect);
             playAnvilEvent(level, pos);
         });
     }
@@ -324,7 +360,20 @@ public class ReforgeMenu extends AbstractContainerMenu {
     }
 
     private static void playReforgeSound(Level level, net.minecraft.core.BlockPos pos, ResourceLocation chosenTierId) {
+        playReforgeSound(level, pos, chosenTierId, false);
+    }
+
+    private static void playReforgeSound(Level level,
+                                         net.minecraft.core.BlockPos pos,
+                                         ResourceLocation chosenTierId,
+                                         boolean perfect) {
         SoundEvent toPlay = SoundEvents.ANVIL_USE;
+
+        if (perfect) {
+            toPlay = SoundEvents.UI_TOAST_CHALLENGE_COMPLETE;
+            level.playSound(null, pos, toPlay, SoundSource.BLOCKS, 0.8f, 1.0f);
+            return;
+        }
 
         if (chosenTierId != null) {
             String path = chosenTierId.getPath().toLowerCase(Locale.ROOT);

@@ -10,6 +10,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -18,6 +19,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.util.FormattedCharSequence;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
@@ -111,6 +113,7 @@ public class SalvageScreen extends net.minecraft.client.gui.screens.inventory.Ab
             drawOddsSummary(gg, leftPos + getOddsPanelX(), topPos + ODDS_PANEL_Y, menu.getSalvageLevel());
         }
         renderTooltip(gg, mouseX, mouseY);
+        renderOddsRowTooltip(gg, mouseX, mouseY);
 
         if (isPointWithinBounds(79, 47, 18, 18, mouseX, mouseY)) {
             List<Component> tooltip = new ArrayList<>();
@@ -343,6 +346,70 @@ public class SalvageScreen extends net.minecraft.client.gui.screens.inventory.Ab
 
     private int getOddsPanelX() {
         return this.imageWidth + ODDS_PANEL_RIGHT_PAD;
+    }
+
+    private void renderOddsRowTooltip(GuiGraphics gg, int mouseX, int mouseY) {
+        if (!showOddsPanel) return;
+
+        int panelX = this.leftPos + getOddsPanelX();
+        int panelY = this.topPos + ODDS_PANEL_Y;
+        int relX = mouseX - panelX;
+        int relY = mouseY - panelY;
+        if (relX < 0 || relX >= ODDS_PANEL_W || relY < 0 || relY >= ODDS_PANEL_H) return;
+
+        int row = getOddsRowIndex(relY);
+        if (row < 0) return;
+
+        Component title;
+        Component desc;
+        switch (row) {
+            case 0 -> {
+                title = Component.translatable("screen.tiered.odds.fail.title");
+                desc = Component.translatable("screen.tiered.odds.fail.desc");
+            }
+            case 1 -> {
+                title = Component.translatable("screen.tiered.odds.lower.title");
+                desc = Component.translatable("screen.tiered.odds.lower.desc");
+            }
+            case 2 -> {
+                title = Component.translatable("screen.tiered.odds.same.title");
+                desc = Component.translatable("screen.tiered.odds.same.desc");
+            }
+            case 3 -> {
+                title = Component.translatable("screen.tiered.odds.higher.title");
+                desc = Component.translatable("screen.tiered.odds.higher.desc");
+            }
+            default -> {
+                return;
+            }
+        }
+
+        List<FormattedCharSequence> lines = new ArrayList<>();
+        lines.addAll(this.font.split(title, 220));
+        lines.addAll(this.font.split(desc, 220));
+        gg.renderTooltip(this.font, lines, mouseX, mouseY);
+    }
+
+    private static int getOddsRowIndex(int relY) {
+        int start = ODDS_LINE_START_Y - 2;
+        int rowHeight = ODDS_LINE_GAP;
+        for (int i = 0; i < 4; i++) {
+            int y0 = start + (i * rowHeight);
+            if (relY >= y0 && relY < y0 + rowHeight) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public List<Rect2i> getJeiExtraAreas() {
+        if (!showOddsPanel) return Collections.emptyList();
+        return List.of(new Rect2i(
+                this.leftPos + getOddsPanelX(),
+                this.topPos + ODDS_PANEL_Y,
+                ODDS_PANEL_W,
+                ODDS_PANEL_H
+        ));
     }
 
     private static String formatPercent(double value) {

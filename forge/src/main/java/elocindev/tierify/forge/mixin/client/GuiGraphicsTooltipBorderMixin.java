@@ -30,7 +30,6 @@ import org.joml.Matrix4f;
 import org.joml.Vector2ic;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -53,9 +52,6 @@ import java.util.List;
  */
 @Mixin(GuiGraphics.class)
 public abstract class GuiGraphicsTooltipBorderMixin {
-
-    // Added by Forge patch on 1.20.x; used to track which ItemStack the tooltip belongs to.
-    @Shadow private ItemStack tooltipStack;
 
     @Unique private static final float TIERIFY_LABEL_SCALE = 0.65f;
     @Unique private static final float SET_BONUS_LABEL_NUDGE_Y = -1.0f;
@@ -122,7 +118,7 @@ public abstract class GuiGraphicsTooltipBorderMixin {
     @Unique private static final int APEX_PLATE_RIGHT_W = 24;
     @Unique private static final float APEX_PLATE_HEIGHT_SCALE = 0.8f;
     @Unique private static final float APEX_PLATE_STAR_SCALE = 1.75f;
-    @Unique private static final float APEX_CREST_APEX_SCALE = 1.05f;
+    @Unique private static final float APEX_CREST_APEX_SCALE = 0.9f;
     @Unique private static final ResourceLocation STAR_RIBBON_LEFT =
             ResourceLocation.fromNamespaceAndPath("tiered", "textures/gui/ribbon/ribbon_left.png");
     @Unique private static final ResourceLocation STAR_RIBBON_MID =
@@ -149,6 +145,8 @@ public abstract class GuiGraphicsTooltipBorderMixin {
     @Unique private int tierify$centerTitleIndex = -1;
     @Unique private int tierify$titleTextY = Integer.MIN_VALUE;
     @Unique private int tierify$titleLineCount = 1;
+    @Unique private static Field tierify$tooltipStackField;
+    @Unique private static boolean tierify$tooltipStackFieldResolved = false;
 
     /**
      * Lightweight tooltip component used only to reserve a small amount of vertical space.
@@ -253,7 +251,7 @@ public abstract class GuiGraphicsTooltipBorderMixin {
         if (!ForgeTierifyConfig.tieredTooltip()) return components;
         if (components == null || components.isEmpty()) return components;
 
-        ItemStack stack = this.tooltipStack;
+        ItemStack stack = tierify$getTooltipStack();
         if (stack == null || stack.isEmpty()) return components;
 
         CompoundTag tiered = stack.getTagElement(TierifyConstants.NBT_SUBTAG_KEY);
@@ -341,7 +339,7 @@ public abstract class GuiGraphicsTooltipBorderMixin {
         if (!ForgeTierifyConfig.tieredTooltip() || TooltipOverhaulCompatForge.isLoaded()) return;
         if (components == null || components.isEmpty()) return;
 
-        ItemStack stack = this.tooltipStack;
+        ItemStack stack = tierify$getTooltipStack();
         if (stack == null || stack.isEmpty()) return;
 
         CompoundTag tiered = stack.getTagElement(TierifyConstants.NBT_SUBTAG_KEY);
@@ -416,7 +414,7 @@ public abstract class GuiGraphicsTooltipBorderMixin {
         if (!ForgeTierifyConfig.tieredTooltip() || TooltipOverhaulCompatForge.isLoaded()) return;
         if (components == null || components.isEmpty()) return;
 
-        ItemStack stack = this.tooltipStack;
+        ItemStack stack = tierify$getTooltipStack();
         if (stack == null || stack.isEmpty()) return;
 
         CompoundTag tiered = stack.getTagElement(TierifyConstants.NBT_SUBTAG_KEY);
@@ -591,14 +589,21 @@ public abstract class GuiGraphicsTooltipBorderMixin {
         // Render centered within the spacer line injected after the title.
         float scale = TIERIFY_LABEL_SCALE;
 
-        MutableComponent perfect = PerfectLabelAnimatorForge.animatedLabel(Util.getMillis());
+        MutableComponent perfect = PerfectLabelAnimatorForge.animatedText(Util.getMillis());
 
         int textW = font.width(perfect);
-        float scaledW = textW * scale;
+        int lineH = font.lineHeight;
+        float starScale = (lineH / (float) STAR_TEX_H) * 0.85f;
+        float starScaledW = STAR_TEX_W * starScale;
+        float starScaledH = STAR_TEX_H * starScale;
+        int gap = STAR_GAP_PX;
+        int leftGap = gap + 1;
+        int rightGap = gap;
+        float totalW = starScaledW + leftGap + textW + rightGap + starScaledW;
+        float scaledW = totalW * scale;
 
         float xPos = x + (w - scaledW) / 2.0f;
 
-        float lineH = font.lineHeight;
         float scaledH = lineH * scale;
 
         int spacerH = (perfectSpacerIndex >= 0 && perfectSpacerIndex < components.size() && components.get(perfectSpacerIndex) instanceof TierifySpacerComponent s)
@@ -611,7 +616,25 @@ public abstract class GuiGraphicsTooltipBorderMixin {
         gg.pose().pushPose();
         gg.pose().translate(xPos, yPos, 450.0f);
         gg.pose().scale(scale, scale, 1.0f);
-        gg.drawString(font, perfect, 0, 0, 0xFFFFFF, false);
+
+        float cursorX = 0.0f;
+        float starY = (lineH - starScaledH) / 2.0f - 1.0f;
+        gg.pose().pushPose();
+        gg.pose().translate(cursorX, starY, 0.0f);
+        gg.pose().scale(starScale, starScale, 1.0f);
+        gg.blit(PERFECT_STAR_ICON, 0, 0, 0, 0, STAR_TEX_W, STAR_TEX_H, STAR_TEX_W, STAR_TEX_H);
+        gg.pose().popPose();
+
+        cursorX += starScaledW + leftGap;
+        gg.drawString(font, perfect, Math.round(cursorX), 0, 0xFFFFFF, false);
+
+        cursorX += textW + rightGap;
+        gg.pose().pushPose();
+        gg.pose().translate(cursorX, starY, 0.0f);
+        gg.pose().scale(starScale, starScale, 1.0f);
+        gg.blit(PERFECT_STAR_ICON, 0, 0, 0, 0, STAR_TEX_W, STAR_TEX_H, STAR_TEX_W, STAR_TEX_H);
+        gg.pose().popPose();
+
         gg.pose().popPose();
     }
 
@@ -1040,5 +1063,26 @@ public abstract class GuiGraphicsTooltipBorderMixin {
         }
 
         return Math.max(1, font.split(title, maxTextWidth).size());
+    }
+
+    @Unique
+    private ItemStack tierify$getTooltipStack() {
+        if (!tierify$tooltipStackFieldResolved) {
+            tierify$tooltipStackFieldResolved = true;
+            try {
+                Field field = GuiGraphics.class.getDeclaredField("tooltipStack");
+                field.setAccessible(true);
+                tierify$tooltipStackField = field;
+            } catch (ReflectiveOperationException ignored) {
+                tierify$tooltipStackField = null;
+            }
+        }
+        if (tierify$tooltipStackField == null) return ItemStack.EMPTY;
+        try {
+            Object value = tierify$tooltipStackField.get(this);
+            return value instanceof ItemStack stack ? stack : ItemStack.EMPTY;
+        } catch (IllegalAccessException ignored) {
+            return ItemStack.EMPTY;
+        }
     }
 }

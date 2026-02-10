@@ -19,6 +19,8 @@ public abstract class FontTextureSwizzleMixin {
     private boolean tierify$swizzleKnown = false;
     @Unique
     private boolean tierify$isSingleChannel = false;
+    @Unique
+    private int tierify$appliedSwizzleMode = -1;
 
     @Inject(method = "bind", at = @At("TAIL"))
     private void tierify$fixFontSwizzle(CallbackInfo ci) {
@@ -29,6 +31,9 @@ public abstract class FontTextureSwizzleMixin {
             tierify$isSingleChannel = internalFormat == GL30.GL_R8 || internalFormat == GL11.GL_RED;
             tierify$swizzleKnown = true;
         }
+
+        int wantedMode = tierify$isSingleChannel ? 1 : 0;
+        if (tierify$appliedSwizzleMode == wantedMode) return;
 
         if (tierify$isSingleChannel) {
             // R8 mask font atlas: make RGB = 1, alpha = mask (red channel)
@@ -43,6 +48,7 @@ public abstract class FontTextureSwizzleMixin {
             GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL33.GL_TEXTURE_SWIZZLE_B, GL11.GL_BLUE);
             GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL33.GL_TEXTURE_SWIZZLE_A, GL11.GL_ALPHA);
         }
+        tierify$appliedSwizzleMode = wantedMode;
     }
 }
 

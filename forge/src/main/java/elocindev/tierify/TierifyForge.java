@@ -9,7 +9,9 @@ import elocindev.tierify.forge.network.ForgeNetwork;
 import elocindev.tierify.forge.registry.ForgeAttributeRegistry;
 import elocindev.tierify.forge.registry.ForgeItemRegistry;
 import elocindev.tierify.forge.registry.ForgeMenuTypes;
+import elocindev.tierify.forge.registry.ForgeMobEffectRegistry;
 import elocindev.tierify.forge.registry.ForgeSoundRegistry;
+import elocindev.tierify.forge.apex.ApexActiveEffects;
 import elocindev.tierify.forge.apex.ApexEffectsBootstrap;
 import elocindev.tierify.platform.ForgePlatformHelper;
 import elocindev.tierify.platform.Platform;
@@ -29,6 +31,7 @@ import net.minecraftforge.common.loot.IGlobalLootModifier;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
+import software.bernie.geckolib.GeckoLib;
 
 @Mod(TierifyCommon.MODID)
 public final class TierifyForge {
@@ -62,10 +65,15 @@ public final class TierifyForge {
         ForgeMenuTypes.MENUS.register(modBus);
         ForgeSoundRegistry.SOUND_EVENTS.register(modBus);
         ForgeAttributeRegistry.ATTRIBUTES.register(modBus);
+        ForgeMobEffectRegistry.MOB_EFFECTS.register(modBus);
         LOOT_MODIFIERS.register(modBus);
 
+        GeckoLib.initialize();
         ForgeNetwork.init();
         ApexEffectsBootstrap.init();
+        ApexActiveEffects.initSpellDamageCompat();
+        ApexActiveEffects.initArsSpellCompat();
+        ApexActiveEffects.initCombatRollCompat();
 
         modBus.addListener(TierifyForge::onConfigLoad);
         modBus.addListener(TierifyForge::onConfigReload);

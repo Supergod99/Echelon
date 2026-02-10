@@ -23,7 +23,10 @@ public record OpenAnvilFromReforgeC2S() {
     public static void handle(OpenAnvilFromReforgeC2S msg, Supplier<NetworkEvent.Context> ctx) {
         var c = ctx.get();
         ServerPlayer sp = c.getSender();
-        if (sp == null) return;
+        if (sp == null) {
+            c.setPacketHandled(true);
+            return;
+        }
 
         c.enqueueWork(() -> {
             ContainerLevelAccess access;

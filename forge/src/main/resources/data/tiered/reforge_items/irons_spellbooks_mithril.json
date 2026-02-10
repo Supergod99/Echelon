@@ -1,0 +1,9 @@
+{
+  "items": [
+    "irons_spellbooks:paladin_chestplate",
+    "irons_spellbooks:speed_boots"
+  ],
+  "base": [
+    "irons_spellbooks:mithril_ingot"
+  ]
+}

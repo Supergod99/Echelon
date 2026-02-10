@@ -16,52 +16,40 @@ public final class PerfectLabelAnimatorForge {
     private PerfectLabelAnimatorForge() {}
 
     private static final String WORD = "\u272fPerfect\u272f";
+    private static final String WORD_TEXT = "Perfect";
 
     private static final float TOTAL_PERIOD_MS = 8000.0f;
-
-    private static final int TIER_COUNT = 5;
-    private static final float TIER_SLOT_FRACTION = 1.0f / TIER_COUNT; // 0.2
-    private static final float TIER_DURATION_MS = TOTAL_PERIOD_MS * TIER_SLOT_FRACTION; // 1600ms
-
-    private static final float CROSSFADE_MS = 250.0f;
-    private static final float CROSSFADE_FRACTION = CROSSFADE_MS / TIER_DURATION_MS;
-
-    // How much the gradient shifts per character
-    private static final float CHAR_WAVE_SPACING = 0.12f;
-
-    // Rare
-    private static final int[] RARE_COLORS = new int[] {
-            rgb(80, 150, 255),
-            rgb(0, 60, 160),
-            rgb(120, 220, 255)
-    };
-
-    // Epic
-    private static final int[] EPIC_COLORS = new int[] {
-            rgb(180, 70, 255),
-            rgb(100, 0, 180),
-            rgb(230, 150, 255)
-    };
-
-    // Legendary
-    private static final int[] LEGENDARY_COLORS = new int[] {
-            rgb(255, 180, 0),
-            rgb(255, 220, 80),
-            rgb(255, 140, 0)
-    };
-
-    // Mythic
-    private static final int[] MYTHIC_COLORS = new int[] {
-            rgb(255, 60, 60),
-            rgb(180, 0, 80),
-            rgb(255, 120, 180)
-    };
+    private static final double PERFECT_SWEEP_RATE_MS = 45.0;
+    private static final double PERFECT_SHEEN_PERIOD_MS = 2200.0;
+    private static final float PERFECT_SHEEN_STRENGTH = 0.08f;
+    private static final float PERFECT_GRADIENT_SOFTEN = 0.012f;
 
     // Perfect
-    private static final int[] PERFECT_COLORS = new int[] {
-            rgb(164, 0, 255),   // Electric Violet
-            rgb(0, 245, 204),   // Radiant Teal
-            rgb(230, 247, 255)  // Starlight Silver
+    private static final int[][] PERFECT_FROST_PRISM = new int[][]{
+        // icy cyan ramp (cool, clean)
+        {195, 250, 255},
+        {180, 245, 255},
+        {170, 240, 255},
+        {160, 235, 255},
+        {150, 230, 255},
+        {145, 225, 255},
+        {140, 220, 255},
+        {138, 216, 255},
+
+        // mist -> near-white
+        {165, 232, 255},
+        {185, 242, 255},
+        {205, 248, 255},
+        {225, 252, 255},
+        {245, 254, 255},
+        {255, 255, 255},
+        {248, 255, 255},
+        {235, 255, 255},
+
+        // soft cyan return (slightly bluer)
+        {215, 255, 255},
+        {205, 255, 255},
+        {195, 250, 255} // loop-friendly end (matches start)
     };
 
     private static final int STAR_BASE_COLOR = rgb(212, 240, 255); // #D4F0FF
@@ -70,112 +58,70 @@ public final class PerfectLabelAnimatorForge {
     private static final float STAR_PULSE_MAX = 1.6f;
 
     public static MutableComponent animatedLabel(long nowMs) {
+        return animatedLabelInternal(nowMs, WORD, true);
+    }
+
+    public static MutableComponent animatedText(long nowMs) {
+        return animatedLabelInternal(nowMs, WORD_TEXT, false);
+    }
+
+    private static MutableComponent animatedLabelInternal(long nowMs, String word, boolean includeStars) {
         long t = (nowMs > 0L) ? nowMs : System.currentTimeMillis();
 
-        if (WORD == null || WORD.isEmpty()) {
+        if (word == null || word.isEmpty()) {
             return Component.empty();
         }
 
-        int length = WORD.length();
+        int length = word.length();
         MutableComponent result = Component.empty();
 
         float cyclePhase = (TOTAL_PERIOD_MS <= 0.0f)
                 ? 0.0f
                 : (t % (long) TOTAL_PERIOD_MS) / TOTAL_PERIOD_MS;
 
-        // Determine tier window + local phase
-        int tierIndex = (int) (cyclePhase / TIER_SLOT_FRACTION);
-        if (tierIndex >= TIER_COUNT) {
-            tierIndex = TIER_COUNT - 1;
-        }
-        float tierStart = tierIndex * TIER_SLOT_FRACTION;
-        float tierLocalPhase = (cyclePhase - tierStart) / TIER_SLOT_FRACTION;
+        double timeOffset = (PERFECT_SWEEP_RATE_MS <= 0.0)
+                ? 0.0
+                : (t / PERFECT_SWEEP_RATE_MS) % 100.0;
 
-        // Crossfade data
-        int primaryTier = tierIndex;
-        Integer secondaryTier = null;
-        float primaryWeight = 1.0f;
-        float secondaryWeight = 0.0f;
-
-        if (tierLocalPhase < CROSSFADE_FRACTION) {
-            // Fade in from previous tier
-            secondaryTier = (tierIndex - 1 + TIER_COUNT) % TIER_COUNT;
-            float tLocal = tierLocalPhase / CROSSFADE_FRACTION;
-            secondaryWeight = clamp01(1.0f - tLocal);
-            primaryWeight = clamp01(tLocal);
-        } else if (tierLocalPhase > 1.0f - CROSSFADE_FRACTION) {
-            // Fade out to next tier
-            secondaryTier = (tierIndex + 1) % TIER_COUNT;
-            float tLocal = (tierLocalPhase - (1.0f - CROSSFADE_FRACTION)) / CROSSFADE_FRACTION;
-            primaryWeight = clamp01(1.0f - tLocal);
-            secondaryWeight = clamp01(tLocal);
-        }
-
-        // Slow gradient drift
-        float tierDrift = tierLocalPhase;
+        float sheenPhase = (PERFECT_SHEEN_PERIOD_MS <= 0.0)
+                ? 0.0f
+                : (float) ((t % PERFECT_SHEEN_PERIOD_MS) / PERFECT_SHEEN_PERIOD_MS);
+        float sheenPulse = 0.5f - 0.5f * (float) Math.cos(2.0 * Math.PI * sheenPhase);
 
         // Star pulse
         float starPulse = 0.5f - 0.5f * (float) Math.cos(2.0 * Math.PI * cyclePhase);
         float starLum = STAR_PULSE_MIN + (STAR_PULSE_MAX - STAR_PULSE_MIN) * starPulse;
 
-        char starChar = WORD.charAt(0);
+        char starChar = word.charAt(0);
 
         for (int i = 0; i < length; i++) {
-            char c = WORD.charAt(i);
+            char c = word.charAt(i);
 
-            boolean isStar = (i == 0 || i == length - 1) && c == starChar;
+            boolean isStar = includeStars && (i == 0 || i == length - 1) && c == starChar;
 
             int rgb;
 
             if (isStar) {
                 rgb = scaleColor(STAR_BASE_COLOR, starLum);
             } else {
-                float charPhase = (tierDrift + i * CHAR_WAVE_SPACING) % 1.0f;
-                if (charPhase < 0.0f) charPhase += 1.0f;
-                // Color from primary tier
-                int primaryColor = getTierGradientColor(primaryTier, charPhase);
-
-                if (secondaryTier != null && secondaryWeight > 0.0f) {
-                    int secondaryColor = getTierGradientColor(secondaryTier, charPhase);
-                    rgb = mixColor(primaryColor, secondaryColor, secondaryWeight);
-                } else {
-                    rgb = primaryColor;
-                }
+                double basePos = (length <= 1) ? 50.0 : (i * (100.0 / (length - 1)));
+                float charPhase = (float) ((basePos + timeOffset) % 100.0) / 100.0f;
+                int base = getColorFromGradient(charPhase, PERFECT_FROST_PRISM);
+                int ahead = getColorFromGradient(wrap01(charPhase + PERFECT_GRADIENT_SOFTEN), PERFECT_FROST_PRISM);
+                int behind = getColorFromGradient(wrap01(charPhase - PERFECT_GRADIENT_SOFTEN), PERFECT_FROST_PRISM);
+                int smoothed = mixColor(mixColor(base, ahead, 0.5f), behind, 0.5f);
+                rgb = mixColor(smoothed, 0xFFFFFF, PERFECT_SHEEN_STRENGTH * sheenPulse);
             }
 
             Style style = Style.EMPTY
                     .withColor(rgb)
-                    .withBold(!isStar);
+                    .withBold(true)
+                    .withItalic(false);
 
             result.append(Component.literal(String.valueOf(c)).setStyle(style));
         }
 
         return result;
-    }
-
-    private static int getTierGradientColor(int tierIndex, float t) {
-        t = wrap01(t);
-
-        int[] stops;
-        switch (tierIndex) {
-            case 0: stops = RARE_COLORS; break;
-            case 1: stops = EPIC_COLORS; break;
-            case 2: stops = LEGENDARY_COLORS; break;
-            case 3: stops = MYTHIC_COLORS; break;
-            case 4:
-            default:
-                stops = PERFECT_COLORS; break;
-        }
-
-        int c0 = stops[0];
-        int c1 = stops[1];
-        int c2 = stops[2];
-
-        if (t < 0.5f) {
-            return mixColor(c0, c1, t * 2.0f);
-        } else {
-            return mixColor(c1, c2, (t - 0.5f) * 2.0f);
-        }
     }
 
     private static float clamp01(float v) {
@@ -212,6 +158,37 @@ public final class PerfectLabelAnimatorForge {
         int bl = Math.round(ab + (bb - ab) * t);
 
         return (r << 16) | (g << 8) | bl;
+    }
+
+    private static int getColorFromGradient(float t, int[][] colors) {
+        if (colors == null || colors.length == 0) {
+            return rgb(255, 255, 255);
+        }
+        if (colors.length == 1) {
+            int[] c = colors[0];
+            return rgb(c[0], c[1], c[2]);
+        }
+        t = wrap01(t);
+        int lastIndex = colors.length - 1;
+        float scaled = t * lastIndex;
+        int idx = (int) Math.floor(scaled);
+        if (idx < 0) idx = 0;
+        if (idx >= lastIndex) idx = lastIndex - 1;
+        float localT = scaled - idx;
+        localT = localT * localT * (3.0f - 2.0f * localT);
+
+        int[] c1 = colors[idx];
+        int[] c2 = colors[idx + 1];
+
+        int r = lerp(c1[0], c2[0], localT);
+        int g = lerp(c1[1], c2[1], localT);
+        int b = lerp(c1[2], c2[2], localT);
+
+        return rgb(r, g, b);
+    }
+
+    private static int lerp(int a, int b, float t) {
+        return a + Math.round((b - a) * t);
     }
 
     private static float wrap01(float v) {

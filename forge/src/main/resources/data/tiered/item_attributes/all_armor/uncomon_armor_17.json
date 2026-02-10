@@ -59,11 +59,11 @@
     },
     "attributes": [
         {
-            "type": "ars_nouveau:ars_nouveau.perk.spell_damage",
+            "type": "tiered:generic.ars_spell_power",
             "modifier": {
                 "name": "tiered:uncomon_armor_17",
                 "operation": "ADDITION",
-                "amount": 1
+                "amount": 0.08
             },
             "optional_equipment_slots": [
                 "FEET",

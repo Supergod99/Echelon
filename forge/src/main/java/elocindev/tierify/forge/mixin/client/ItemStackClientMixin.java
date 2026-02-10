@@ -19,6 +19,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.locale.Language;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attribute;
@@ -29,6 +30,7 @@ import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import elocindev.tierify.forge.compat.TooltipOverhaulCompatForge;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -59,6 +61,11 @@ public abstract class ItemStackClientMixin {
     }
     private static final Pattern DISPLAYED_ZERO_PATTERN =
             Pattern.compile("^[+\\-]\\s*([0-9]+(?:[\\.,][0-9]+)?)%?.*");
+    private static final Pattern LEADING_SIGNED_NUMBER_PATTERN =
+            Pattern.compile("^\\s*([+\\-])\\s*([0-9]+(?:[\\.,][0-9]+)?)%?\\s+(.+)$");
+    private static final Set<ResourceLocation> PERCENT_ADDITION_ATTRIBUTES = Set.of(
+            ResourceLocation.fromNamespaceAndPath("tiered", "generic.ars_spell_power")
+    );
 
     @Shadow public abstract Multimap<Attribute, AttributeModifier> getAttributeModifiers(EquipmentSlot slot);
 
@@ -80,7 +87,10 @@ public abstract class ItemStackClientMixin {
             // The lang keys are of the form "<tierId>.label" (e.g. "tiered:legendary_armor_1.label")
             MutableComponent label = Component.translatable(tierId + ".label");
             int tierIdx = TierGradientAnimatorForge.getTierFromId(tierId);
-            MutableComponent animated = TierGradientAnimatorForge.animate(label, tierIdx);
+            MutableComponent animated = StarApexUtils.isApex(self)
+                    ? ApexEffectGradientAnimatorForge.animateWithFont(
+                            label, ApexEffectGradientAnimatorForge.FONT_PREFIX)
+                    : TierGradientAnimatorForge.animate(label, tierIdx);
 
             Component baseName = cir.getReturnValue();
             CompoundTag extra = self.getTagElement(TierifyConstants.NBT_SUBTAG_EXTRA_KEY);
@@ -165,6 +175,7 @@ public abstract class ItemStackClientMixin {
         }
 
         fixRedPlusLines(tooltip);
+        normalizePercentAdditionAttributeLines(self, tooltip);
         stripDisplayedZeros(tooltip);
         if (StarApexUtils.isApex(self)) {
             applyApexGradientToAttributeLines(self, tooltip);
@@ -432,7 +443,10 @@ public abstract class ItemStackClientMixin {
 
     private static Integer opIndexFromAttrModifierKey(String key) {
         if (key == null) return null;
-        if (!key.startsWith("attribute.modifier.plus.") && !key.startsWith("attribute.modifier.take.")) return null;
+        if (!key.startsWith("attribute.modifier.plus.")
+                && !key.startsWith("attribute.modifier.take.")
+                && !key.startsWith("tiered.attribute.modifier.plus.")
+                && !key.startsWith("tiered.attribute.modifier.take.")) return null;
         int lastDot = key.lastIndexOf('.');
         if (lastDot < 0 || lastDot == key.length() - 1) return null;
         try {
@@ -619,6 +633,86 @@ public abstract class ItemStackClientMixin {
         return root;
     }
 
+    private static void normalizePercentAdditionAttributeLines(ItemStack self, List<Component> tooltip) {
+        if (tooltip == null || tooltip.isEmpty()) return;
+
+        for (EquipmentSlot slot : EquipmentSlot.values()) {
+            Multimap<Attribute, AttributeModifier> modifiers = self.getAttributeModifiers(slot);
+            if (modifiers == null || modifiers.isEmpty()) continue;
+
+            for (Attribute attribute : modifiers.keySet()) {
+                ResourceLocation attrId = ForgeRegistries.ATTRIBUTES.getKey(attribute);
+                if (attrId == null || !PERCENT_ADDITION_ATTRIBUTES.contains(attrId)) continue;
+                normalizePercentAdditionAttributeLine(tooltip, attribute);
+            }
+        }
+    }
+
+    private static void normalizePercentAdditionAttributeLine(List<Component> tooltip, Attribute attribute) {
+        String attrName = Component.translatable(attribute.getDescriptionId()).getString();
+
+        for (int i = 0; i < tooltip.size(); i++) {
+            Component line = tooltip.get(i);
+            if (line == null) continue;
+            String plain = line.getString();
+            if (plain == null || !plain.contains(attrName)) continue;
+
+            // First-pass fallback: force plain "0.x Attr Name" into percent display,
+            // regardless of translation-key shape from other mods/wrappers.
+            String trimmed = plain.trim();
+            if (!trimmed.contains("%") && trimmed.endsWith(attrName)) {
+                var matcher = LEADING_SIGNED_NUMBER_PATTERN.matcher(trimmed);
+                if (matcher.matches()) {
+                    Double value = parseDisplayedNumber(matcher.group(2));
+                    if (value != null) {
+                        String sign = matcher.group(1);
+                        String tail = matcher.group(3);
+                        String rebuiltText = sign + MODIFIER_FORMAT.format(Math.abs(value * 100.0D)) + "% " + tail;
+                        tooltip.set(i, Component.literal(rebuiltText).setStyle(line.getStyle()));
+                        continue;
+                    }
+                }
+            }
+
+            TranslatableContents tc = asTranslatable(line);
+            if (tc == null) {
+                var matcher = LEADING_SIGNED_NUMBER_PATTERN.matcher(trimmed);
+                if (!matcher.matches()) continue;
+                String tail = matcher.group(3);
+                if (tail == null || !tail.contains(attrName)) continue;
+
+                Double value = parseDisplayedNumber(matcher.group(2));
+                if (value == null) continue;
+                String sign = matcher.group(1);
+                String rebuiltText = sign + MODIFIER_FORMAT.format(Math.abs(value * 100.0D)) + "% " + tail;
+                tooltip.set(i, Component.literal(rebuiltText).setStyle(line.getStyle()));
+                continue;
+            }
+            Integer opIdx = opIndexFromAttrModifierKey(tc.getKey());
+            if (opIdx == null || opIdx != 0) continue;
+
+            Object[] args = tc.getArgs();
+            if (args.length < 2) continue;
+            Double value = parseDisplayedNumber(args[0]);
+            if (value == null) continue;
+
+            boolean isTakeKey = tc.getKey().startsWith("attribute.modifier.take.")
+                    || tc.getKey().startsWith("tiered.attribute.modifier.take.");
+            String prefix = tc.getKey().startsWith("tiered.attribute.modifier.")
+                    ? "tiered.attribute.modifier."
+                    : "attribute.modifier.";
+            String newKey = prefix + (isTakeKey ? "take.1" : "plus.1");
+            String token = MODIFIER_FORMAT.format(Math.abs(value * 100.0D));
+
+            MutableComponent rebuilt = Component.translatable(newKey, token, args[1]).setStyle(line.getStyle());
+            for (Component sibling : line.getSiblings()) {
+                rebuilt.append(sibling);
+            }
+            tooltip.set(i, rebuilt);
+        }
+    }
+
+
     private static boolean isRedLike(net.minecraft.network.chat.TextColor color) {
         if (color == null) return false;
 
@@ -742,6 +836,7 @@ public abstract class ItemStackClientMixin {
 
         // Strip legacy requirement text; all Apex effects are full-set now.
         s = s.replaceAll("(?i)\\s*Requires full Apex set\\.?\\s*", " ").trim();
+        s = s.replaceAll("\\.+$", "").trim();
         if (s.isEmpty()) return Component.empty();
 
         // Apply a subtle gold gradient to the description (NOT the hint).
@@ -755,7 +850,7 @@ public abstract class ItemStackClientMixin {
         if (!StarApexUtils.isApex(stack)) return;
 
         ApexEffect effect = ApexEffectRegistry.resolveFor(stack);
-        if (effect == null || effect.triggerType() != ApexEffect.ApexTriggerType.ACTIVE_USE) return;
+        if (effect == null) return;
 
         int insertAt = tooltip.size();
 
@@ -777,7 +872,7 @@ public abstract class ItemStackClientMixin {
             // tooltip.add(insertAt++, Component.literal(" "));  <-- DELETE THIS
 
             ResourceLocation reforgeId = ApexEffectRegistry.getReforgeId(stack);
-            for (Component desc : getApexEffectDescription(reforgeId)) {
+            for (Component desc : getApexEffectDescription(reforgeId, effect)) {
                 tooltip.add(insertAt++, styleApexBody(desc)); // gradient description
             }
         }
@@ -818,15 +913,72 @@ public abstract class ItemStackClientMixin {
         return -1;
     }
 
-    private static List<Component> getApexEffectDescription(ResourceLocation reforgeId) {
-        if (reforgeId != null && reforgeId.getNamespace().equals("tiered")
-                && reforgeId.getPath().equals("mythic_armor_1")) {
-            return List.of(
-                    Component.translatable("tooltip.tiered.apex_effect.mythic_armor_1.line1"),
-                    Component.translatable("tooltip.tiered.apex_effect.mythic_armor_1.line2")
-            );
+    private static List<Component> getApexEffectDescription(ResourceLocation reforgeId, ApexEffect effect) {
+        List<Component> out = new ArrayList<>(2);
+        Component line1 = getApexEffectSummaryLine(reforgeId);
+        if (line1 != null && !line1.getString().isEmpty()) {
+            out.add(line1);
         }
-        return List.of();
+        Component line2 = getApexEffectTriggerLine(reforgeId, effect);
+        if (line2 != null && !line2.getString().isEmpty()) {
+            out.add(line2);
+        }
+        return out;
+    }
+
+    private static Component getApexEffectSummaryLine(ResourceLocation reforgeId) {
+        if (reforgeId == null) return null;
+        String key = "tooltip.tiered.apex_effect." + reforgeId.getPath() + ".line1";
+        return maybeTranslatable(key);
+    }
+
+    private static Component getApexEffectTriggerLine(ResourceLocation reforgeId, ApexEffect effect) {
+        if (reforgeId != null) {
+            String overrideKey = "tooltip.tiered.apex_effect." + reforgeId.getPath() + ".line2";
+            Component override = maybeTranslatable(overrideKey);
+            if (override != null) {
+                return override;
+            }
+        }
+        return buildApexTriggerLine(effect);
+    }
+
+    private static Component buildApexTriggerLine(ApexEffect effect) {
+        if (effect == null) return null;
+        return switch (effect.triggerType()) {
+            case ACTIVE_USE -> {
+                if (effect.counterModel() == ApexEffect.ApexCounterModel.COOLDOWN_TICKS
+                        && effect.counterValue() > 0) {
+                    int seconds = Math.max(1, Math.round(effect.counterValue() / 20.0f));
+                    yield maybeTranslatable("tooltip.tiered.apex_effect.trigger.cooldown", seconds);
+                }
+                yield maybeTranslatable("tooltip.tiered.apex_effect.trigger.active");
+            }
+            case PASSIVE_TICK -> maybeTranslatable("tooltip.tiered.apex_effect.trigger.passive");
+            case ON_HIT -> {
+                if (effect.counterModel() == ApexEffect.ApexCounterModel.EVERY_N
+                        && effect.counterValue() > 0) {
+                    yield maybeTranslatable("tooltip.tiered.apex_effect.trigger.every_n_hits", effect.counterValue());
+                }
+                yield maybeTranslatable("tooltip.tiered.apex_effect.trigger.on_hit");
+            }
+            case ON_HURT -> maybeTranslatable("tooltip.tiered.apex_effect.trigger.on_take_damage");
+            case ON_BLOCK_BREAK -> maybeTranslatable("tooltip.tiered.apex_effect.trigger.on_block_break");
+            case ON_BOW_USE -> maybeTranslatable("tooltip.tiered.apex_effect.trigger.on_bow_use");
+            case ON_SPELL_USE -> maybeTranslatable("tooltip.tiered.apex_effect.trigger.on_spell_use");
+        };
+    }
+
+    private static Component maybeTranslatable(String key, Object... args) {
+        if (!hasTranslation(key)) return null;
+        return args == null || args.length == 0
+                ? Component.translatable(key)
+                : Component.translatable(key, args);
+    }
+
+    private static boolean hasTranslation(String key) {
+        if (key == null || key.isEmpty()) return false;
+        return Language.getInstance().has(key);
     }
 
     /**

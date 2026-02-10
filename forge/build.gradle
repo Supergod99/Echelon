@@ -59,6 +59,7 @@ dependencies {
     runtimeOnly fg.deobf("curse.maven:armageddon-1110642:7142556")
     runtimeOnly fg.deobf("curse.maven:attributefix-280510:4911084")
     runtimeOnly fg.deobf("curse.maven:geckolib-388172:7025129")
+    compileOnly fg.deobf("curse.maven:geckolib-388172:7025129")
     runtimeOnly fg.deobf("curse.maven:tooltipoverhaul-1327508:7096296")
     runtimeOnly fg.deobf("curse.maven:obscureAPI-638417:7171906")
     runtimeOnly fg.deobf("curse.maven:fancy-toasts-1326436:7302363")
@@ -66,9 +67,24 @@ dependencies {
     runtimeOnly fg.deobf("curse.maven:lethality-a-terramity-addon-1282036:7332696")
     compileOnly fg.deobf("curse.maven:tooltipoverhaul-1327508:7096296")
     compileOnly fg.deobf("curse.maven:obscureAPI-638417:7171906")
+    compileOnly fg.deobf("curse.maven:jei-238222:7391695")
     runtimeOnly fg.deobf("curse.maven:playerAnimator-658587:4587214")
-    runtimeOnly fg.deobf("curse.maven:ironsspells-855414:6970299")
-    runtimeOnly fg.deobf("curse.maven:tosmagic-1046916:7185948")
+    runtimeOnly fg.deobf("curse.maven:ironsspells-855414:7552907")
+    runtimeOnly fg.deobf("curse.maven:tosmagic-1046916:7424522")
+    runtimeOnly fg.deobf("curse.maven:mmmmmmmmmmmm-225738:6860192")
+    runtimeOnly fg.deobf("curse.maven:jade-324717:6855440")
+    runtimeOnly fg.deobf("curse.maven:jei-238222:7391695")
+    runtimeOnly fg.deobf("curse.maven:emi-580555:6420945")
+    runtimeOnly fg.deobf("curse.maven:combat-roll-678036:5625925")
+    runtimeOnly fg.deobf("curse.maven:alshanexs-familiars-1171602:7481428")
+    runtimeOnly fg.deobf("curse.maven:familiarslib-1316458:7468719")
+    runtimeOnly fg.deobf("curse.maven:ars-nouveau-401955:6688854")
+    runtimeOnly fg.deobf("curse.maven:gtbcs-geomancy-plus-1352485:7580390")
+    runtimeOnly fg.deobf("curse.maven:gtbcs-spelllib-1194714:7584987")
+    runtimeOnly fg.deobf("curse.maven:mowzies-mobs-250498:6586086")
+    compileOnly fg.deobf("curse.maven:emi-580555:6420945")
+    compileOnly fg.deobf("curse.maven:ars-nouveau-401955:6688854")
+    runtimeOnly fg.deobf("curse.maven:selene-499980:5454157")
     runtimeOnly fg.deobf("curse.maven:cataclysm-551586:6906993")
     runtimeOnly fg.deobf("curse.maven:alexscaves-924854:5848216")
     runtimeOnly fg.deobf("curse.maven:caelus-308989:5281700")
@@ -103,11 +119,11 @@ minecraft {
             // Optional but very useful while validating
             property 'mixin.debug.verbose', 'true'
             property 'mixin.debug.export', 'true'
-            property 'tierify.debug.tooltip_compare', 'true'
-            property 'tierify.debug.obscure_setbonus', 'true'
 
             property 'mixin.env.remapRefMap', 'true'
             property 'mixin.env.refMapRemappingFile', "${project.buildDir}/createSrgToMcp/output.srg"
+            // Dev-only: avoid C2 JIT instability seen in hs_err logs
+            jvmArgs '-XX:TieredStopAtLevel=1'
             workingDirectory project.file("run")
 
             mods {

@@ -14,6 +14,7 @@ import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -93,6 +94,16 @@ public final class ForgeCommandInit {
                                         BoolArgumentType.getBool(ctx, "value")))
                                 .then(Commands.argument("targets", EntityArgument.players())
                                         .executes(ctx -> executeApex(
+                                                ctx.getSource(),
+                                                EntityArgument.getPlayers(ctx, "targets"),
+                                                BoolArgumentType.getBool(ctx, "value"))))))
+                .then(Commands.literal("perfect")
+                        .then(Commands.argument("value", BoolArgumentType.bool())
+                                .executes(ctx -> executePerfectSelf(
+                                        ctx.getSource(),
+                                        BoolArgumentType.getBool(ctx, "value")))
+                                .then(Commands.argument("targets", EntityArgument.players())
+                                        .executes(ctx -> executePerfect(
                                                 ctx.getSource(),
                                                 EntityArgument.getPlayers(ctx, "targets"),
                                                 BoolArgumentType.getBool(ctx, "value"))))))
@@ -235,9 +246,54 @@ public final class ForgeCommandInit {
                         true);
                 continue;
             }
+            if (apex) {
+                StarApexUtils.setStars(itemStack, 5);
+            }
             StarApexUtils.setApex(itemStack, apex);
             source.sendSuccess(
                     () -> Component.translatable("commands.tiered.apex.set", state, player.getDisplayName()),
+                    true);
+        }
+        return 1;
+    }
+
+    private static int executePerfectSelf(CommandSourceStack source, boolean perfect) {
+        ServerPlayer player = source.getPlayer();
+        if (player == null) {
+            source.sendFailure(Component.literal("Command can only be used by a player."));
+            return 0;
+        }
+        return executePerfect(source, List.of(player), perfect);
+    }
+
+    private static int executePerfect(CommandSourceStack source, Collection<ServerPlayer> targets, boolean perfect) {
+        String state = perfect ? "true" : "false";
+        for (ServerPlayer player : targets) {
+            ItemStack itemStack = player.getMainHandItem();
+            if (itemStack.isEmpty()) {
+                source.sendSuccess(
+                        () -> Component.translatable("commands.tiered.failed", player.getDisplayName()),
+                        true);
+                continue;
+            }
+            CompoundTag tierTag = itemStack.getTagElement(TierifyConstants.NBT_SUBTAG_KEY);
+            String tierId = tierTag != null ? tierTag.getString(TierifyConstants.NBT_SUBTAG_DATA_KEY) : null;
+            if (tierTag == null || tierId == null || tierId.isEmpty()) {
+                source.sendSuccess(
+                        () -> Component.translatable(
+                                "commands.tiered.perfect.failed",
+                                itemStack.getItem().getName(itemStack).getString(),
+                                player.getDisplayName()),
+                        true);
+                continue;
+            }
+            if (perfect) {
+                tierTag.putBoolean("Perfect", true);
+            } else {
+                tierTag.remove("Perfect");
+            }
+            source.sendSuccess(
+                    () -> Component.translatable("commands.tiered.perfect.set", state, player.getDisplayName()),
                     true);
         }
         return 1;

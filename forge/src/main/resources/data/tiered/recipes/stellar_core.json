@@ -2,10 +2,13 @@
   "type": "minecraft:crafting_shaped",
   "pattern": [
     " S ",
-    "S S",
+    "SPS",
     " S "
   ],
   "key": {
+    "P": {
+      "item": "tiered:painite"
+    },
     "S": {
       "item": "tiered:stardust"
     }

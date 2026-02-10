@@ -28,6 +28,13 @@ versionRange="[1.20.1]"
 ordering="NONE"
 side="BOTH"
 
+[[dependencies.tiered]]
+modId="geckolib"
+mandatory=true
+versionRange="[0,)"
+ordering="AFTER"
+side="BOTH"
+
 # AttributesLib (Apothic Attributes) is typically seen under modid "attributeslib" in Forge logs.
 [[dependencies.tiered]]
 modId="attributeslib"

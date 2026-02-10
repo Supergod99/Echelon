@@ -23,7 +23,9 @@ public record ApexEffect(ApexTriggerType triggerType,
         ON_HIT,
         ON_HURT,
         ON_BLOCK_BREAK,
-        PASSIVE_TICK
+        PASSIVE_TICK,
+        ON_BOW_USE,
+        ON_SPELL_USE
     }
 
     public enum ApexCounterModel {

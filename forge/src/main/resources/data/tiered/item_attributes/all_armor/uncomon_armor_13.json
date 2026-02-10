@@ -59,7 +59,7 @@
     },
     "attributes": [
         {
-            "type": "alshanex_familiars:sound_spell_power",
+            "type": "familiarslib:sound_spell_power",
             "modifier": {
                 "name": "tiered:uncomon_armor_13",
                 "operation": "MULTIPLY_BASE",

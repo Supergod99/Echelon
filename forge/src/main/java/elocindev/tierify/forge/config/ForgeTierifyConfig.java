@@ -71,6 +71,7 @@ public final class ForgeTierifyConfig {
     public static final ForgeConfigSpec.BooleanValue TIERED_TOOLTIP;
     public static final ForgeConfigSpec.BooleanValue SHOW_PLATES_ON_NAME;
     public static final ForgeConfigSpec.BooleanValue CENTER_NAME;
+    public static final ForgeConfigSpec.BooleanValue JEI_RESERVE_EXTRA_AREAS;
 
     public static final ForgeConfigSpec.ConfigValue<List<? extends String>> TIER_1_QUALITIES;
     public static final ForgeConfigSpec.ConfigValue<List<? extends String>> TIER_2_QUALITIES;
@@ -351,6 +352,10 @@ public final class ForgeTierifyConfig {
         CENTER_NAME = clientBuilder
                 .comment("Centers the item name in the tooltip.")
                 .define("centerName", true);
+
+        JEI_RESERVE_EXTRA_AREAS = clientBuilder
+                .comment("If true, Tierify registers extra GUI areas with JEI/EMI so recipe overlays won't overlap custom right-side panels.")
+                .define("jeiReserveExtraAreas", true);
 
         clientBuilder.pop();
         CLIENT_SPEC = clientBuilder.build();
@@ -705,6 +710,10 @@ public final class ForgeTierifyConfig {
 
     public static boolean centerName() {
         return CENTER_NAME.get();
+    }
+
+    public static boolean jeiReserveExtraAreas() {
+        return JEI_RESERVE_EXTRA_AREAS.get();
     }
 
     public static List<String> getTierQualities(int tier) {

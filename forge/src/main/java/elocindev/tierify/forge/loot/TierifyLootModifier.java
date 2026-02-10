@@ -15,6 +15,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.loot.LootContext;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 import net.minecraftforge.common.loot.IGlobalLootModifier;
 import net.minecraftforge.common.loot.LootModifier;
@@ -94,6 +95,7 @@ public class TierifyLootModifier extends LootModifier {
                                                 RandomSource rng,
                                                 ResourceLocation dimensionId) {
         if (generatedLoot == null || context == null || dimensionId == null) return;
+        if (!isLootContainerContext(context)) return;
         if (!rollReforgeMaterialChance(rng)) return;
 
         ReforgeMaterialLootProfiles.Entry profile = ReforgeMaterialLootProfiles.get(dimensionId);
@@ -163,6 +165,31 @@ public class TierifyLootModifier extends LootModifier {
 
         return ItemStack.EMPTY;
     }
+
+    private static boolean isLootContainerContext(LootContext context) {
+        if (context == null) return false;
+        ResourceLocation lootTable = context.getQueriedLootTableId();
+        if (lootTable != null) {
+            if (isContainerLootPath(lootTable.getPath())) {
+                return true;
+            }
+        }
+        if (context.getParamOrNull(LootContextParams.THIS_ENTITY) != null) return false;
+        return context.getParamOrNull(LootContextParams.BLOCK_ENTITY) != null;
+    }
+
+    private static boolean isContainerLootPath(String path) {
+        if (path == null || path.isEmpty()) return false;
+        if (path.startsWith("chests/") || path.startsWith("containers/")) return true;
+        String[] segments = path.split("/");
+        for (String segment : segments) {
+            if ("chests".equals(segment) || "containers".equals(segment)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     @Override
     public Codec<? extends IGlobalLootModifier> codec() {

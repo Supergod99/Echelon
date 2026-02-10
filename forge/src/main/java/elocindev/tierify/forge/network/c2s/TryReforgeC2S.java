@@ -14,7 +14,10 @@ public record TryReforgeC2S() {
     public static void handle(TryReforgeC2S msg, Supplier<NetworkEvent.Context> ctx) {
         NetworkEvent.Context c = ctx.get();
         ServerPlayer sp = c.getSender();
-        if (sp == null) return;
+        if (sp == null) {
+            c.setPacketHandled(true);
+            return;
+        }
 
         c.enqueueWork(() -> {
             if (sp.containerMenu instanceof ReforgeMenu menu) {

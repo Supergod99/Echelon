@@ -63,7 +63,7 @@
             "modifier": {
                 "name": "tiered:rare_armor_15",
                 "operation": "MULTIPLY_BASE",
-                "amount": 0.15
+                "amount": 0.09
             },
             "optional_equipment_slots": [
                 "FEET",
@@ -73,11 +73,25 @@
             ]
         },
         {
-            "type": "irons_spellbooks:spell_power",
+            "type": "tiered:generic.summon_health",
             "modifier": {
                 "name": "tiered:rare_armor_15",
                 "operation": "MULTIPLY_BASE",
-                "amount": -0.03
+                "amount": 0.09
+            },
+            "optional_equipment_slots": [
+                "FEET",
+                "LEGS",
+                "CHEST",
+                "HEAD"
+            ]
+        },
+        {
+            "type": "irons_spellbooks:cast_time_reduction",
+            "modifier": {
+                "name": "tiered:rare_armor_15",
+                "operation": "MULTIPLY_BASE",
+                "amount": -0.075
             },
             "optional_equipment_slots": [
                 "FEET",

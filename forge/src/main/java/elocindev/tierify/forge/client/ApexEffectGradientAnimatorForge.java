@@ -12,6 +12,8 @@ public final class ApexEffectGradientAnimatorForge {
             ResourceLocation.fromNamespaceAndPath("tiered", "apex_effect");
     public static final ResourceLocation FONT_SMALL =
             ResourceLocation.fromNamespaceAndPath("tiered", "apex_effect_small");
+    public static final ResourceLocation FONT_PREFIX =
+            ResourceLocation.fromNamespaceAndPath("tiered", "apex_effect_prefix");
 
     private static final int[][] APEX_EFFECT_COLORS = new int[][]{
             // Deep ember shadows (orange-leaning, not brown)
@@ -102,6 +104,10 @@ public final class ApexEffectGradientAnimatorForge {
     };
 
     public static MutableComponent animate(Component base) {
+        return animateWithFont(base, FONT_MAIN);
+    }
+
+    public static MutableComponent animateWithFont(Component base, ResourceLocation font) {
         if (base == null) return Component.empty();
 
         String raw = base.getString();
@@ -112,6 +118,7 @@ public final class ApexEffectGradientAnimatorForge {
 
         long now = System.currentTimeMillis();
         double timeOffset = (now / 65L) % 100.0;
+        ResourceLocation useFont = (font != null) ? font : FONT_MAIN;
 
         for (int i = 0; i < length; i++) {
             char c = raw.charAt(i);
@@ -124,7 +131,7 @@ public final class ApexEffectGradientAnimatorForge {
             double animatedPos = (basePos + timeOffset) % 100.0;
             int rgb = getColorFromGradient((int) animatedPos, APEX_EFFECT_COLORS);
 
-            Style style = Style.EMPTY.withColor(TextColor.fromRgb(rgb)).withFont(FONT_MAIN);
+            Style style = Style.EMPTY.withColor(TextColor.fromRgb(rgb)).withFont(useFont);
             result.append(Component.literal(String.valueOf(c)).setStyle(style));
         }
 

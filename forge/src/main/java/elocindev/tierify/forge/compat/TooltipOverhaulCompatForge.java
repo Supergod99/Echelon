@@ -28,8 +28,6 @@ import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraftforge.fml.ModList;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.awt.Point;
 import java.lang.reflect.Field;
@@ -42,9 +40,6 @@ import java.util.Locale;
 import java.util.UUID;
 
 public final class TooltipOverhaulCompatForge {
-    private static final Logger LOGGER = LogManager.getLogger("tiered");
-    private static final boolean DEBUG_TOOLTIP_COMPARE =
-            Boolean.parseBoolean(System.getProperty("tierify.debug.tooltip_compare", "false"));
     private static final String MOD_ID = "tooltipoverhaul";
     private static final float SET_BONUS_LABEL_NUDGE_Y = 4.0f;
     private static final ResourceLocation SET_BONUS_CREST =
@@ -110,7 +105,7 @@ public final class TooltipOverhaulCompatForge {
     private static final float APEX_PLATE_CONTENT_NUDGE_PX = 0.5f;
     private static final float APEX_PLATE_HEIGHT_SCALE = 0.8f;
     private static final float APEX_PLATE_STAR_SCALE = 1.75f;
-    private static final float APEX_CREST_APEX_SCALE = 1.05f;
+    private static final float APEX_CREST_APEX_SCALE = 0.9f;
     private static final ResourceLocation STAR_RIBBON_LEFT =
             ResourceLocation.fromNamespaceAndPath("tiered", "textures/gui/ribbon/ribbon_left.png");
     private static final ResourceLocation STAR_RIBBON_MID =
@@ -258,9 +253,6 @@ public final class TooltipOverhaulCompatForge {
         if (pos == null) {
             pos = findPosArg(args, size);
         }
-        debugTooltipCompare("argsResolved posIdx=1 sizeIdx=2 posType='{}' sizeType='{}'",
-                (pos != null ? pos.getClass().getName() : "null"),
-                (size != null ? size.getClass().getName() : "null"));
         Object fontObj = (args.length > 5) ? args[5] : null;
         if (!(fontObj instanceof Font)) {
             fontObj = findFontArg(args);
@@ -270,11 +262,9 @@ public final class TooltipOverhaulCompatForge {
         ItemStack stack = getItemStack(ctx);
         ItemStack ctxStack = stack;
         if (stack == null || stack.isEmpty()) {
-            debugTooltipRenderSummary("skip_no_ctx_stack", ItemStack.EMPTY, ItemStack.EMPTY, null, null);
             return;
         }
         if (isMainTooltipInCompareMode(ctx)) {
-            debugTooltipRenderSummary("skip_main_compare_tooltip", ctxStack, ItemStack.EMPTY, null, null);
             return;
         }
         List<ClientTooltipComponent> components = findTooltipComponents(ctx);
@@ -282,7 +272,6 @@ public final class TooltipOverhaulCompatForge {
         String tooltipTitle = findTooltipTitleText(components, textLines);
         stack = resolveStackForRenderedTooltip(stack, components, textLines);
         if (stack == null || stack.isEmpty()) {
-            debugTooltipRenderSummary("skip_unresolved_stack", ctxStack, ItemStack.EMPTY, tooltipTitle, null);
             return;
         }
 
@@ -297,7 +286,6 @@ public final class TooltipOverhaulCompatForge {
             tierId = tiered.getString(TierifyConstants.NBT_SUBTAG_DATA_KEY);
             isPerfect = tiered.getBoolean("Perfect");
             if ((tierId == null || tierId.isEmpty()) && !isPerfect) {
-                debugTooltipRenderSummary("skip_missing_tier_id", ctxStack, stack, tooltipTitle, null);
                 return;
             }
             isApex = StarApexUtils.isApex(stack);
@@ -315,25 +303,21 @@ public final class TooltipOverhaulCompatForge {
         } else if (stack.getItem() instanceof ReforgeAddition) {
             ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
             if (id == null) {
-                debugTooltipRenderSummary("skip_reforge_without_id", ctxStack, stack, tooltipTitle, null);
                 return;
             }
             lookupKey = id.toString();
         } else {
-            debugTooltipRenderSummary("skip_not_tiered_or_reforge", ctxStack, stack, tooltipTitle, null);
             return;
         }
 
         boolean usePerfectBorder = isPerfect;
         TierifyTooltipBorderRendererForge.Template template = TierifyTooltipBorderRendererForge.findTemplate(lookupKey, usePerfectBorder);
         if (template == null) {
-            debugTooltipRenderSummary("skip_no_template", ctxStack, stack, tooltipTitle, lookupKey);
             return;
         }
 
         GuiGraphics gg = getGuiGraphics(ctx);
         if (gg == null) {
-            debugTooltipRenderSummary("skip_no_guigraphics", ctxStack, stack, tooltipTitle, lookupKey);
             return;
         }
 
@@ -355,7 +339,6 @@ public final class TooltipOverhaulCompatForge {
         } else {
             int[] fallback = fallbackPosFromContext(ctx, width, height);
             if (fallback == null) {
-                debugTooltipRenderSummary("skip_no_position", ctxStack, stack, tooltipTitle, lookupKey);
                 return;
             }
             x = fallback[0];
@@ -363,17 +346,8 @@ public final class TooltipOverhaulCompatForge {
         }
 
         if (width <= 0 || height <= 0) {
-            debugTooltipRenderSummary("skip_non_positive_size", ctxStack, stack, tooltipTitle, lookupKey);
             return;
         }
-        debugTooltipCompare("resolvedPos ctxMain={} hasOther={} pos=({}, {}) size=({}, {}) lastMainRect={}",
-                readIsMainTooltip(ctx),
-                hasOtherTooltipContext(ctx),
-                x,
-                y,
-                width,
-                height,
-                resolveTooltipOverhaulLastMainRect());
         Boolean isMain = readIsMainTooltip(ctx);
         java.awt.Rectangle mainRect = resolveTooltipOverhaulLastMainRectRect();
         if (Boolean.FALSE.equals(isMain) && mainRect != null) {
@@ -383,7 +357,6 @@ public final class TooltipOverhaulCompatForge {
                 int margin = 4;
                 int newX = Math.max(margin, mainRect.x - spacing - width);
                 if (newX != x) {
-                    debugTooltipCompare("adjusting equipped pos from mainRect x={} -> {}", x, newX);
                     x = newX;
                 }
             }
@@ -431,7 +404,6 @@ public final class TooltipOverhaulCompatForge {
                 renderPerfectLabel(gg, font, x, y, width, baseZ);
             }
         }
-        debugTooltipRenderSummary("rendered", ctxStack, stack, tooltipTitle, lookupKey);
     }
 
     private static ItemStack getItemStack(Object ctx) {
@@ -511,15 +483,8 @@ public final class TooltipOverhaulCompatForge {
         if (tooltipTitleMatchesStack(tooltipTitle, ctxStack)) return ctxStack;
         ItemStack equipped = findMatchingEquippedArmorStack(tooltipTitle);
         if (equipped != null && !equipped.isEmpty()) {
-            debugTooltipCompare("resolved equipped tooltip stack: title='{}' ctx='{}' resolved='{}'",
-                    tooltipTitle,
-                    safeName(ctxStack),
-                    safeName(equipped));
             return equipped;
         }
-        debugTooltipCompare("unable to resolve tooltip stack; skipping overlay: title='{}' ctx='{}'",
-                tooltipTitle,
-                safeName(ctxStack));
         return ItemStack.EMPTY;
     }
 
@@ -561,10 +526,6 @@ public final class TooltipOverhaulCompatForge {
             ItemStack armor = player.getItemBySlot(slot);
             if (armor.isEmpty()) continue;
             if (tooltipTitleMatchesStack(title, armor)) {
-                debugTooltipCompare("equipped match slot={} title='{}' item='{}'",
-                        slot.getName(),
-                        title,
-                        safeName(armor));
                 return armor;
             }
         }
@@ -589,48 +550,6 @@ public final class TooltipOverhaulCompatForge {
             out.append(c);
         }
         return out.toString().trim();
-    }
-
-    private static void debugTooltipCompare(String message, Object... args) {
-        if (!DEBUG_TOOLTIP_COMPARE) return;
-        LOGGER.info("[Tierify/TOCompareDebug] " + message, args);
-    }
-
-    private static void debugTooltipRenderSummary(String outcome,
-                                                  ItemStack ctxStack,
-                                                  ItemStack renderStack,
-                                                  String tooltipTitle,
-                                                  String lookupKey) {
-        if (!DEBUG_TOOLTIP_COMPARE) return;
-        String tierId = "";
-        int stars = 0;
-        boolean apex = false;
-        if (renderStack != null && !renderStack.isEmpty()) {
-            CompoundTag tiered = renderStack.getTagElement(TierifyConstants.NBT_SUBTAG_KEY);
-            if (tiered != null) {
-                tierId = tiered.getString(TierifyConstants.NBT_SUBTAG_DATA_KEY);
-            }
-            stars = StarApexUtils.getStars(renderStack);
-            apex = StarApexUtils.isApex(renderStack);
-        }
-        LOGGER.info("[Tierify/TOCompareDebug] renderSummary outcome={} title='{}' ctx='{}' render='{}' tier='{}' stars={} apex={} lookup='{}'",
-                outcome,
-                tooltipTitle == null ? "" : tooltipTitle,
-                safeName(ctxStack),
-                safeName(renderStack),
-                tierId,
-                stars,
-                apex,
-                lookupKey == null ? "" : lookupKey);
-    }
-
-    private static String safeName(ItemStack stack) {
-        if (stack == null || stack.isEmpty()) return "<empty>";
-        try {
-            return stack.getHoverName().getString();
-        } catch (Throwable ignored) {
-            return "<name_error>";
-        }
     }
 
     private static void renderApexNameGlow(GuiGraphics gg,
@@ -892,16 +811,42 @@ public final class TooltipOverhaulCompatForge {
     }
 
     private static void renderPerfectLabel(GuiGraphics gg, Font font, int bgX, int bgY, int bgWidth, float baseZ) {
-        Component label = PerfectLabelAnimatorForge.animatedLabel(Util.getMillis());
+        Component label = PerfectLabelAnimatorForge.animatedText(Util.getMillis());
         float scale = 0.65f;
+        int lineH = font.lineHeight;
+        float starScale = (lineH / (float) STAR_TEX_H) * 0.85f;
+        float starScaledW = STAR_TEX_W * starScale;
+        float starScaledH = STAR_TEX_H * starScale;
+        int gap = STAR_GAP_PX;
+        int leftGap = gap + 1;
+        int rightGap = gap;
         int textWidth = font.width(label);
-        float centeredX = bgX + (bgWidth / 2.0f) - ((textWidth * scale) / 2.0f);
+        float totalW = starScaledW + leftGap + textWidth + rightGap + starScaledW;
+        float centeredX = bgX + (bgWidth / 2.0f) - ((totalW * scale) / 2.0f);
         float fixedY = bgY + 22.0f;
 
         gg.pose().pushPose();
         gg.pose().translate(centeredX, fixedY, baseZ + 10.0f);
         gg.pose().scale(scale, scale, 1.0f);
-        gg.drawString(font, label, 0, 0, 0xFFFFFF, true);
+
+        float cursorX = 0.0f;
+        float starY = (lineH - starScaledH) / 2.0f - 1.0f;
+        gg.pose().pushPose();
+        gg.pose().translate(cursorX, starY, 0.0f);
+        gg.pose().scale(starScale, starScale, 1.0f);
+        gg.blit(PERFECT_STAR_ICON, 0, 0, 0, 0, STAR_TEX_W, STAR_TEX_H, STAR_TEX_W, STAR_TEX_H);
+        gg.pose().popPose();
+
+        cursorX += starScaledW + leftGap;
+        gg.drawString(font, label, Math.round(cursorX), 0, 0xFFFFFF, true);
+
+        cursorX += textWidth + rightGap;
+        gg.pose().pushPose();
+        gg.pose().translate(cursorX, starY, 0.0f);
+        gg.pose().scale(starScale, starScale, 1.0f);
+        gg.blit(PERFECT_STAR_ICON, 0, 0, 0, 0, STAR_TEX_W, STAR_TEX_H, STAR_TEX_W, STAR_TEX_H);
+        gg.pose().popPose();
+
         gg.pose().popPose();
     }
 

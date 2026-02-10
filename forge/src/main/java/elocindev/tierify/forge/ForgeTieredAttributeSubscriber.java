@@ -26,9 +26,13 @@ import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -57,6 +61,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.nio.charset.StandardCharsets;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 
 @Mod.EventBusSubscriber(modid = TierifyCommon.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class ForgeTieredAttributeSubscriber {
@@ -72,13 +78,105 @@ public final class ForgeTieredAttributeSubscriber {
 
     private static final ResourceLocation DURABLE_ID =
             ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "generic.durable");
+    private static final ResourceLocation ARS_SPELL_POWER_ID =
+            ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "generic.ars_spell_power");
     private static final String STORED_CUSTOM_NAME_KEY = "StoredCustomName";
+    private static final DecimalFormat PREVIEW_MODIFIER_FORMAT = new DecimalFormat("0.##");
+
+    static {
+        DecimalFormatSymbols s = DecimalFormatSymbols.getInstance(Locale.ROOT);
+        s.setDecimalSeparator('.');
+        PREVIEW_MODIFIER_FORMAT.setDecimalFormatSymbols(s);
+    }
 
     private ForgeTieredAttributeSubscriber() {}
 
     @Nullable
     public static ResourceLocation pickRandomTier(ItemStack target, List<String> qualities, RandomSource rand) {
         return RELOADER.pickRandomTier(target, qualities, rand);
+    }
+
+    public static List<Component> buildReforgePreviewAttributes(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return Collections.emptyList();
+
+        CompoundTag tierTag = stack.getTagElement(TierifyConstants.NBT_SUBTAG_KEY);
+        if (tierTag == null) return Collections.emptyList();
+
+        String tierStr = tierTag.getString(TierifyConstants.NBT_SUBTAG_DATA_KEY);
+        if (tierStr == null || tierStr.isEmpty()) return Collections.emptyList();
+
+        ResourceLocation tierId = ResourceLocation.tryParse(tierStr);
+        if (tierId == null) return Collections.emptyList();
+
+        TierData tier = RELOADER.getTier(tierId);
+        if (tier == null || tier.attributes == null || tier.attributes.isEmpty()) return Collections.emptyList();
+
+        boolean isPerfect = tierTag.getBoolean("Perfect");
+        double starMult = 1.0 + (0.05 * StarApexUtils.getStars(stack));
+        if (StarApexUtils.isApex(stack)) {
+            starMult += 0.25;
+        }
+
+        List<Component> lines = new ArrayList<>();
+        for (TierAttributeEntry entry : tier.attributes) {
+            if (entry == null) continue;
+            if (isPerfect && entry.amount < 0.0D) continue;
+
+            boolean applies = false;
+            for (EquipmentSlot slot : EquipmentSlot.values()) {
+                if (entry.appliesTo(stack, slot)) {
+                    applies = true;
+                    break;
+                }
+            }
+            if (!applies) continue;
+
+            Attribute attr = ForgeRegistries.ATTRIBUTES.getValue(entry.attributeId);
+            if (attr == null) continue;
+
+            double amount = entry.amount * starMult;
+            if (amount == 0.0D) continue;
+
+            boolean isMultiplier = entry.operation != AttributeModifier.Operation.ADDITION;
+            double display = amount;
+            int opIdx = operationIndex(entry.operation);
+            if (isMultiplier) {
+                display *= 100.0D;
+            } else if (ARS_SPELL_POWER_ID.equals(entry.attributeId)) {
+                display *= 100.0D;
+                opIdx = 1;
+            } else if (attr == Attributes.KNOCKBACK_RESISTANCE) {
+                display *= 10.0D;
+            } else if (attr == Attributes.MOVEMENT_SPEED) {
+                // Match expected "% Speed" display for Tierify speed reforge amounts.
+                display *= 1000.0D;
+                opIdx = 2;
+            }
+
+            String num = PREVIEW_MODIFIER_FORMAT.format(Math.abs(display));
+            String key = (amount > 0.0D)
+                    ? "attribute.modifier.plus." + opIdx
+                    : "attribute.modifier.take." + opIdx;
+
+            MutableComponent line = Component.translatable(
+                    key,
+                    num,
+                    Component.translatable(attr.getDescriptionId())
+            );
+            line = line.withStyle(amount > 0.0D ? ChatFormatting.BLUE : ChatFormatting.RED);
+            lines.add(line);
+        }
+
+        return lines;
+    }
+
+    private static int operationIndex(AttributeModifier.Operation op) {
+        if (op == null) return 0;
+        return switch (op) {
+            case ADDITION -> 0;
+            case MULTIPLY_BASE -> 1;
+            case MULTIPLY_TOTAL -> 2;
+        };
     }
 
     @Nullable

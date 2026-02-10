@@ -10,13 +10,21 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundSetHealthPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.projectile.ThrownTrident;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
+import net.minecraftforge.event.entity.ProjectileImpactEvent;
+import net.minecraftforge.event.entity.living.LivingDamageEvent;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.living.LivingEquipmentChangeEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.living.MobSpawnEvent;
@@ -29,6 +37,8 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = TierifyCommon.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class ForgeGameplayEventSubscriber {
+
+    private static final int SLOW_TIME_TICK_STRIDE = 5;
 
     private ForgeGameplayEventSubscriber() {}
 
@@ -81,6 +91,11 @@ public final class ForgeGameplayEventSubscriber {
     @SubscribeEvent
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
         if (event.getLevel().isClientSide()) return;
+
+        if (event.getEntity() instanceof LivingEntity living) {
+            ApexActiveEffects.tryEmpowerSummon(living);
+        }
+
         if (!(event.getEntity() instanceof AbstractArrow arrow)) return;
 
         if (arrow.getOwner() instanceof Player player) {
@@ -93,10 +108,65 @@ public final class ForgeGameplayEventSubscriber {
 
     @SubscribeEvent
     public static void onLivingHurt(LivingHurtEvent event) {
+        if (event.getEntity().level().isClientSide()) return;
+
+        if (event.getSource().getEntity() instanceof ServerPlayer attacker) {
+            boolean directMelee = event.getSource().getDirectEntity() == attacker;
+            boolean rangedProjectile = event.getSource().getDirectEntity() instanceof Projectile projectile
+                    && projectile.getOwner() == attacker;
+            boolean eligibleCounterHit = directMelee || rangedProjectile;
+            event.setAmount(ApexActiveEffects.applyRollCounterDamageBonus(attacker, eligibleCounterHit, event.getAmount()));
+        }
+
         if (event.getSource().getDirectEntity() instanceof ThrownTrident trident) {
             if (trident.getOwner() instanceof Player player) {
                 event.setAmount(ForgeAttributeHelper.getExtraRangeDamage(player, event.getAmount()));
             }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onProjectileImpact(ProjectileImpactEvent event) {
+        if (event.getEntity().level().isClientSide()) return;
+        if (!(event.getProjectile() instanceof AbstractArrow arrow)) return;
+        if (!(arrow.getOwner() instanceof ServerPlayer player)) return;
+
+        HitResult result = event.getRayTraceResult();
+        if (result == null || result.getType() == HitResult.Type.MISS || result.getType() == HitResult.Type.BLOCK) {
+            ApexActiveEffects.onRangedProjectileMiss(player);
+            return;
+        }
+        if (result instanceof EntityHitResult entityHitResult && entityHitResult.getEntity() instanceof LivingEntity) {
+            ApexActiveEffects.onRangedProjectileHit(player);
+            return;
+        }
+        ApexActiveEffects.onRangedProjectileMiss(player);
+    }
+
+    @SubscribeEvent
+    public static void onLivingDeath(LivingDeathEvent event) {
+        if (event.getEntity().level().isClientSide()) return;
+        if (!(event.getSource().getDirectEntity() instanceof AbstractArrow arrow)) return;
+        if (!(arrow.getOwner() instanceof ServerPlayer player)) return;
+        ApexActiveEffects.onRangedProjectileKill(player);
+    }
+
+    @SubscribeEvent
+    public static void onLivingDamage(LivingDamageEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        if (event.getAmount() <= 0.0f) return;
+        event.setAmount(event.getAmount() * ApexActiveEffects.getRollDamageTakenMultiplier(player));
+        ApexActiveEffects.markPlayerHurt(player);
+    }
+
+    @SubscribeEvent
+    public static void onLivingTick(LivingEvent.LivingTickEvent event) {
+        if (event.getEntity().level().isClientSide()) return;
+        if (!ApexActiveEffects.shouldApplySlowTime(event.getEntity())) return;
+
+        // Time-dilation: run one out of N ticks while inside the aura.
+        if (SLOW_TIME_TICK_STRIDE > 1 && (event.getEntity().tickCount % SLOW_TIME_TICK_STRIDE) != 0) {
+            event.setCanceled(true);
         }
     }
 
