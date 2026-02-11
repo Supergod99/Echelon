@@ -18,13 +18,13 @@ public final class ApexKeybindHandler {
         if (event.phase != TickEvent.Phase.END) return;
         if (Minecraft.getInstance().player == null) return;
 
-        if (ApexKeybinds.ARMOR_ACTIVE.consumeClick()) {
+        if (ApexKeybinds.consumeArmorActive()) {
             ForgeNetwork.CHANNEL.sendToServer(new ApexActiveEffectC2S(ApexActiveEffectC2S.ApexActiveSlot.ARMOR));
         }
-        if (ApexKeybinds.MAINHAND_ACTIVE.consumeClick()) {
+        if (ApexKeybinds.consumeMainhandActive()) {
             ForgeNetwork.CHANNEL.sendToServer(new ApexActiveEffectC2S(ApexActiveEffectC2S.ApexActiveSlot.MAINHAND));
         }
-        if (ApexKeybinds.OFFHAND_ACTIVE.consumeClick()) {
+        if (ApexKeybinds.consumeOffhandActive()) {
             ForgeNetwork.CHANNEL.sendToServer(new ApexActiveEffectC2S(ApexActiveEffectC2S.ApexActiveSlot.OFFHAND));
         }
     }

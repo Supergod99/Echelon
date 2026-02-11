@@ -10,28 +10,37 @@ import org.lwjgl.glfw.GLFW;
 public final class ApexKeybinds {
 
     public static final String CATEGORY = "key.categories.tiered";
-    public static final KeyMapping ARMOR_ACTIVE = new KeyMapping(
-            "key.tiered.apex_armor_active",
-            GLFW.GLFW_KEY_K,
-            CATEGORY
-    );
-    public static final KeyMapping MAINHAND_ACTIVE = new KeyMapping(
-            "key.tiered.apex_mainhand_active",
-            GLFW.GLFW_KEY_J,
-            CATEGORY
-    );
-    public static final KeyMapping OFFHAND_ACTIVE = new KeyMapping(
-            "key.tiered.apex_offhand_active",
-            GLFW.GLFW_KEY_L,
-            CATEGORY
-    );
+    private static KeyMapping armorActive;
+    private static KeyMapping mainhandActive;
+    private static KeyMapping offhandActive;
 
     private ApexKeybinds() {}
 
     @SubscribeEvent
     public static void onRegisterKeys(RegisterKeyMappingsEvent event) {
-        event.register(ARMOR_ACTIVE);
-        event.register(MAINHAND_ACTIVE);
-        event.register(OFFHAND_ACTIVE);
+        if (armorActive == null) {
+            armorActive = new KeyMapping("key.tiered.apex_armor_active", GLFW.GLFW_KEY_K, CATEGORY);
+        }
+        if (mainhandActive == null) {
+            mainhandActive = new KeyMapping("key.tiered.apex_mainhand_active", GLFW.GLFW_KEY_J, CATEGORY);
+        }
+        if (offhandActive == null) {
+            offhandActive = new KeyMapping("key.tiered.apex_offhand_active", GLFW.GLFW_KEY_L, CATEGORY);
+        }
+        event.register(armorActive);
+        event.register(mainhandActive);
+        event.register(offhandActive);
+    }
+
+    public static boolean consumeArmorActive() {
+        return armorActive != null && armorActive.consumeClick();
+    }
+
+    public static boolean consumeMainhandActive() {
+        return mainhandActive != null && mainhandActive.consumeClick();
+    }
+
+    public static boolean consumeOffhandActive() {
+        return offhandActive != null && offhandActive.consumeClick();
     }
 }
