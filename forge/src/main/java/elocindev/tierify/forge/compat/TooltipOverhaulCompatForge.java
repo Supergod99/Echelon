@@ -14,6 +14,8 @@ import net.minecraft.client.Minecraft;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -26,8 +28,10 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraftforge.fml.ModList;
+import elocindev.tierify.forge.mixin.client.AbstractContainerScreenAccessor;
 
 import java.awt.Point;
 import java.lang.reflect.Field;
@@ -264,14 +268,9 @@ public final class TooltipOverhaulCompatForge {
         if (stack == null || stack.isEmpty()) {
             return;
         }
-        if (isMainTooltipInCompareMode(ctx)) {
-            return;
-        }
         List<ClientTooltipComponent> components = findTooltipComponents(ctx);
         List<Component> textLines = findTooltipTextLines(ctx);
-        String tooltipTitle = findTooltipTitleText(components, textLines);
-        stack = resolveStackForRenderedTooltip(stack, components, textLines);
-        if (stack == null || stack.isEmpty()) {
+        if (!shouldRenderForCurrentTooltipContext(ctx, stack)) {
             return;
         }
 
@@ -445,6 +444,30 @@ public final class TooltipOverhaulCompatForge {
         return other != null;
     }
 
+    private static boolean shouldRenderForCurrentTooltipContext(Object ctx, ItemStack ctxStack) {
+        if (ctxStack == null || ctxStack.isEmpty()) return false;
+
+        Boolean isMain = readIsMainTooltip(ctx);
+        if (Boolean.FALSE.equals(isMain)) {
+            // Only allow secondary compare tooltip context, never orphaned stale secondary contexts.
+            return hasOtherTooltipContext(ctx);
+        }
+
+        Screen screen = Minecraft.getInstance().screen;
+        if (!(screen instanceof AbstractContainerScreen<?> container)) {
+            return true;
+        }
+
+        Slot hovered = ((AbstractContainerScreenAccessor) container).tierify$getHoveredSlot();
+        if (hovered == null || !hovered.hasItem()) {
+            return false;
+        }
+
+        ItemStack hoveredStack = hovered.getItem();
+        return hoveredStack != null && !hoveredStack.isEmpty()
+                && ItemStack.isSameItemSameTags(hoveredStack, ctxStack);
+    }
+
     private static String resolveTooltipOverhaulLastMainRect() {
         try {
             Class<?> renderer = Class.forName("dev.xylonity.tooltipoverhaul.client.TooltipRenderer");
@@ -478,13 +501,13 @@ public final class TooltipOverhaulCompatForge {
                                                             List<Component> textLines) {
         if (ctxStack == null || ctxStack.isEmpty()) return ctxStack;
         String tooltipTitle = findTooltipTitleText(components, textLines);
-        if (tooltipTitle == null || tooltipTitle.isEmpty()) return ctxStack;
-        if (isLikelyStatLine(tooltipTitle)) return ctxStack;
-        if (tooltipTitleMatchesStack(tooltipTitle, ctxStack)) return ctxStack;
-        ItemStack equipped = findMatchingEquippedArmorStack(tooltipTitle);
-        if (equipped != null && !equipped.isEmpty()) {
-            return equipped;
+        boolean containsCtxName = tooltipContainsStackName(ctxStack, components, textLines);
+        if (tooltipTitle == null || tooltipTitle.isEmpty()) {
+            return containsCtxName ? ctxStack : ItemStack.EMPTY;
         }
+        if (tooltipTitleMatchesStack(tooltipTitle, ctxStack)) return ctxStack;
+        if (containsCtxName) return ctxStack;
+        if (isLikelyStatLine(tooltipTitle)) return ItemStack.EMPTY;
         return ItemStack.EMPTY;
     }
 
@@ -519,19 +542,6 @@ public final class TooltipOverhaulCompatForge {
         return normalizedTitle.contains(hoverName) || hoverName.contains(normalizedTitle);
     }
 
-    private static ItemStack findMatchingEquippedArmorStack(String title) {
-        Player player = Minecraft.getInstance().player;
-        if (player == null || title == null || title.isEmpty()) return ItemStack.EMPTY;
-        for (EquipmentSlot slot : new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
-            ItemStack armor = player.getItemBySlot(slot);
-            if (armor.isEmpty()) continue;
-            if (tooltipTitleMatchesStack(title, armor)) {
-                return armor;
-            }
-        }
-        return ItemStack.EMPTY;
-    }
-
     private static String normalizeTooltipTitle(String value) {
         if (value == null || value.isEmpty()) return "";
         StringBuilder out = new StringBuilder(value.length());
@@ -550,6 +560,34 @@ public final class TooltipOverhaulCompatForge {
             out.append(c);
         }
         return out.toString().trim();
+    }
+
+    private static boolean tooltipContainsStackName(ItemStack stack,
+                                                    List<ClientTooltipComponent> components,
+                                                    List<Component> textLines) {
+        if (stack == null || stack.isEmpty()) return false;
+        String stackName = normalizeTooltipTitle(stack.getHoverName().getString());
+        if (stackName.isEmpty()) return false;
+
+        if (components != null && !components.isEmpty()) {
+            for (ClientTooltipComponent component : components) {
+                String line = normalizeTooltipTitle(getTooltipString(component));
+                if (!line.isEmpty() && (line.contains(stackName) || stackName.contains(line))) {
+                    return true;
+                }
+            }
+        }
+
+        if (textLines != null && !textLines.isEmpty()) {
+            for (Component lineComp : textLines) {
+                if (lineComp == null) continue;
+                String line = normalizeTooltipTitle(lineComp.getString());
+                if (!line.isEmpty() && (line.contains(stackName) || stackName.contains(line))) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static void renderApexNameGlow(GuiGraphics gg,
@@ -1040,7 +1078,7 @@ public final class TooltipOverhaulCompatForge {
         crestBaseScale *= (APEX_CREST_SCALE * APEX_CREST_APEX_SCALE);
         int crestWBase = Math.round(APEX_CREST_TEX_W * crestBaseScale);
         int crestHBase = Math.round(APEX_CREST_TEX_H * crestBaseScale);
-        float crestScale = crestBaseScale * (1.0f + 0.02f * (float) Math.sin(Util.getMillis() / 700.0));
+        float crestScale = crestBaseScale;
 
         float centerX = bgX + (bgW / 2.0f);
         int titleIndex = 0;

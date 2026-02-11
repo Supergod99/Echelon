@@ -26,15 +26,11 @@ import java.util.List;
 @Mixin(targets = "dev.xylonity.tooltipoverhaul.client.style.text.DefaultText", remap = false)
 public class TooltipOverhaulTitleAlignmentMixin {
 
-    @Unique private static int tierify$titleLineCount;
     @Unique private static int tierify$titleBaseX;
     @Unique private static int tierify$titleOffset;
     @Unique private static Point tierify$titleSize;
     @Unique private static Object tierify$titleCtx;
     @Unique private static boolean tierify$applyTitleCentering;
-    @Unique private static int tierify$titleTargetY;
-    @Unique private static boolean tierify$titleDeltaSet;
-    @Unique private static int tierify$titleDeltaY;
 
     @Unique
     private static final class TierifyCenteredTitleComponent implements ClientTooltipComponent {
@@ -59,21 +55,13 @@ public class TooltipOverhaulTitleAlignmentMixin {
         @Override
         public void renderText(Font font, int x, int y, org.joml.Matrix4f matrix, net.minecraft.client.renderer.MultiBufferSource.BufferSource buffer) {
             int drawX = x;
-            int drawY = y;
             if (tierify$applyTitleCentering) {
                 Integer centeredX = callTitleAlignmentX(tierify$titleBaseX, tierify$titleOffset, tierify$titleSize, delegate, font, tierify$titleCtx);
                 if (centeredX != null) {
                     drawX = centeredX;
                 }
-                if (tierify$titleTargetY != Integer.MIN_VALUE) {
-                    if (!tierify$titleDeltaSet && firstLine) {
-                        tierify$titleDeltaY = tierify$titleTargetY - y;
-                        tierify$titleDeltaSet = true;
-                    }
-                    drawY = y + tierify$titleDeltaY;
-                }
             }
-            delegate.renderText(font, drawX, drawY, matrix, buffer);
+            delegate.renderText(font, drawX, y, matrix, buffer);
         }
 
         @Override
@@ -90,15 +78,11 @@ public class TooltipOverhaulTitleAlignmentMixin {
                                                       Point size,
                                                       Font font,
                                                       CallbackInfo ci) {
-        tierify$titleLineCount = 1;
         tierify$titleBaseX = 0;
         tierify$titleOffset = 0;
         tierify$titleSize = size;
         tierify$titleCtx = ctx;
         tierify$applyTitleCentering = false;
-        tierify$titleTargetY = Integer.MIN_VALUE;
-        tierify$titleDeltaSet = false;
-        tierify$titleDeltaY = 0;
 
         if (!ForgeTierifyConfig.tieredTooltip()) return;
 
@@ -134,22 +118,24 @@ public class TooltipOverhaulTitleAlignmentMixin {
         int extraX = callExtraTextPosition(ctx, "TITLE", "X");
         int extraY = callExtraTextPosition(ctx, "TITLE", "Y");
         int baseX = posX + extraX - (hasIcon ? 0 : 1);
-
         int available = Math.max(1, size.x - paddingX - firstLineOffset);
+        int splitTitleLines = 1;
         if (title != null) {
-            tierify$titleLineCount = Math.max(1, font.split(title, available).size());
+            splitTitleLines = Math.max(1, font.split(title, available).size());
+        }
+        // TooltipOverhaul may paginate/scroll long tooltips; only touch single-line
+        // titles so we never misclassify content lines as title lines.
+        if (splitTitleLines != 1) {
+            return;
         }
 
         tierify$titleBaseX = baseX;
         tierify$titleOffset = firstLineOffset;
-        int posY = (int) pos.y;
-        int ratingOffset = (!shouldShowRating && hasIcon) ? 6 : 0;
-        tierify$titleTargetY = posY + paddingY + 3 + ratingOffset + extraY;
         tierify$applyTitleCentering = true;
 
         List<?> components = readComponents(ctx);
         if (components != null && !components.isEmpty()) {
-            int count = Math.min(tierify$titleLineCount, components.size());
+            int count = Math.min(1, components.size());
             @SuppressWarnings("unchecked")
             List<Object> mutable = (List<Object>) components;
             for (int i = 0; i < count; i++) {

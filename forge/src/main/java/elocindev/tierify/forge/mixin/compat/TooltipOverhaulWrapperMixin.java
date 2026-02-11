@@ -10,7 +10,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.gen.Invoker;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -22,38 +21,35 @@ import java.lang.reflect.Field;
 @Mixin(value = TooltipWrapper.class, remap = false)
 public class TooltipOverhaulWrapperMixin {
 
-    @Inject(method = "wrap", at = @At("HEAD"), cancellable = true, remap = false)
-    private static void tierify$skipWrap(Font font,
-                                         List<ClientTooltipComponent> orig,
-                                         int screenWidth,
-                                         ItemStack stack,
-                                         CallbackInfoReturnable<List<ClientTooltipComponent>> cir) {
-        List<ClientTooltipComponent> wrapped = wrapPreservingTitle(font, stack, orig, screenWidth, false);
-        if (wrapped != null) {
-            cir.setReturnValue(wrapped);
+    @Inject(method = "wrap", at = @At("RETURN"), cancellable = true, remap = false)
+    private static void tierify$afterWrap(Font font,
+                                          List<ClientTooltipComponent> orig,
+                                          int screenWidth,
+                                          ItemStack stack,
+                                          CallbackInfoReturnable<List<ClientTooltipComponent>> cir) {
+        List<ClientTooltipComponent> patched = patchWrappedResult(stack, cir.getReturnValue());
+        if (patched != null) {
+            cir.setReturnValue(patched);
         }
     }
 
-    @Inject(method = "wrapHalf", at = @At("HEAD"), cancellable = true, remap = false)
-    private static void tierify$skipWrapHalf(Font font,
-                                             List<ClientTooltipComponent> orig,
-                                             int screenWidth,
-                                             ItemStack stack,
-                                             CallbackInfoReturnable<List<ClientTooltipComponent>> cir) {
-        List<ClientTooltipComponent> wrapped = wrapPreservingTitle(font, stack, orig, screenWidth, true);
-        if (wrapped != null) {
-            cir.setReturnValue(wrapped);
+    @Inject(method = "wrapHalf", at = @At("RETURN"), cancellable = true, remap = false)
+    private static void tierify$afterWrapHalf(Font font,
+                                              List<ClientTooltipComponent> orig,
+                                              int screenWidth,
+                                              ItemStack stack,
+                                              CallbackInfoReturnable<List<ClientTooltipComponent>> cir) {
+        List<ClientTooltipComponent> patched = patchWrappedResult(stack, cir.getReturnValue());
+        if (patched != null) {
+            cir.setReturnValue(patched);
         }
     }
 
-    private static List<ClientTooltipComponent> wrapPreservingTitle(Font font,
-                                                                    ItemStack stack,
-                                                                    List<ClientTooltipComponent> orig,
-                                                                    int screenWidth,
-                                                                    boolean halfScreen) {
+    private static List<ClientTooltipComponent> patchWrappedResult(ItemStack stack,
+                                                                   List<ClientTooltipComponent> wrapped) {
         if (!ForgeTierifyConfig.tieredTooltip()) return null;
         if (stack == null || stack.isEmpty()) return null;
-        if (orig == null || orig.isEmpty()) return null;
+        if (wrapped == null || wrapped.isEmpty()) return null;
 
         CompoundTag tiered = stack.getTagElement(TierifyConstants.NBT_SUBTAG_KEY);
         if (tiered == null) return null;
@@ -61,52 +57,7 @@ public class TooltipOverhaulWrapperMixin {
         String tierId = tiered.getString(TierifyConstants.NBT_SUBTAG_DATA_KEY);
         if ((tierId == null || tierId.isEmpty()) && !tiered.getBoolean("Perfect")) return null;
 
-        int paddingX = resolveTooltipOverhaulPaddingX();
-        int basePadding = paddingX * 2 + 4;
-        int iconPadding = stack.isEmpty() ? 0 : 26;
-        int maxAllowed = Math.max(60, (halfScreen ? screenWidth / 2 - 8 : (int) (screenWidth * 0.75F)) - basePadding - iconPadding);
-
-        for (ClientTooltipComponent component : orig) {
-            if (component.getWidth(font) > maxAllowed) {
-                List<ClientTooltipComponent> wrapped = wrapTailPreserveTitle(font, orig, screenWidth, stack, halfScreen);
-                return replaceApexEffectLine(wrapped);
-            }
-        }
-
-        return replaceApexEffectLine(orig);
-    }
-
-    private static int resolveTooltipOverhaulPaddingX() {
-        try {
-            Class<?> renderer = Class.forName("dev.xylonity.tooltipoverhaul.client.TooltipRenderer");
-            java.lang.reflect.Field field = renderer.getField("PADDING_X");
-            Object value = field.get(null);
-            if (value instanceof Number number) {
-                return number.intValue();
-            }
-        } catch (Throwable ignored) {
-        }
-        return 4;
-    }
-
-    private static List<ClientTooltipComponent> wrapTailPreserveTitle(Font font,
-                                                                      List<ClientTooltipComponent> orig,
-                                                                      int screenWidth,
-                                                                      ItemStack stack,
-                                                                      boolean halfScreen) {
-        if (orig.size() <= 1) {
-            return orig;
-        }
-
-        List<ClientTooltipComponent> tail = tierify$wrapInternal(font, orig.subList(1, orig.size()), screenWidth, stack, halfScreen);
-        if (tail == null || tail.isEmpty()) {
-            return orig;
-        }
-
-        List<ClientTooltipComponent> out = new ArrayList<>(1 + tail.size());
-        out.add(orig.get(0));
-        out.addAll(tail);
-        return replaceApexEffectLine(out);
+        return replaceApexEffectLine(wrapped);
     }
 
     private static final String APEX_EFFECT_LABEL = "Apex Effect";
@@ -183,15 +134,5 @@ public class TooltipOverhaulWrapperMixin {
             return true;
         });
         return out.toString();
-    }
-
-
-    @Invoker(value = "wrapInternal", remap = false)
-    private static List<ClientTooltipComponent> tierify$wrapInternal(Font font,
-                                                                     List<ClientTooltipComponent> orig,
-                                                                     int screenWidth,
-                                                                     ItemStack stack,
-                                                                     boolean halfScreen) {
-        throw new AssertionError("Invoker should be patched by Mixin.");
     }
 }

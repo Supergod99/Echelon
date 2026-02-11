@@ -22,6 +22,9 @@ public class TieredForgeMixinPlugin implements IMixinConfigPlugin {
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
         if (mixinClassName.startsWith("elocindev.tierify.forge.mixin.compat.TooltipOverhaul")) {
+            if (mixinClassName.equals("elocindev.tierify.forge.mixin.compat.TooltipOverhaulTitleAlignmentMixin")) {
+                return false;
+            }
             return isModLoaded("tooltipoverhaul");
         }
         if (mixinClassName.equals("elocindev.tierify.forge.mixin.compat.SkillInfoScreenMixin")) {
@@ -41,7 +44,7 @@ public class TieredForgeMixinPlugin implements IMixinConfigPlugin {
             return isModLoaded("brutality") || isModLoaded("attributeslib") || isModLoaded("apothic_attributes");
         }
         if (mixinClassName.equals("elocindev.tierify.forge.mixin.client.FontTextureSwizzleMixin")) {
-            return false;
+            return true;
         }
         return true;
     }

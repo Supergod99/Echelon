@@ -712,7 +712,7 @@ public abstract class GuiGraphicsTooltipBorderMixin {
         crestBaseScale *= (APEX_CREST_SCALE * APEX_CREST_APEX_SCALE);
         int crestWBase = Math.round(APEX_CREST_TEX_W * crestBaseScale);
         int crestHBase = Math.round(APEX_CREST_TEX_H * crestBaseScale);
-        float crestScale = crestBaseScale * (1.0f + 0.02f * (float) Math.sin(Util.getMillis() / 700.0));
+        float crestScale = crestBaseScale;
 
         float centerX = x + (w / 2.0f);
         int titleIndex = (components.get(0) instanceof TierifySpacerComponent) ? 1 : 0;
