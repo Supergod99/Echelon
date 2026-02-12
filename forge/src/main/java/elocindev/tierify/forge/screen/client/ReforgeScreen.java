@@ -43,6 +43,9 @@ public class ReforgeScreen extends net.minecraft.client.gui.screens.inventory.Ab
     private static final int PREVIEW_PAD_X = 8;
     private static final int PREVIEW_PAD_Y = 6;
     private static final int PREVIEW_TITLE_GAP = 4;
+    private static final int PREVIEW_SCREEN_MARGIN = 2;
+    private static final int PREVIEW_BORDER_OVERHANG = 6;
+    private static final float PREVIEW_CONSTRAINED_HEADROOM = 0.98f;
     private static final int PREVIEW_STAR_BAND_PX = 12;
     private static final int PREVIEW_STAR_NUDGE_Y = 6;
     private static final float PREVIEW_Z = 450.0f;
@@ -277,30 +280,39 @@ public class ReforgeScreen extends net.minecraft.client.gui.screens.inventory.Ab
             maxTextWidth = Math.max(maxTextWidth, this.font.width(line));
         }
         int extraTop = (isApex || stars > 0) ? PREVIEW_STAR_BAND_PX : 0;
-        int width = Math.max(64, maxTextWidth + (PREVIEW_PAD_X * 2));
-        int height = computeTooltipHeight(lines.size()) + (PREVIEW_PAD_Y * 2) + extraTop;
-        Rect2i previewRect = computePreviewRect(width, height, extraTop);
+        int unscaledWidth = Math.max(64, maxTextWidth + (PREVIEW_PAD_X * 2));
+        int unscaledHeight = computeTooltipHeight(lines.size()) + (PREVIEW_PAD_Y * 2) + extraTop;
+        float previewScale = computePreviewScale(unscaledWidth, unscaledHeight);
+        int width = Math.max(1, Math.round(unscaledWidth * previewScale));
+        int height = Math.max(1, Math.round(unscaledHeight * previewScale));
+        Rect2i previewRect = computePreviewRect(width, height);
         int x = previewRect.getX();
         int y = previewRect.getY();
 
-        TierifyTooltipBorderRendererForge.render(gg, x, y, width, height, tierId, tierIndex, isPerfect);
+        gg.pose().pushPose();
+        gg.pose().translate(x, y, 0.0f);
+        gg.pose().scale(previewScale, previewScale, 1.0f);
 
-        int innerWidth = width - (PREVIEW_PAD_X * 2);
-        int lineY = y + PREVIEW_PAD_Y + extraTop - (extraTop > 0 ? PREVIEW_STAR_NUDGE_Y : 0);
+        TierifyTooltipBorderRendererForge.render(gg, 0, 0, unscaledWidth, unscaledHeight, tierId, tierIndex, isPerfect);
+
+        int innerWidth = unscaledWidth - (PREVIEW_PAD_X * 2);
+        int lineY = PREVIEW_PAD_Y + extraTop - (extraTop > 0 ? PREVIEW_STAR_NUDGE_Y : 0);
         ResourceLocation starIcon = isPerfect ? PERFECT_STAR_ICON : STAR_ICON;
         if (isApex) {
-            renderApexCrownPlatePreview(gg, x, width, lineY, starIcon, isPerfect);
+            renderApexCrownPlatePreview(gg, 0, unscaledWidth, lineY, starIcon, isPerfect);
         } else if (stars > 0) {
-            renderStarsRibbonPreview(gg, x, width, lineY, stars, starIcon, isPerfect);
+            renderStarsRibbonPreview(gg, 0, unscaledWidth, lineY, stars, starIcon, isPerfect);
         }
         for (int i = 0; i < lines.size(); i++) {
             Component line = lines.get(i);
             int lineW = this.font.width(line);
-            int drawX = x + PREVIEW_PAD_X + (innerWidth - lineW) / 2;
+            int drawX = PREVIEW_PAD_X + (innerWidth - lineW) / 2;
             gg.drawString(this.font, line, drawX, lineY, 0xFFFFFF, false);
             lineY += this.font.lineHeight;
             if (i == 0) lineY += PREVIEW_TITLE_GAP;
         }
+
+        gg.pose().popPose();
     }
 
     private List<Component> buildPreviewLines(ItemStack target, String tierId, boolean isApex, int tierIndex) {
@@ -329,16 +341,30 @@ public class ReforgeScreen extends net.minecraft.client.gui.screens.inventory.Ab
         return lines;
     }
 
-    private Rect2i computePreviewRect(int width, int height, int extraTop) {
+    private Rect2i computePreviewRect(int width, int height) {
         int x = this.leftPos - width - 8;
         int y = this.topPos + 10;
-        int maxX = this.width - width - 6;
-        int maxY = this.height - height - 6;
-        if (x < 2) x = 2;
-        if (x > maxX) x = Math.max(2, maxX);
+        int maxX = this.leftPos - width - 8;
+        int minX = PREVIEW_SCREEN_MARGIN + PREVIEW_BORDER_OVERHANG;
+        int minY = PREVIEW_SCREEN_MARGIN + PREVIEW_BORDER_OVERHANG;
+        int maxY = this.height - height - PREVIEW_SCREEN_MARGIN - PREVIEW_BORDER_OVERHANG;
+        if (x < minX) x = minX;
+        if (x > maxX) x = Math.max(minX, maxX);
         if (y > maxY) y = Math.max(2, maxY);
-        if (y < 2) y = 2;
+        if (y < minY) y = minY;
         return new Rect2i(x, y, width, height);
+    }
+
+    private float computePreviewScale(int width, int height) {
+        int availableWidth = Math.max(1, this.leftPos - 8 - PREVIEW_BORDER_OVERHANG - PREVIEW_SCREEN_MARGIN);
+        int availableHeight = Math.max(1, this.height - (PREVIEW_BORDER_OVERHANG * 2) - (PREVIEW_SCREEN_MARGIN * 2));
+        float widthScale = availableWidth / (float) width;
+        float heightScale = availableHeight / (float) height;
+        float scale = Math.min(1.0f, Math.min(widthScale, heightScale));
+        if (scale < 1.0f) {
+            scale *= PREVIEW_CONSTRAINED_HEADROOM;
+        }
+        return Math.max(0.01f, scale);
     }
 
     private int computeTooltipHeight(int lineCount) {
