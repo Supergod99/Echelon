@@ -1,7 +1,6 @@
 package elocindev.tierify.forge.mixin;
 
 import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.fml.loading.LoadingModList;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
@@ -45,7 +44,7 @@ public class TieredForgeMixinPlugin implements IMixinConfigPlugin {
             return isModLoaded("brutality") || isModLoaded("attributeslib") || isModLoaded("apothic_attributes");
         }
         if (mixinClassName.equals("elocindev.tierify.forge.mixin.client.FontTextureSwizzleMixin")) {
-            return !FMLLoader.isProduction();
+            return false;
         }
         return true;
     }
