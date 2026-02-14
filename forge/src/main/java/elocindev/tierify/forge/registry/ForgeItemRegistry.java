@@ -65,7 +65,6 @@ public final class ForgeItemRegistry {
             e.accept(STELLAR_CORE);
             e.accept(APEX_CRUX);
         }
-
     }
 
     private ForgeItemRegistry() {}
