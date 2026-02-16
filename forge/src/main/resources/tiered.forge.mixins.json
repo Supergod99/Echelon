@@ -17,8 +17,7 @@
     "MerchantMenuMixin",
     "compat.ArmageddonTreasureBagProceduresMixin",
     "compat.ArmageddonTreasureBagEntityProceduresMixin",
-    "compat.CuriosBrutalityUuidSaltMixin",
-    "compat.LethalityScalingFixMixin"
+    "compat.CuriosBrutalityUuidSaltMixin"
   ],
   "client": [
     "client.ItemStackClientMixin",
@@ -29,8 +28,6 @@
     "client.ItemBarMixin",
     "client.FontTextureSwizzleMixin",
     "compat.TooltipOverhaulFrameMixin",
-    "compat.TooltipOverhaulStarsEffectMixin",
-    "compat.TooltipOverhaulStarsEffectStarMixin",
     "compat.TooltipOverhaulTitleAlignmentMixin",
     "compat.TooltipOverhaulWrapperMixin",
     "compat.SkillInfoScreenMixin",
