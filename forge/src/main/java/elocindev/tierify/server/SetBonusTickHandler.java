@@ -42,7 +42,7 @@ public final class SetBonusTickHandler {
         if (DIRTY.isEmpty()) return;
 
         for (P p : players) {
-            if (!DIRTY.remove(p)) continue;
+            if (!Boolean.TRUE.equals(DIRTY.remove(p))) continue;
             if (on) apply.accept(p);
             else remove.accept(p);
         }
