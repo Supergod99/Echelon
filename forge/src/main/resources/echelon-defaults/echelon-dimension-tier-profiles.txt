@@ -1,0 +1,8 @@
+# Echelon dimension tier weights
+# One line = one dimension
+# Format: dimension_id=[tier1,tier2,tier3,tier4,tier5,tier6]
+# You can use: *=[...] or modid:*=[...]
+
+minecraft:overworld=[100,10,1,0,0,0]
+minecraft:the_nether=[10,100,50,5,1,0]
+minecraft:the_end=[0,10,100,10,3,1]

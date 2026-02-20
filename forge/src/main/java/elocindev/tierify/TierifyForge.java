@@ -1,6 +1,7 @@
 package elocindev.tierify;
 
 import elocindev.tierify.forge.config.ForgeTierifyConfig;
+import elocindev.tierify.forge.config.DimensionTierWeightProfiles;
 import elocindev.tierify.forge.config.EntityLootDropProfiles;
 import elocindev.tierify.forge.config.ReforgeMaterialLootProfiles;
 import elocindev.tierify.forge.config.TreasureBagProfiles;
@@ -43,6 +44,7 @@ public final class TierifyForge {
     private static final String DEFAULT_ENTITY_PROFILES = "echelon-defaults/echelon-entity-drop-profiles.txt";
     private static final String DEFAULT_REFORGE_MATERIAL_PROFILES = "echelon-defaults/echelon-reforge-material-profiles.txt";
     private static final String DEFAULT_TREASURE_BAG_PROFILES = "echelon-defaults/echelon-treasure-bag-profiles.txt";
+    private static final String DEFAULT_DIMENSION_PROFILES = "echelon-defaults/echelon-dimension-tier-profiles.txt";
 
     @SuppressWarnings("unused")
     private static final RegistryObject<Codec<? extends IGlobalLootModifier>> TIERIFY_LOOT =
@@ -52,13 +54,14 @@ public final class TierifyForge {
         @SuppressWarnings("removal")
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
 
-        ensureDefaultConfig("echelon-common.toml", DEFAULT_COMMON_CONFIG);
-        ensureDefaultConfig("echelon-client.toml", DEFAULT_CLIENT_CONFIG);
-        ensureDefaultConfig("echelon-entity-drop-profiles.txt", DEFAULT_ENTITY_PROFILES);
-        ensureDefaultConfig("echelon-reforge-material-profiles.txt", DEFAULT_REFORGE_MATERIAL_PROFILES);
-        ensureDefaultConfig("echelon-treasure-bag-profiles.txt", DEFAULT_TREASURE_BAG_PROFILES);
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ForgeTierifyConfig.SPEC, "echelon-common.toml");
-        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ForgeTierifyConfig.CLIENT_SPEC, "echelon-client.toml");
+        ensureDefaultConfig("echelon/echelon-common.toml", DEFAULT_COMMON_CONFIG);
+        ensureDefaultConfig("echelon/echelon-client.toml", DEFAULT_CLIENT_CONFIG);
+        ensureDefaultConfig("echelon/echelon-entity-drop-profiles.txt", DEFAULT_ENTITY_PROFILES);
+        ensureDefaultConfig("echelon/echelon-reforge-material-profiles.txt", DEFAULT_REFORGE_MATERIAL_PROFILES);
+        ensureDefaultConfig("echelon/echelon-treasure-bag-profiles.txt", DEFAULT_TREASURE_BAG_PROFILES);
+        ensureDefaultConfig("echelon/echelon-dimension-tier-profiles.txt", DEFAULT_DIMENSION_PROFILES);
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ForgeTierifyConfig.SPEC, "echelon/echelon-common.toml");
+        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ForgeTierifyConfig.CLIENT_SPEC, "echelon/echelon-client.toml");
 
         Platform.init(new ForgePlatformHelper());
         ForgeItemRegistry.ITEMS.register(modBus);
@@ -90,7 +93,12 @@ public final class TierifyForge {
             if (stream == null) {
                 return;
             }
-            Files.createDirectories(configDir);
+            Path parent = target.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            } else {
+                Files.createDirectories(configDir);
+            }
             Files.copy(stream, target);
         } catch (IOException ignored) {
             // If we cannot copy defaults, fallback to Forge-generated config.
@@ -102,6 +110,7 @@ public final class TierifyForge {
             EntityLootDropProfiles.reload();
             ReforgeMaterialLootProfiles.reload();
             TreasureBagProfiles.reload();
+            DimensionTierWeightProfiles.reload();
         }
     }
 
@@ -110,6 +119,7 @@ public final class TierifyForge {
             EntityLootDropProfiles.reload();
             ReforgeMaterialLootProfiles.reload();
             TreasureBagProfiles.reload();
+            DimensionTierWeightProfiles.reload();
         }
     }
 }

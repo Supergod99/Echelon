@@ -4,6 +4,7 @@ import draylar.tiered.api.SetBonusLogic;
 import elocindev.tierify.server.SetBonusTickHandler;
 import elocindev.tierify.forge.config.ForgeTierifyConfig;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -25,5 +26,10 @@ public final class ForgeServerTickSubscriber {
                 SetBonusLogic::updatePlayerSetBonus,
                 SetBonusLogic::updatePlayerSetBonus
         );
+    }
+
+    @SubscribeEvent
+    public static void onServerStopping(ServerStoppingEvent event) {
+        SetBonusTickHandler.clearForServer(event.getServer());
     }
 }

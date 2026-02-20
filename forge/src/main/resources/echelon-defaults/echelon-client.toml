@@ -1,14 +1,17 @@
-
-[client_settings]
-	#Whether or not to show the reforging tab in the anvil screen.
+[echelon.client]
+	# Show the Reforge tab in the anvil.
 	showReforgingTab = true
+	# Move Reforge tab left/right.
 	#Range: > -2147483648
 	xIconPosition = 0
+	# Move Reforge tab up/down.
 	#Range: > -2147483648
 	yIconPosition = 0
-	#Enable Tierify tooltip borders/labels.
+	# Enable Echelon tooltip style.
 	tieredTooltip = true
-	#Swaps the text with a plate displayed on the item's name.
+	# Show plates on item names.
 	showPlatesOnName = false
-	#Centers the item name in the tooltip.
+	# Center item names in tooltips.
 	centerName = true
+	# Reserve space so JEI/EMI does not overlap Echelon panels.
+	jeiReserveExtraAreas = true

@@ -29,7 +29,7 @@ public final class ReforgeMaterialLootProfiles {
 
         String fileName = ForgeTierifyConfig.reforgeMaterialLootProfilesFile();
         if (fileName == null || fileName.isBlank()) {
-            fileName = "echelon-reforge-material-profiles.txt";
+            fileName = "echelon/echelon-reforge-material-profiles.txt";
         }
 
         Path path = FMLPaths.CONFIGDIR.get().resolve(fileName);
@@ -96,13 +96,13 @@ public final class ReforgeMaterialLootProfiles {
                     path,
                     "# Echelon reforge material loot profiles\n" +
                     "# dimension_id=weights\n" +
-                    "# weights: 6 ints (Common..Mythic) OR preset overworld|nether|end|global\n" +
+                    "# weights: [Common,Uncommon,Rare,Epic,Legendary,Mythic] OR preset overworld|nether|end|global\n" +
                     "# Wildcards:\n" +
                     "#   *=weights\n" +
                     "#   modid:*=weights\n\n" +
-                    "minecraft:overworld=100,10,1,0,0,0\n" +
-                    "minecraft:the_nether=10,100,10,3,1,0\n" +
-                    "minecraft:the_end=0,10,100,10,3,1\n",
+                    "minecraft:overworld=[100,10,1,0,0,0]\n" +
+                    "minecraft:the_nether=[10,100,10,3,1,0]\n" +
+                    "minecraft:the_end=[0,10,100,10,3,1]\n",
                     StandardCharsets.UTF_8
             );
         } catch (IOException ignored) {

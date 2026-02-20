@@ -8,6 +8,7 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonParser;
 import elocindev.tierify.TierifyCommon;
 import elocindev.tierify.TierifyConstants;
+import elocindev.tierify.forge.config.DimensionTierWeightProfiles;
 import elocindev.tierify.forge.config.ForgeTierifyConfig;
 import elocindev.tierify.forge.network.ForgeNetwork;
 import elocindev.tierify.forge.network.s2c.ConfigSyncS2C;
@@ -302,44 +303,23 @@ public final class ForgeTieredAttributeSubscriber {
 
         String lower = p.toLowerCase(Locale.ROOT);
         if (lower.equals("overworld")) {
-            return new int[] {
-                    Math.max(0, ForgeTierifyConfig.overworldTier1Weight()),
-                    Math.max(0, ForgeTierifyConfig.overworldTier2Weight()),
-                    Math.max(0, ForgeTierifyConfig.overworldTier3Weight()),
-                    Math.max(0, ForgeTierifyConfig.overworldTier4Weight()),
-                    Math.max(0, ForgeTierifyConfig.overworldTier5Weight()),
-                    Math.max(0, ForgeTierifyConfig.overworldTier6Weight())
-            };
+            DimensionTierWeightProfiles.Entry entry = DimensionTierWeightProfiles.get(Level.OVERWORLD.location());
+            return entry != null ? entry.weights() : ForgeTierifyConfig.entityTierWeights();
         }
         if (lower.equals("nether")) {
-            return new int[] {
-                    Math.max(0, ForgeTierifyConfig.netherTier1Weight()),
-                    Math.max(0, ForgeTierifyConfig.netherTier2Weight()),
-                    Math.max(0, ForgeTierifyConfig.netherTier3Weight()),
-                    Math.max(0, ForgeTierifyConfig.netherTier4Weight()),
-                    Math.max(0, ForgeTierifyConfig.netherTier5Weight()),
-                    Math.max(0, ForgeTierifyConfig.netherTier6Weight())
-            };
+            DimensionTierWeightProfiles.Entry entry = DimensionTierWeightProfiles.get(Level.NETHER.location());
+            return entry != null ? entry.weights() : ForgeTierifyConfig.entityTierWeights();
         }
         if (lower.equals("end")) {
-            return new int[] {
-                    Math.max(0, ForgeTierifyConfig.endTier1Weight()),
-                    Math.max(0, ForgeTierifyConfig.endTier2Weight()),
-                    Math.max(0, ForgeTierifyConfig.endTier3Weight()),
-                    Math.max(0, ForgeTierifyConfig.endTier4Weight()),
-                    Math.max(0, ForgeTierifyConfig.endTier5Weight()),
-                    Math.max(0, ForgeTierifyConfig.endTier6Weight())
-            };
+            DimensionTierWeightProfiles.Entry entry = DimensionTierWeightProfiles.get(Level.END.location());
+            return entry != null ? entry.weights() : ForgeTierifyConfig.entityTierWeights();
         }
         if (lower.equals("global")) {
-            return new int[] {
-                    Math.max(0, ForgeTierifyConfig.entityTier1Weight()),
-                    Math.max(0, ForgeTierifyConfig.entityTier2Weight()),
-                    Math.max(0, ForgeTierifyConfig.entityTier3Weight()),
-                    Math.max(0, ForgeTierifyConfig.entityTier4Weight()),
-                    Math.max(0, ForgeTierifyConfig.entityTier5Weight()),
-                    Math.max(0, ForgeTierifyConfig.entityTier6Weight())
-            };
+            return ForgeTierifyConfig.entityTierWeights();
+        }
+
+        if (p.startsWith("[") && p.endsWith("]") && p.length() >= 2) {
+            p = p.substring(1, p.length() - 1).trim();
         }
 
         String[] parts = p.split("[,\\s]+");
@@ -359,95 +339,11 @@ public final class ForgeTieredAttributeSubscriber {
 
     private static int[] resolveEntityWeights(@Nullable ResourceLocation dimensionId) {
         if (ForgeTierifyConfig.useDimensionTierWeights() && dimensionId != null) {
-            if (dimensionId.equals(Level.OVERWORLD.location())) {
-                return new int[] {
-                        Math.max(0, ForgeTierifyConfig.overworldTier1Weight()),
-                        Math.max(0, ForgeTierifyConfig.overworldTier2Weight()),
-                        Math.max(0, ForgeTierifyConfig.overworldTier3Weight()),
-                        Math.max(0, ForgeTierifyConfig.overworldTier4Weight()),
-                        Math.max(0, ForgeTierifyConfig.overworldTier5Weight()),
-                        Math.max(0, ForgeTierifyConfig.overworldTier6Weight())
-                };
-            }
-            if (dimensionId.equals(Level.NETHER.location())) {
-                return new int[] {
-                        Math.max(0, ForgeTierifyConfig.netherTier1Weight()),
-                        Math.max(0, ForgeTierifyConfig.netherTier2Weight()),
-                        Math.max(0, ForgeTierifyConfig.netherTier3Weight()),
-                        Math.max(0, ForgeTierifyConfig.netherTier4Weight()),
-                        Math.max(0, ForgeTierifyConfig.netherTier5Weight()),
-                        Math.max(0, ForgeTierifyConfig.netherTier6Weight())
-                };
-            }
-            if (dimensionId.equals(Level.END.location())) {
-                return new int[] {
-                        Math.max(0, ForgeTierifyConfig.endTier1Weight()),
-                        Math.max(0, ForgeTierifyConfig.endTier2Weight()),
-                        Math.max(0, ForgeTierifyConfig.endTier3Weight()),
-                        Math.max(0, ForgeTierifyConfig.endTier4Weight()),
-                        Math.max(0, ForgeTierifyConfig.endTier5Weight()),
-                        Math.max(0, ForgeTierifyConfig.endTier6Weight())
-                };
-            }
-
-            int[] override = getModdedDimensionOverrideWeights(dimensionId);
-            if (override != null) return override;
+            DimensionTierWeightProfiles.Entry entry = DimensionTierWeightProfiles.get(dimensionId);
+            if (entry != null) return entry.weights();
         }
 
-        return new int[] {
-                Math.max(0, ForgeTierifyConfig.entityTier1Weight()),
-                Math.max(0, ForgeTierifyConfig.entityTier2Weight()),
-                Math.max(0, ForgeTierifyConfig.entityTier3Weight()),
-                Math.max(0, ForgeTierifyConfig.entityTier4Weight()),
-                Math.max(0, ForgeTierifyConfig.entityTier5Weight()),
-                Math.max(0, ForgeTierifyConfig.entityTier6Weight())
-        };
-    }
-
-    @Nullable
-    private static int[] getModdedDimensionOverrideWeights(ResourceLocation dimensionId) {
-        if (dimensionId == null) return null;
-
-        List<String> entries = ForgeTierifyConfig.moddedDimensionTierWeightOverrides();
-        if (entries == null || entries.isEmpty()) return null;
-
-        String dimId = dimensionId.toString();
-        String namespace = dimensionId.getNamespace();
-
-        int[] wildcard = null;
-        int[] namespaceWildcard = null;
-
-        for (String raw : entries) {
-            if (raw == null) continue;
-            String s = raw.trim();
-            if (s.isEmpty()) continue;
-            if (s.startsWith("#") || s.startsWith("//")) continue;
-
-            int eq = s.indexOf('=');
-            if (eq <= 0) continue;
-
-            String left = s.substring(0, eq).trim();
-            String right = s.substring(eq + 1).trim();
-            if (left.isEmpty() || right.isEmpty()) continue;
-
-            if (left.equals(dimId)) {
-                return parseWeightProfile(right);
-            }
-
-            if (left.endsWith(":*")) {
-                String ns = left.substring(0, left.length() - 2);
-                if (ns.equals(namespace)) {
-                    namespaceWildcard = parseWeightProfile(right);
-                }
-                continue;
-            }
-
-            if (left.equals("*")) {
-                wildcard = parseWeightProfile(right);
-            }
-        }
-
-        return (namespaceWildcard != null) ? namespaceWildcard : wildcard;
+        return ForgeTierifyConfig.entityTierWeights();
     }
 
     public static void applySyncedAttributes(Map<ResourceLocation, String> jsonById) {
