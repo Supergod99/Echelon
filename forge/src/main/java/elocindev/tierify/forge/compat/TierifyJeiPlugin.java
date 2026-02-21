@@ -2,6 +2,7 @@ package elocindev.tierify.forge.compat;
 
 import elocindev.tierify.TierifyCommon;
 import elocindev.tierify.forge.config.ForgeTierifyConfig;
+import elocindev.tierify.forge.screen.client.ReforgeScreen;
 import elocindev.tierify.forge.screen.client.SalvageScreen;
 import elocindev.tierify.forge.screen.client.SalvageUpgradeScreen;
 import mezz.jei.api.IModPlugin;
@@ -38,6 +39,16 @@ public final class TierifyJeiPlugin implements IModPlugin {
         }
     };
 
+    private static final IGuiContainerHandler<ReforgeScreen> REFORGE_HANDLER = new IGuiContainerHandler<>() {
+        @Override
+        public List<Rect2i> getGuiExtraAreas(ReforgeScreen screen) {
+            if (!ForgeTierifyConfig.jeiReserveExtraAreas()) {
+                return List.of();
+            }
+            return screen.getJeiExtraAreas();
+        }
+    };
+
     @Override
     public ResourceLocation getPluginUid() {
         return PLUGIN_ID;
@@ -47,5 +58,6 @@ public final class TierifyJeiPlugin implements IModPlugin {
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
         registration.addGuiContainerHandler(SalvageScreen.class, SALVAGE_HANDLER);
         registration.addGuiContainerHandler(SalvageUpgradeScreen.class, SALVAGE_UPGRADE_HANDLER);
+        registration.addGuiContainerHandler(ReforgeScreen.class, REFORGE_HANDLER);
     }
 }

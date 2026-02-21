@@ -30,6 +30,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TieredItem;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.entity.player.Inventory;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -79,6 +80,7 @@ public class ReforgeScreen extends net.minecraft.client.gui.screens.inventory.Ab
             ResourceLocation.fromNamespaceAndPath("tiered", "textures/item/apex_crux.png");
     private static final int APEX_CREST_TEX_W = 36;
     private static final int APEX_CREST_TEX_H = 36;
+    private static final int PREVIEW_EXCLUSION_PAD = 2;
 
     private static final TagKey<Item> TAG_REFORGE_BASE_ITEM = TagKey.create(
             Registries.ITEM,
@@ -88,6 +90,16 @@ public class ReforgeScreen extends net.minecraft.client.gui.screens.inventory.Ab
     private ReforgeButton reforgeButton;
     private ItemStack lastTarget = ItemStack.EMPTY;
     private List<Item> baseItems = Collections.emptyList();
+
+    private record PreviewLayout(List<Component> lines,
+                                 boolean isApex,
+                                 boolean isPerfect,
+                                 String tierId,
+                                 int tierIndex,
+                                 int unscaledWidth,
+                                 int unscaledHeight,
+                                 float scale,
+                                 Rect2i rect) {}
 
     public ReforgeScreen(ReforgeMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
@@ -251,41 +263,24 @@ public class ReforgeScreen extends net.minecraft.client.gui.screens.inventory.Ab
 
     private void renderReforgePreview(GuiGraphics gg) {
         ItemStack target = menu.getSlot(1).getItem();
-        if (target.isEmpty()) return;
+        PreviewLayout layout = computePreviewLayout(target);
+        if (layout == null) return;
 
-        CompoundTag tiered = target.getTagElement(TierifyConstants.NBT_SUBTAG_KEY);
-        if (tiered == null) return;
-
-        String tierId = tiered.getString(TierifyConstants.NBT_SUBTAG_DATA_KEY);
-        if (tierId == null || tierId.isEmpty()) return;
-
-        ResourceLocation tierRl = ResourceLocation.tryParse(tierId);
-        if (tierRl == null) return;
-
-        boolean isApex = StarApexUtils.isApex(target);
-        boolean isPerfect = tiered.getBoolean("Perfect");
+        String tierId = layout.tierId;
+        boolean isApex = layout.isApex;
+        boolean isPerfect = layout.isPerfect;
+        int tierIndex = layout.tierIndex;
+        int unscaledWidth = layout.unscaledWidth;
+        int unscaledHeight = layout.unscaledHeight;
+        float previewScale = layout.scale;
+        Rect2i previewRect = layout.rect;
+        List<Component> lines = layout.lines;
         int stars = StarApexUtils.getStars(target);
         boolean mythicStars = tierId.startsWith("tiered:mythic");
         if (!mythicStars) {
             stars = 0;
         }
-        int tierIndex = TierGradientAnimatorForge.getTierFromId(tierId);
-
-        List<Component> lines = buildPreviewLines(target, tierId, isApex, tierIndex);
-
-        if (lines.isEmpty()) return;
-
-        int maxTextWidth = 0;
-        for (Component line : lines) {
-            maxTextWidth = Math.max(maxTextWidth, this.font.width(line));
-        }
         int extraTop = (isApex || stars > 0) ? PREVIEW_STAR_BAND_PX : 0;
-        int unscaledWidth = Math.max(64, maxTextWidth + (PREVIEW_PAD_X * 2));
-        int unscaledHeight = computeTooltipHeight(lines.size()) + (PREVIEW_PAD_Y * 2) + extraTop;
-        float previewScale = computePreviewScale(unscaledWidth, unscaledHeight);
-        int width = Math.max(1, Math.round(unscaledWidth * previewScale));
-        int height = Math.max(1, Math.round(unscaledHeight * previewScale));
-        Rect2i previewRect = computePreviewRect(width, height);
         int x = previewRect.getX();
         int y = previewRect.getY();
 
@@ -313,6 +308,57 @@ public class ReforgeScreen extends net.minecraft.client.gui.screens.inventory.Ab
         }
 
         gg.pose().popPose();
+    }
+
+    @Nullable
+    private PreviewLayout computePreviewLayout(ItemStack target) {
+        if (target == null || target.isEmpty()) return null;
+
+        CompoundTag tiered = target.getTagElement(TierifyConstants.NBT_SUBTAG_KEY);
+        if (tiered == null) return null;
+
+        String tierId = tiered.getString(TierifyConstants.NBT_SUBTAG_DATA_KEY);
+        if (tierId == null || tierId.isEmpty()) return null;
+
+        if (ResourceLocation.tryParse(tierId) == null) return null;
+
+        boolean isApex = StarApexUtils.isApex(target);
+        boolean isPerfect = tiered.getBoolean("Perfect");
+        int tierIndex = TierGradientAnimatorForge.getTierFromId(tierId);
+
+        List<Component> lines = buildPreviewLines(target, tierId, isApex, tierIndex);
+        if (lines.isEmpty()) return null;
+
+        int maxTextWidth = 0;
+        for (Component line : lines) {
+            maxTextWidth = Math.max(maxTextWidth, this.font.width(line));
+        }
+
+        int stars = StarApexUtils.getStars(target);
+        if (!tierId.startsWith("tiered:mythic")) {
+            stars = 0;
+        }
+        int extraTop = (isApex || stars > 0) ? PREVIEW_STAR_BAND_PX : 0;
+
+        int unscaledWidth = Math.max(64, maxTextWidth + (PREVIEW_PAD_X * 2));
+        int unscaledHeight = computeTooltipHeight(lines.size()) + (PREVIEW_PAD_Y * 2) + extraTop;
+        float scale = computePreviewScale(unscaledWidth, unscaledHeight);
+        int width = Math.max(1, Math.round(unscaledWidth * scale));
+        int height = Math.max(1, Math.round(unscaledHeight * scale));
+        Rect2i rect = computePreviewRect(width, height);
+        return new PreviewLayout(lines, isApex, isPerfect, tierId, tierIndex, unscaledWidth, unscaledHeight, scale, rect);
+    }
+
+    public List<Rect2i> getJeiExtraAreas() {
+        PreviewLayout layout = computePreviewLayout(menu.getSlot(1).getItem());
+        if (layout == null) return Collections.emptyList();
+        Rect2i r = layout.rect;
+        return List.of(new Rect2i(
+                Math.max(0, r.getX() - PREVIEW_EXCLUSION_PAD),
+                Math.max(0, r.getY() - PREVIEW_EXCLUSION_PAD),
+                r.getWidth() + (PREVIEW_EXCLUSION_PAD * 2),
+                r.getHeight() + (PREVIEW_EXCLUSION_PAD * 2)
+        ));
     }
 
     private List<Component> buildPreviewLines(ItemStack target, String tierId, boolean isApex, int tierIndex) {

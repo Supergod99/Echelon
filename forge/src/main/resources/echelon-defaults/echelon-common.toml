@@ -14,9 +14,9 @@
 	allowReforgingDamaged = true
 
 [echelon.loot_sources]
-	# Give reforges to chest loot.
+	# Give reforges to gear in chest loot.
 	lootContainerModifier = true
-	# Chest loot reforge chance.
+	# Reforged gear in chest loot chance.
 	#Range: 0.0 ~ 1.0
 	lootContainerModifierChance = 0.1
 	# Give reforges to treasure bag gear.
@@ -78,7 +78,7 @@
 	salvageChanceLower = 0.1
 	# Salvage chance for one tier higher.
 	#Range: 0.0 ~ 1.0
-	salvageChanceHigher = 0.1
+	salvageChanceHigher = 0.01
 
 [echelon.quality_names]
 	# Names used for common reforges.
