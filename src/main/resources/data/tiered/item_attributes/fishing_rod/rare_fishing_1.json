@@ -2,7 +2,7 @@
     "id": "tiered:rare_fishing_1",
     "verifiers": [
     ],
-    "weight": 15,
+    "weight": 0,
     "style": {
         "color": "blue"
     },
