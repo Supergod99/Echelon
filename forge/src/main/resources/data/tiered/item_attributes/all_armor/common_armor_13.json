@@ -59,11 +59,11 @@
     },
     "attributes": [
         {
-            "type": "familiarslib:sound_spell_power",
+            "type": "generic.movement_speed",
             "modifier": {
                 "name": "tiered:common_armor_13",
-                "operation": "MULTIPLY_BASE",
-                "amount": 0.04
+                "operation": "ADDITION",
+                "amount": 0.003
             },
             "optional_equipment_slots": [
                 "FEET",
@@ -73,11 +73,11 @@
             ]
         },
         {
-            "type": "irons_spellbooks:spell_power",
+            "type": "generic.armor",
             "modifier": {
                 "name": "tiered:common_armor_13",
-                "operation": "MULTIPLY_BASE",
-                "amount": -0.01
+                "operation": "ADDITION",
+                "amount": -0.5
             },
             "optional_equipment_slots": [
                 "FEET",

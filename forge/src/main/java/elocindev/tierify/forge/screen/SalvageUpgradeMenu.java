@@ -13,7 +13,6 @@ import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.Blocks;
 
 public class SalvageUpgradeMenu extends AbstractContainerMenu {
     private final Container inputs = new SimpleContainer(1) {
@@ -140,7 +139,7 @@ public class SalvageUpgradeMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(access, player, Blocks.ANVIL);
+        return AnvilMenuValidity.stillValidAnvil(access, player);
     }
 
     @Override

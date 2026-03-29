@@ -81,39 +81,19 @@ public final class ApexEffectsBootstrap {
                 ApexEffect.ApexCounterModel.COOLDOWN_TICKS,
                 SPELL_COOLDOWN_TICKS);
         registerTooltipOnly("mythic_armor_10",
-                ApexEffect.ApexTriggerType.ON_SPELL_USE,
-                ApexEffect.ApexCounterModel.COOLDOWN_TICKS,
-                SPELL_COOLDOWN_TICKS);
+                ApexEffect.ApexTriggerType.PASSIVE_TICK,
+                ApexEffect.ApexCounterModel.EVERY_N,
+                0);
         registerTooltipOnly("mythic_armor_11",
-                ApexEffect.ApexTriggerType.ON_SPELL_USE,
-                ApexEffect.ApexCounterModel.COOLDOWN_TICKS,
-                SPELL_COOLDOWN_TICKS);
+                ApexEffect.ApexTriggerType.PASSIVE_TICK,
+                ApexEffect.ApexCounterModel.EVERY_N,
+                0);
         registerTooltipOnly("mythic_armor_12",
-                ApexEffect.ApexTriggerType.ON_SPELL_USE,
-                ApexEffect.ApexCounterModel.COOLDOWN_TICKS,
-                SPELL_COOLDOWN_TICKS);
-        registerTooltipOnly("mythic_armor_13",
-                ApexEffect.ApexTriggerType.ON_SPELL_USE,
-                ApexEffect.ApexCounterModel.COOLDOWN_TICKS,
-                SPELL_COOLDOWN_TICKS);
-        registerTooltipOnly("mythic_armor_14",
-                ApexEffect.ApexTriggerType.ON_SPELL_USE,
-                ApexEffect.ApexCounterModel.COOLDOWN_TICKS,
-                SPELL_COOLDOWN_TICKS);
-        registerTooltipOnly("mythic_armor_15",
-                ApexEffect.ApexTriggerType.PASSIVE_TICK,
-                ApexEffect.ApexCounterModel.EVERY_N,
-                0);
-        registerTooltipOnly("mythic_armor_16",
-                ApexEffect.ApexTriggerType.PASSIVE_TICK,
-                ApexEffect.ApexCounterModel.EVERY_N,
-                0);
-        registerTooltipOnly("mythic_armor_17",
                 ApexEffect.ApexTriggerType.PASSIVE_TICK,
                 ApexEffect.ApexCounterModel.EVERY_N,
                 0);
         ApexEffectRegistry.register(
-                ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_18"),
+                ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_13"),
                 new ApexEffect(
                         ApexEffect.ApexTriggerType.ACTIVE_USE,
                         ApexEffect.ApexCounterModel.COOLDOWN_TICKS,
@@ -125,15 +105,11 @@ public final class ApexEffectsBootstrap {
                         )
                 )
         );
-        registerTooltipOnly("mythic_armor_19",
-                ApexEffect.ApexTriggerType.ON_SPELL_USE,
-                ApexEffect.ApexCounterModel.COOLDOWN_TICKS,
-                SPELL_COOLDOWN_TICKS);
-        registerTooltipOnly("mythic_armor_20",
+        registerTooltipOnly("mythic_armor_14",
                 ApexEffect.ApexTriggerType.PASSIVE_TICK,
                 ApexEffect.ApexCounterModel.EVERY_N,
                 0);
-        registerTooltipOnly("mythic_armor_21",
+        registerTooltipOnly("mythic_armor_15",
                 ApexEffect.ApexTriggerType.PASSIVE_TICK,
                 ApexEffect.ApexCounterModel.EVERY_N,
                 0);

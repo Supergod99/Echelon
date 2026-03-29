@@ -84,7 +84,7 @@
 	# Names used for common reforges.
 	tier1Qualities = ["Common"]
 	# Names used for uncommon reforges.
-	tier2Qualities = ["Uncomon"]
+	tier2Qualities = ["Uncommon"]
 	# Names used for rare reforges.
 	tier3Qualities = ["Rare"]
 	# Names used for epic reforges.

@@ -44,6 +44,7 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.event.ItemAttributeModifierEvent;
 import net.minecraftforge.event.OnDatapackSyncEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
@@ -107,10 +108,7 @@ public final class ForgeTieredAttributeSubscriber {
         CompoundTag tierTag = stack.getTagElement(TierifyConstants.NBT_SUBTAG_KEY);
         if (tierTag == null) return Collections.emptyList();
 
-        String tierStr = tierTag.getString(TierifyConstants.NBT_SUBTAG_DATA_KEY);
-        if (tierStr == null || tierStr.isEmpty()) return Collections.emptyList();
-
-        ResourceLocation tierId = ResourceLocation.tryParse(tierStr);
+        ResourceLocation tierId = getNormalizedTierId(tierTag);
         if (tierId == null) return Collections.emptyList();
 
         TierData tier = RELOADER.getTier(tierId);
@@ -373,7 +371,10 @@ public final class ForgeTieredAttributeSubscriber {
                 tierTag.putUUID("TierUUID", UUID.randomUUID());
             }
 
-            ResourceLocation tierId = ResourceLocation.tryParse(tierTag.getString(TierifyConstants.NBT_SUBTAG_DATA_KEY));
+            ResourceLocation tierId = getNormalizedTierId(tierTag);
+            if (tierId != null) {
+                tierTag.putString(TierifyConstants.NBT_SUBTAG_DATA_KEY, tierId.toString());
+            }
             TierData data = tierId == null ? null : RELOADER.getTier(tierId);
 
             if (data == null || !data.isValidFor(stack)) {
@@ -395,6 +396,29 @@ public final class ForgeTieredAttributeSubscriber {
 
             inventory.setItem(i, stack);
         }
+    }
+
+    @Nullable
+    private static ResourceLocation getNormalizedTierId(@Nullable CompoundTag tierTag) {
+        if (tierTag == null) return null;
+
+        String tierStr = tierTag.getString(TierifyConstants.NBT_SUBTAG_DATA_KEY);
+        if (tierStr == null || tierStr.isEmpty()) return null;
+
+        return normalizeLegacyTierId(ResourceLocation.tryParse(tierStr));
+    }
+
+    @Nullable
+    private static ResourceLocation normalizeLegacyTierId(@Nullable ResourceLocation tierId) {
+        if (tierId == null) return null;
+        if (!TierifyCommon.MODID.equals(tierId.getNamespace())) return tierId;
+
+        String path = tierId.getPath();
+        if (!path.startsWith("uncomon_")) return tierId;
+
+        return ResourceLocation.fromNamespaceAndPath(
+                tierId.getNamespace(),
+                "uncommon_" + path.substring("uncomon_".length()));
     }
 
     @SubscribeEvent
@@ -420,7 +444,7 @@ public final class ForgeTieredAttributeSubscriber {
         }
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onItemAttributeModifiers(ItemAttributeModifierEvent event) {
         ItemStack stack = event.getItemStack();
         EquipmentSlot slot = event.getSlotType();
@@ -429,10 +453,7 @@ public final class ForgeTieredAttributeSubscriber {
         CompoundTag tierTag = stack.getTagElement(TierifyConstants.NBT_SUBTAG_KEY);
         if (tierTag == null) return;
 
-        String tierStr = tierTag.getString(TierifyConstants.NBT_SUBTAG_DATA_KEY);
-        if (tierStr == null || tierStr.isEmpty()) return;
-
-        ResourceLocation tierId = ResourceLocation.tryParse(tierStr);
+        ResourceLocation tierId = getNormalizedTierId(tierTag);
         if (tierId == null) return;
 
         TierData tier = RELOADER.getTier(tierId);
@@ -643,16 +664,13 @@ public final class ForgeTieredAttributeSubscriber {
             if (stack == null || stack.isEmpty()) return Collections.emptyList();
             if (tierName == null || tierName.isBlank()) return Collections.emptyList();
 
-            String needle = tierName.toLowerCase(Locale.ROOT);
             List<ResourceLocation> out = new ArrayList<>();
 
             for (Map.Entry<ResourceLocation, TierData> e : byId.entrySet()) {
                 TierData data = e.getValue();
                 if (!data.isValidFor(stack)) continue;
 
-                String path = e.getKey().getPath().toLowerCase(Locale.ROOT);
-                if (!path.contains(needle)) continue;
-                if ("common".equals(needle) && path.contains("uncommon")) continue;
+                if (!matchesQuality(e.getKey(), tierName)) continue;
 
                 out.add(e.getKey());
             }
@@ -771,7 +789,7 @@ public final class ForgeTieredAttributeSubscriber {
             CompoundTag tierTag = stack.getTagElement(TierifyConstants.NBT_SUBTAG_KEY);
             if (tierTag == null) return;
 
-            ResourceLocation tierId = ResourceLocation.tryParse(tierTag.getString(TierifyConstants.NBT_SUBTAG_DATA_KEY));
+            ResourceLocation tierId = getNormalizedTierId(tierTag);
             TierData data = tierId == null ? null : byId.get(tierId);
 
             CompoundTag root = stack.getTag();
@@ -818,14 +836,46 @@ public final class ForgeTieredAttributeSubscriber {
         private static boolean matchesQuality(ResourceLocation id, List<String> qualities) {
             if (qualities == null || qualities.isEmpty()) return true;
 
-            String path = id.toString().toLowerCase(Locale.ROOT);
             for (String q : qualities) {
-                if (q == null || q.isBlank()) continue;
-                String needle = q.toLowerCase(Locale.ROOT);
-                if (path.contains(needle)) return true;
+                if (matchesQuality(id, q)) return true;
             }
 
             return false;
+        }
+
+        private static boolean matchesQuality(ResourceLocation id, @Nullable String quality) {
+            if (id == null || quality == null || quality.isBlank()) return false;
+
+            String requestedTier = normalizeTierName(quality);
+            String actualTier = normalizeTierName(id.getPath());
+            if (requestedTier != null && actualTier != null) {
+                return actualTier.equals(requestedTier);
+            }
+
+            String needle = quality.trim().toLowerCase(Locale.ROOT);
+            String path = id.toString().toLowerCase(Locale.ROOT);
+            if (!path.contains(needle)) return false;
+            if ("common".equals(needle) && (path.contains("uncommon") || path.contains("uncomon"))) return false;
+            return true;
+        }
+
+        @Nullable
+        private static String normalizeTierName(@Nullable String value) {
+            if (value == null || value.isBlank()) return null;
+
+            String normalized = value.trim().toLowerCase(Locale.ROOT);
+            int namespaceIndex = normalized.indexOf(':');
+            if (namespaceIndex >= 0 && namespaceIndex < normalized.length() - 1) {
+                normalized = normalized.substring(namespaceIndex + 1);
+            }
+
+            if (normalized.startsWith("uncommon") || normalized.startsWith("uncomon")) return "uncommon";
+            if (normalized.startsWith("common")) return "common";
+            if (normalized.startsWith("rare")) return "rare";
+            if (normalized.startsWith("epic")) return "epic";
+            if (normalized.startsWith("legendary")) return "legendary";
+            if (normalized.startsWith("mythic")) return "mythic";
+            return null;
         }
 
         private static ResourceLocation resolveTierId(ResourceLocation fallback, JsonObject root) {

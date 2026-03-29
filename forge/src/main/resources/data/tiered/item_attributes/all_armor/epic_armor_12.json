@@ -59,11 +59,11 @@
     },
     "attributes": [
         {
-            "type": "irons_spellbooks:nature_spell_power",
+            "type": "tiered:generic.ars_spell_power",
             "modifier": {
                 "name": "tiered:epic_armor_12",
-                "operation": "MULTIPLY_BASE",
-                "amount": 0.16
+                "operation": "ADDITION",
+                "amount": 0.14
             },
             "optional_equipment_slots": [
                 "FEET",
@@ -73,11 +73,11 @@
             ]
         },
         {
-            "type": "irons_spellbooks:spell_power",
+            "type": "ars_nouveau:ars_nouveau.perk.max_mana",
             "modifier": {
                 "name": "tiered:epic_armor_12",
-                "operation": "MULTIPLY_BASE",
-                "amount": -0.04
+                "operation": "ADDITION",
+                "amount": -40.0
             },
             "optional_equipment_slots": [
                 "FEET",

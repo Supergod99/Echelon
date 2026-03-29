@@ -1,6 +1,15 @@
 {
     "id": "tiered:uncommon_ranged_3",
     "verifiers": [
+        {
+            "tag": "c:bows"
+        },
+        {
+            "tag": "c:crossbows"
+        },
+        {
+            "tag": "too_many_bows:bows"
+        }
     ],
     "weight": 1,
     "style": {
@@ -8,39 +17,25 @@
     },
     "attributes": [
         {
-            "type": "tiered:generic.crit_chance",
+            "type": "brutality:armor_penetration",
+            "modifier": {
+                "name": "tiered:uncommon_ranged_3",
+                "operation": "MULTIPLY_BASE",
+                "amount": 0.1
+            },
+            "optional_equipment_slots": [
+                "MAINHAND"
+            ]
+        },
+        {
+            "type": "attributeslib:crit_damage",
             "modifier": {
                 "name": "tiered:uncommon_ranged_3",
                 "operation": "MULTIPLY_BASE",
                 "amount": -0.1
             },
             "optional_equipment_slots": [
-                "MAINHAND",
-                "OFFHAND"
-            ]
-        },
-        {
-            "type": "tiered:generic.durable",
-            "modifier": {
-                "name": "tiered:uncommon_ranged_3",
-                "operation": "MULTIPLY_BASE",
-                "amount": -0.15
-            },
-            "optional_equipment_slots": [
-                "MAINHAND",
-                "OFFHAND"
-            ]
-        },
-        {
-            "type": "generic.movement_speed",
-            "modifier": {
-                "name": "tiered:uncommon_ranged_3",
-                "operation": "MULTIPLY_BASE",
-                "amount": -0.1
-            },
-            "optional_equipment_slots": [
-                "MAINHAND",
-                "OFFHAND"
+                "MAINHAND"
             ]
         }
     ]

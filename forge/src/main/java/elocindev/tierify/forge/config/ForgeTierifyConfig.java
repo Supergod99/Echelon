@@ -264,7 +264,7 @@ public final class ForgeTierifyConfig {
                 .defineList("tier1Qualities", List.of("Common"), ForgeTierifyConfig::isString);
         TIER_2_QUALITIES = builder
                 .comment("Names used for uncommon reforges.")
-                .defineList("tier2Qualities", List.of("Uncomon"), ForgeTierifyConfig::isString);
+                .defineList("tier2Qualities", List.of("Uncommon"), ForgeTierifyConfig::isString);
         TIER_3_QUALITIES = builder
                 .comment("Names used for rare reforges.")
                 .defineList("tier3Qualities", List.of("Rare"), ForgeTierifyConfig::isString);

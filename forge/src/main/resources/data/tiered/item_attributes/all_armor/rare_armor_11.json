@@ -59,11 +59,11 @@
     },
     "attributes": [
         {
-            "type": "irons_spellbooks:lightning_spell_power",
+            "type": "ars_nouveau:ars_nouveau.perk.max_mana",
             "modifier": {
                 "name": "tiered:rare_armor_11",
-                "operation": "MULTIPLY_BASE",
-                "amount": 0.12
+                "operation": "ADDITION",
+                "amount": 100.0
             },
             "optional_equipment_slots": [
                 "FEET",
@@ -73,11 +73,25 @@
             ]
         },
         {
-            "type": "irons_spellbooks:spell_power",
+            "type": "ars_nouveau:ars_nouveau.perk.mana_regen",
             "modifier": {
                 "name": "tiered:rare_armor_11",
-                "operation": "MULTIPLY_BASE",
-                "amount": -0.03
+                "operation": "ADDITION",
+                "amount": 2.0
+            },
+            "optional_equipment_slots": [
+                "FEET",
+                "LEGS",
+                "CHEST",
+                "HEAD"
+            ]
+        },
+        {
+            "type": "generic.armor",
+            "modifier": {
+                "name": "tiered:rare_armor_11",
+                "operation": "ADDITION",
+                "amount": -1.5
             },
             "optional_equipment_slots": [
                 "FEET",

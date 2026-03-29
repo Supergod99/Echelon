@@ -65,19 +65,19 @@ public final class ApexActiveEffects {
     private static final ResourceLocation NO_DAMAGE_REFORGE =
             ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_2");
     private static final ResourceLocation SUMMON_APEX_REFORGE =
-            ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_15");
+            ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_10");
     private static final ResourceLocation SLOW_TIME_REFORGE =
-            ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_18");
+            ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_13");
     private static final ResourceLocation UNBREAKABLE_REFORGE =
-            ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_20");
+            ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_14");
     private static final ResourceLocation ROLL_COUNTER_REFORGE =
             ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_3");
     private static final ResourceLocation RANGED_MOMENTUM_REFORGE =
-            ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_21");
+            ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_15");
     private static final ResourceLocation ARS_MANA_DISCOUNT_REFORGE =
-            ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_16");
+            ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_11");
     private static final ResourceLocation ARS_SPELL_DAMAGE_REFORGE =
-            ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_17");
+            ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_12");
     private static final ResourceLocation ARS_SPELL_POWER_ID =
             ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "generic.ars_spell_power");
     private static final ResourceLocation ARROW_DAMAGE_ID =
@@ -126,19 +126,13 @@ public final class ApexActiveEffects {
     private static volatile Method IS_ROLLING_METHOD;
     private static volatile boolean ROLL_INVULN_FIELD_INIT = false;
     private static volatile Field ROLL_INVULN_FIELD;
-    private static final Map<ResourceLocation, String> SPELL_SCHOOL_BY_REFORGE = Map.ofEntries(
-            Map.entry(ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_4"), "fire"),
-            Map.entry(ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_5"), "ice"),
-            Map.entry(ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_6"), "blood"),
-            Map.entry(ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_7"), "eldritch"),
-            Map.entry(ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_8"), "ender"),
-            Map.entry(ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_9"), "evocation"),
-            Map.entry(ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_10"), "holy"),
-            Map.entry(ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_11"), "lightning"),
-            Map.entry(ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_12"), "nature"),
-            Map.entry(ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_13"), "sound"),
-            Map.entry(ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_14"), "aqua"),
-            Map.entry(ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_19"), "geomancy")
+    private static final Map<ResourceLocation, Set<String>> SPELL_SCHOOLS_BY_REFORGE = Map.ofEntries(
+            Map.entry(ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_7"), Set.of("fire", "lightning")),
+            Map.entry(ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_4"), Set.of("aqua", "ice")),
+            Map.entry(ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_5"), Set.of("blood", "eldritch")),
+            Map.entry(ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_9"), Set.of("ender", "sound")),
+            Map.entry(ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_6"), Set.of("holy", "evocation")),
+            Map.entry(ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_8"), Set.of("nature", "geomancy"))
     );
     private static final Map<String, Set<String>> SPELL_SCHOOL_ALIASES = Map.of(
             "geomancy", Set.of("geomancy", "geo")
@@ -946,11 +940,11 @@ public final class ApexActiveEffects {
         ResourceLocation reforgeId = getMatchingApexArmorSetReforge(player);
         if (reforgeId == null) return;
 
-        String expectedSchoolPath = SPELL_SCHOOL_BY_REFORGE.get(reforgeId);
-        if (expectedSchoolPath == null) return;
+        Set<String> expectedSchoolPaths = SPELL_SCHOOLS_BY_REFORGE.get(reforgeId);
+        if (expectedSchoolPaths == null || expectedSchoolPaths.isEmpty()) return;
 
         String actualSchoolPath = resolveSchoolPath(source);
-        if (actualSchoolPath == null || !matchesSpellSchool(expectedSchoolPath, actualSchoolPath)) return;
+        if (actualSchoolPath == null || !matchesSpellSchools(expectedSchoolPaths, actualSchoolPath)) return;
         if (!consumeSpellProc(player, reforgeId)) return;
 
         Object amountObj = invokeNoArgs(event, "getAmount");
@@ -992,12 +986,17 @@ public final class ApexActiveEffects {
         return null;
     }
 
-    private static boolean matchesSpellSchool(String expectedSchoolPath, String actualSchoolPath) {
-        if (expectedSchoolPath.equals(actualSchoolPath)) {
-            return true;
+    private static boolean matchesSpellSchools(Set<String> expectedSchoolPaths, String actualSchoolPath) {
+        for (String expectedSchoolPath : expectedSchoolPaths) {
+            if (expectedSchoolPath.equals(actualSchoolPath)) {
+                return true;
+            }
+            Set<String> aliases = SPELL_SCHOOL_ALIASES.get(expectedSchoolPath);
+            if (aliases != null && aliases.contains(actualSchoolPath)) {
+                return true;
+            }
         }
-        Set<String> aliases = SPELL_SCHOOL_ALIASES.get(expectedSchoolPath);
-        return aliases != null && aliases.contains(actualSchoolPath);
+        return false;
     }
 
     private static boolean consumeSpellProc(ServerPlayer player, ResourceLocation reforgeId) {
@@ -1017,7 +1016,7 @@ public final class ApexActiveEffects {
         if (player == null) return;
 
         ResourceLocation reforgeId = getMatchingApexArmorSetReforge(player);
-        if (reforgeId == null || !SPELL_SCHOOL_BY_REFORGE.containsKey(reforgeId)) {
+        if (reforgeId == null || !SPELL_SCHOOLS_BY_REFORGE.containsKey(reforgeId)) {
             player.removeEffect(ForgeMobEffectRegistry.APEX_SPELL_SURGE_COOLDOWN.get());
             return;
         }

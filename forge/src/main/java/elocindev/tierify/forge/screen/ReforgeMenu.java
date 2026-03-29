@@ -31,7 +31,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TieredItem;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.List;
@@ -379,7 +378,7 @@ public class ReforgeMenu extends AbstractContainerMenu {
             String path = chosenTierId.getPath().toLowerCase(Locale.ROOT);
             String key = null;
             if (path.startsWith("common_")) key = "reforge_sound_common";
-            else if (path.startsWith("uncomon_") || path.startsWith("uncommon_")) key = "reforge_sound_uncommon";
+            else if (path.startsWith("uncommon_") || path.startsWith("uncomon_")) key = "reforge_sound_uncommon";
             else if (path.startsWith("rare_")) key = "reforge_sound_rare";
             else if (path.startsWith("epic_")) key = "reforge_sound_epic";
             else if (path.startsWith("legendary_")) key = "reforge_sound_legendary";
@@ -409,7 +408,7 @@ public class ReforgeMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(access, player, Blocks.ANVIL);
+        return AnvilMenuValidity.stillValidAnvil(access, player);
     }
 
     @Override

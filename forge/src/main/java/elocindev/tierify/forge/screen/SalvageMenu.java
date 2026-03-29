@@ -24,7 +24,6 @@ import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.util.RandomSource;
 
 import java.util.Locale;
@@ -156,7 +155,7 @@ public class SalvageMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(access, player, Blocks.ANVIL);
+        return AnvilMenuValidity.stillValidAnvil(access, player);
     }
 
     @Override
@@ -272,7 +271,8 @@ public class SalvageMenu extends AbstractContainerMenu {
         if (id.contains("legendary")) return 5;
         if (id.contains("epic")) return 4;
         if (id.contains("rare")) return 3;
-        if (id.contains("uncommon") || id.contains("uncomon")) return 2;
+        if (id.contains("uncommon")) return 2;
+        if (id.contains("uncomon")) return 2;
         if (id.contains("common")) return 1;
         return 0;
     }

@@ -59,11 +59,25 @@
     },
     "attributes": [
         {
-            "type": "irons_spellbooks:blood_spell_power",
+            "type": "irons_spellbooks:holy_spell_power",
             "modifier": {
                 "name": "tiered:legendary_armor_6",
                 "operation": "MULTIPLY_BASE",
-                "amount": 0.2
+                "amount": 0.25
+            },
+            "optional_equipment_slots": [
+                "FEET",
+                "LEGS",
+                "CHEST",
+                "HEAD"
+            ]
+        },
+        {
+            "type": "irons_spellbooks:evocation_spell_power",
+            "modifier": {
+                "name": "tiered:legendary_armor_6",
+                "operation": "MULTIPLY_BASE",
+                "amount": 0.25
             },
             "optional_equipment_slots": [
                 "FEET",

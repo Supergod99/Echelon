@@ -8,7 +8,7 @@ import net.minecraft.network.chat.Style;
  * Forge port of Fabric's TierGradientAnimator (palette + math parity).
  *
  * Notes:
- * - Keeps the legacy tier key spelling "uncomon" (intentional).
+ * - Uses the canonical uncommon spelling, but still recognizes legacy "uncomon" ids during migration.
  * - Legendary + Mythic remain bold.
  * - Uses a time-based sweep (System.currentTimeMillis) like Fabric; no tick hook required.
  */
@@ -23,7 +23,7 @@ public final class TierGradientAnimatorForge {
             {160, 160, 160}
     };
 
-    // Uncommon ("uncomon" legacy spelling)
+    // Uncommon
     private static final int[][] UNCOMMON_COLORS = new int[][]{
             {90,  200, 90},
             {0,   120, 0},
@@ -34,7 +34,8 @@ public final class TierGradientAnimatorForge {
     private static final int[][] RARE_COLORS = new int[][]{
             {80,  150, 255},
             {0,   60,  160},
-            {120, 220, 255}
+            // Keep the return stop blue-biased; a cyan-leaning stop reads like a white flash on dark tooltips.
+            {90,  185, 255}
     };
 
     // Epic
@@ -63,7 +64,7 @@ public final class TierGradientAnimatorForge {
      *
      * Indexes:
      * 0 = common
-     * 1 = uncomon
+     * 1 = uncommon
      * 2 = rare
      * 3 = epic
      * 4 = legendary
@@ -76,8 +77,7 @@ public final class TierGradientAnimatorForge {
         if (s.contains("legendary")) return 4;
         if (s.contains("epic")) return 3;
         if (s.contains("rare")) return 2;
-        // IMPORTANT: do NOT support "uncommon" here; only the legacy spelling.
-        if (s.contains("uncomon")) return 1;
+        if (s.contains("uncommon") || s.contains("uncomon")) return 1;
         return 0;
     }
 

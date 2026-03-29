@@ -1,18 +1,45 @@
 {
     "id": "tiered:uncommon_shield_3",
     "verifiers": [
+        {
+            "tag": "forge:tools/shields"
+        },
+        {
+            "tag": "forge:tools/shield"
+        },
+        {
+            "tag": "c:tools/shields"
+        },
+        {
+            "tag": "c:tools/shield"
+        },
+        {
+            "tag": "c:shields"
+        }
     ],
-    "weight": 35,
+    "weight": 1,
     "style": {
         "color": "dark_green"
     },
     "attributes": [
         {
-            "type": "generic.armor",
+            "type": "combatroll:distance",
             "modifier": {
                 "name": "tiered:uncommon_shield_3",
                 "operation": "ADDITION",
-                "amount": -1
+                "amount": 0.25
+            },
+            "optional_equipment_slots": [
+                "MAINHAND",
+                "OFFHAND"
+            ]
+        },
+        {
+            "type": "combatroll:recharge",
+            "modifier": {
+                "name": "tiered:uncommon_shield_3",
+                "operation": "MULTIPLY_BASE",
+                "amount": 0.065
             },
             "optional_equipment_slots": [
                 "MAINHAND",
@@ -24,19 +51,7 @@
             "modifier": {
                 "name": "tiered:uncommon_shield_3",
                 "operation": "MULTIPLY_BASE",
-                "amount": -0.1
-            },
-            "optional_equipment_slots": [
-                "MAINHAND",
-                "OFFHAND"
-            ]
-        },
-        {
-            "type": "generic.movement_speed",
-            "modifier": {
-                "name": "tiered:uncommon_shield_3",
-                "operation": "MULTIPLY_BASE",
-                "amount": -0.1
+                "amount": -0.075
             },
             "optional_equipment_slots": [
                 "MAINHAND",

@@ -38,7 +38,12 @@ public class ReforgeAddition extends Item {
         tooltip.add(Component.literal("Reforging Qualities:").withStyle(ChatFormatting.GRAY));
         for (String quality : qualities) {
             tooltip.add(Component.literal(" - ").withStyle(ChatFormatting.GRAY)
-                    .append(Component.literal(quality).withStyle(ChatFormatting.DARK_GRAY)));
+                    .append(Component.literal(normalizeDisplayQuality(quality)).withStyle(ChatFormatting.DARK_GRAY)));
         }
+    }
+
+    private static String normalizeDisplayQuality(String quality) {
+        if (quality == null || quality.isBlank()) return "";
+        return quality.equalsIgnoreCase("uncomon") ? "Uncommon" : quality;
     }
 }

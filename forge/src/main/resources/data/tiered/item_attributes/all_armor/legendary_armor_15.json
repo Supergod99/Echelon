@@ -59,11 +59,11 @@
     },
     "attributes": [
         {
-            "type": "irons_spellbooks:summon_damage",
+            "type": "attributeslib:arrow_damage",
             "modifier": {
                 "name": "tiered:legendary_armor_15",
                 "operation": "MULTIPLY_BASE",
-                "amount": 0.13
+                "amount": 0.25
             },
             "optional_equipment_slots": [
                 "FEET",
@@ -73,25 +73,11 @@
             ]
         },
         {
-            "type": "tiered:generic.summon_health",
+            "type": "generic.armor",
             "modifier": {
                 "name": "tiered:legendary_armor_15",
-                "operation": "MULTIPLY_BASE",
-                "amount": 0.13
-            },
-            "optional_equipment_slots": [
-                "FEET",
-                "LEGS",
-                "CHEST",
-                "HEAD"
-            ]
-        },
-        {
-            "type": "irons_spellbooks:cast_time_reduction",
-            "modifier": {
-                "name": "tiered:legendary_armor_15",
-                "operation": "MULTIPLY_BASE",
-                "amount": -0.125
+                "operation": "ADDITION",
+                "amount": -2.5
             },
             "optional_equipment_slots": [
                 "FEET",
