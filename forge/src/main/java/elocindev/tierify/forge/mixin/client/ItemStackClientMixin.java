@@ -63,9 +63,7 @@ public abstract class ItemStackClientMixin {
             Pattern.compile("^[+\\-]\\s*([0-9]+(?:[\\.,][0-9]+)?)%?.*");
     private static final Pattern LEADING_SIGNED_NUMBER_PATTERN =
             Pattern.compile("^\\s*([+\\-])\\s*([0-9]+(?:[\\.,][0-9]+)?)%?\\s+(.+)$");
-    private static final Set<ResourceLocation> PERCENT_ADDITION_ATTRIBUTES = Set.of(
-            ResourceLocation.fromNamespaceAndPath("tiered", "generic.ars_spell_power")
-    );
+    private static final Set<ResourceLocation> PERCENT_ADDITION_ATTRIBUTES = Set.of();
 
     @Shadow public abstract Multimap<Attribute, AttributeModifier> getAttributeModifiers(EquipmentSlot slot);
 

@@ -18,7 +18,5 @@ public final class ForgeAttributeSubscriber {
         event.add(EntityType.PLAYER, ForgeAttributeRegistry.DIG_SPEED.get());
         event.add(EntityType.PLAYER, ForgeAttributeRegistry.DURABLE.get());
         event.add(EntityType.PLAYER, ForgeAttributeRegistry.RANGE_ATTACK_DAMAGE.get());
-        event.add(EntityType.PLAYER, ForgeAttributeRegistry.SUMMON_HEALTH.get());
-        event.add(EntityType.PLAYER, ForgeAttributeRegistry.ARS_SPELL_POWER.get());
     }
 }

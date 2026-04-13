@@ -80,8 +80,6 @@ public final class ForgeTieredAttributeSubscriber {
 
     private static final ResourceLocation DURABLE_ID =
             ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "generic.durable");
-    private static final ResourceLocation ARS_SPELL_POWER_ID =
-            ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "generic.ars_spell_power");
     private static final ResourceLocation CRIT_CHANCE_ID =
             ResourceLocation.fromNamespaceAndPath("attributeslib", "crit_chance");
     private static final ResourceLocation CRIT_DAMAGE_ID =
@@ -145,9 +143,6 @@ public final class ForgeTieredAttributeSubscriber {
             int opIdx = operationIndex(entry.operation);
             if (isMultiplier) {
                 display *= 100.0D;
-            } else if (ARS_SPELL_POWER_ID.equals(entry.attributeId)) {
-                display *= 100.0D;
-                opIdx = 1;
             } else if (CRIT_CHANCE_ID.equals(entry.attributeId) || CRIT_DAMAGE_ID.equals(entry.attributeId)) {
                 display *= 100.0D;
                 opIdx = 1;

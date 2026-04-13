@@ -22,10 +22,6 @@ public final class ForgeAttributeRegistry {
             register("generic.range_attack_damage", 0.0D, 0.0D, 2048.0D);
     public static final RegistryObject<Attribute> FORTUNE =
             register("generic.fortune", 0.0D, 0.0D, 100.0D);
-    public static final RegistryObject<Attribute> SUMMON_HEALTH =
-            register("generic.summon_health", 1.0D, 0.0D, 100.0D);
-    public static final RegistryObject<Attribute> ARS_SPELL_POWER =
-            register("generic.ars_spell_power", 0.0D, 0.0D, 100.0D);
 
     private static RegistryObject<Attribute> register(String path, double base, double min, double max) {
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, path);
