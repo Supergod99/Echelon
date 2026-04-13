@@ -22,6 +22,8 @@ Geckolib will be removed from `mods.toml`, Gradle dependencies, and source usage
 
 Compile-time optional integrations can remain only when they are intentional and do not make the built jar fail without the optional mod. Examples include JEI/EMI plugin compile APIs and mixins guarded by the existing mixin plugin. Development-only runtime dependencies should be trimmed for the standalone branch so the dev environment reflects the target dependency set.
 
+Tooltip Overhaul must not be a runtime dependency for this branch. If optional Tooltip Overhaul integration code remains, it should be either reflection-based or compile-only with mixins guarded by `TieredForgeMixinPlugin`, and the built jar must load when Tooltip Overhaul is absent.
+
 ## Reforge Data
 
 Bundled `data/tiered/item_attributes` will be reduced to attributes from these namespaces:
@@ -107,6 +109,16 @@ Keep Echelon tooltip borders, gradient assets, item models, item textures, sound
 
 Any removed reforge IDs must also be removed or remapped in tooltip border data so tooltips do not reference dead IDs.
 
+## Tooltip Independence
+
+Echelon's native tooltip system is the primary standalone path. Tiered borders, perfect borders, perfect labels, star ribbons, Apex crown plates, Apex perimeter effects, set-bonus crest display, Apex effect fallback text, and reforge screen previews must all work with only Forge, Minecraft, Echelon, and Apothic Attributes installed.
+
+Tooltip Overhaul remains optional compatibility only. When it is installed, Echelon can use the existing adapter layer and guarded mixins to fit Tooltip Overhaul's layout. When it is not installed, the native `GuiGraphics` tooltip mixin and `TierifyTooltipBorderRendererForge` path must render the same core information without missing borders or UI elements.
+
+Standalone development runs should not include Tooltip Overhaul as `runtimeOnly`, because that would hide failures in the native tooltip path. A `compileOnly` dependency may remain only if direct optional mixins still need Tooltip Overhaul types at compile time.
+
+`assets/tiered/tooltips/tooltip_borders.json` remains the native border source of truth. During reforge pruning and renumbering, its deciders must be cleaned so every kept reforge ID maps correctly and every removed or renamed reforge ID disappears from the tooltip data. The legacy `assets/legendarytooltips` resources should be reviewed as optional resource-pack compatibility and must not be required for Echelon's own tooltip presentation.
+
 ## Docs
 
 README and related docs will describe this branch as the standalone Echelon edition. Required dependencies should list Forge and Apothic Attributes only. Optional compatibility should be clearly separated from required dependencies.
@@ -122,6 +134,9 @@ Verification should include:
 - a resource scan proving no standalone-forbidden attribute namespaces remain in bundled `item_attributes`
 - a resource scan proving removed reforge IDs are not referenced by lang, tooltip borders, Apex registration, or other bundled data
 - a dependency scan proving `mods.toml` requires `attributeslib` but not `geckolib`
+- a dependency scan proving Tooltip Overhaul is not a runtime dependency
 - a smoke review of core recipes so each material/progression item is obtainable
+- a client smoke test without Tooltip Overhaul installed, covering tiered borders, perfect labels, star/Apex visuals, Apex effect tooltip text, and reforge preview rendering
+- an optional client smoke test with Tooltip Overhaul installed, covering the guarded compatibility path
 
 Add or update automated tests for loot policy and data consistency so future branch work cannot accidentally reintroduce pack-only attribute namespaces into standalone resources.
