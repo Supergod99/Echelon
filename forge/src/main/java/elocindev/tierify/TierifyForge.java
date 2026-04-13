@@ -32,7 +32,6 @@ import net.minecraftforge.common.loot.IGlobalLootModifier;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
-import software.bernie.geckolib.GeckoLib;
 
 @Mod(TierifyCommon.MODID)
 public final class TierifyForge {
@@ -71,7 +70,6 @@ public final class TierifyForge {
         ForgeMobEffectRegistry.MOB_EFFECTS.register(modBus);
         LOOT_MODIFIERS.register(modBus);
 
-        GeckoLib.initialize();
         ForgeNetwork.init();
         ApexEffectsBootstrap.init();
         ApexActiveEffects.initSpellDamageCompat();
