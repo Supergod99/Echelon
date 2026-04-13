@@ -135,6 +135,14 @@ class StandaloneResourcePolicyTest {
                 assertTrue(validNamespaces.contains(typeNamespace),
                         "Forbidden attribute namespace '" + typeNamespace + "' in " + file + " (" + type + ")");
 
+                if ("tiered".equals(typeNamespace)) {
+                    String typePath = type.substring(type.indexOf(':') + 1);
+                    assertFalse(
+                            "generic.summon_health".equals(typePath) || "generic.ars_spell_power".equals(typePath),
+                            "Forbidden attribute type in " + file + ": " + type
+                    );
+                }
+
                 if (attribute.has("modifier") && attribute.get("modifier").isJsonObject()) {
                     JsonObject modifier = attribute.getAsJsonObject("modifier");
                     if (modifier.has("name") && modifier.get("name").isJsonPrimitive()) {
@@ -148,8 +156,6 @@ class StandaloneResourcePolicyTest {
             String groupKey = matcher.group(1) + ":" + matcher.group(2);
             groupNumbers.computeIfAbsent(groupKey, ignored -> new TreeSet<>()).add(number);
 
-            assertFalse(id.equals("tiered:generic.summon_health"), "Forbidden attribute id present: " + file);
-            assertFalse(id.equals("tiered:generic.ars_spell_power"), "Forbidden attribute id present: " + file);
         }
 
         for (Map.Entry<String, Set<Integer>> entry : groupNumbers.entrySet()) {
@@ -459,6 +465,7 @@ class StandaloneResourcePolicyTest {
         return lower.endsWith(".java")
                 || lower.endsWith(".json")
                 || lower.endsWith(".txt")
+                || lower.endsWith(".toml")
                 || lower.endsWith(".mcmeta")
                 || lower.endsWith(".gpl");
     }
