@@ -99,10 +99,6 @@ public final class ForgeGameplayEventSubscriber {
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
         if (event.getLevel().isClientSide()) return;
 
-        if (event.getEntity() instanceof LivingEntity living) {
-            ApexActiveEffects.tryEmpowerSummon(living);
-        }
-
         if (!(event.getEntity() instanceof AbstractArrow arrow)) return;
 
         if (arrow.getOwner() instanceof Player player) {
@@ -116,14 +112,6 @@ public final class ForgeGameplayEventSubscriber {
     @SubscribeEvent
     public static void onLivingHurt(LivingHurtEvent event) {
         if (event.getEntity().level().isClientSide()) return;
-
-        if (event.getSource().getEntity() instanceof ServerPlayer attacker) {
-            boolean directMelee = event.getSource().getDirectEntity() == attacker;
-            boolean rangedProjectile = event.getSource().getDirectEntity() instanceof Projectile projectile
-                    && projectile.getOwner() == attacker;
-            boolean eligibleCounterHit = directMelee || rangedProjectile;
-            event.setAmount(ApexActiveEffects.applyRollCounterDamageBonus(attacker, eligibleCounterHit, event.getAmount()));
-        }
 
         if (event.getSource().getDirectEntity() instanceof ThrownTrident trident) {
             if (trident.getOwner() instanceof Player player) {
@@ -162,7 +150,6 @@ public final class ForgeGameplayEventSubscriber {
     public static void onLivingDamage(LivingDamageEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         if (event.getAmount() <= 0.0f) return;
-        event.setAmount(event.getAmount() * ApexActiveEffects.getRollDamageTakenMultiplier(player));
         ApexActiveEffects.markPlayerHurt(player);
     }
 

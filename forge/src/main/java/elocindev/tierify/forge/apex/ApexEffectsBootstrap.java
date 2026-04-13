@@ -7,11 +7,10 @@ public final class ApexEffectsBootstrap {
 
     private static final int ARMOR_BOOST_TICKS = 6 * 20;
     private static final int ARMOR_BOOST_COOLDOWN_TICKS = 30 * 20;
-    private static final int SPELL_COOLDOWN_TICKS = 20 * 20;
-    private static final int SLOW_TIME_COOLDOWN_TICKS = 30 * 20;
-    private static final int SLOW_TIME_DURATION_TICKS = 8 * 20;
     private static final int NO_DAMAGE_SHIELD_DELAY_TICKS = 12 * 20;
     private static final float NO_DAMAGE_SHIELD_FRACTION = 0.25f;
+    private static final int SLOW_TIME_COOLDOWN_TICKS = 30 * 20;
+    private static final int SLOW_TIME_DURATION_TICKS = 8 * 20;
     private static final ApexEffect.ApexEffectHandler NOOP_HANDLER = ctx -> {};
 
     private ApexEffectsBootstrap() {}
@@ -52,48 +51,20 @@ public final class ApexEffectsBootstrap {
                         )
                 )
         );
-        registerTooltipOnly("mythic_armor_3",
-                ApexEffect.ApexTriggerType.PASSIVE_TICK,
-                ApexEffect.ApexCounterModel.EVERY_N,
-                0);
+        ApexEffectRegistry.register(
+                ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_3"),
+                new ApexEffect(
+                        ApexEffect.ApexTriggerType.PASSIVE_TICK,
+                        ApexEffect.ApexCounterModel.EVERY_N,
+                        0,
+                        ctx -> ApexActiveEffects.setUnbreakableArmorActive(ctx.player(), true))
+        );
         registerTooltipOnly("mythic_armor_4",
-                ApexEffect.ApexTriggerType.ON_SPELL_USE,
-                ApexEffect.ApexCounterModel.COOLDOWN_TICKS,
-                SPELL_COOLDOWN_TICKS);
-        registerTooltipOnly("mythic_armor_5",
-                ApexEffect.ApexTriggerType.ON_SPELL_USE,
-                ApexEffect.ApexCounterModel.COOLDOWN_TICKS,
-                SPELL_COOLDOWN_TICKS);
-        registerTooltipOnly("mythic_armor_6",
-                ApexEffect.ApexTriggerType.ON_SPELL_USE,
-                ApexEffect.ApexCounterModel.COOLDOWN_TICKS,
-                SPELL_COOLDOWN_TICKS);
-        registerTooltipOnly("mythic_armor_7",
-                ApexEffect.ApexTriggerType.ON_SPELL_USE,
-                ApexEffect.ApexCounterModel.COOLDOWN_TICKS,
-                SPELL_COOLDOWN_TICKS);
-        registerTooltipOnly("mythic_armor_8",
-                ApexEffect.ApexTriggerType.ON_SPELL_USE,
-                ApexEffect.ApexCounterModel.COOLDOWN_TICKS,
-                SPELL_COOLDOWN_TICKS);
-        registerTooltipOnly("mythic_armor_9",
-                ApexEffect.ApexTriggerType.ON_SPELL_USE,
-                ApexEffect.ApexCounterModel.COOLDOWN_TICKS,
-                SPELL_COOLDOWN_TICKS);
-        registerTooltipOnly("mythic_armor_10",
-                ApexEffect.ApexTriggerType.PASSIVE_TICK,
-                ApexEffect.ApexCounterModel.EVERY_N,
-                0);
-        registerTooltipOnly("mythic_armor_11",
-                ApexEffect.ApexTriggerType.PASSIVE_TICK,
-                ApexEffect.ApexCounterModel.EVERY_N,
-                0);
-        registerTooltipOnly("mythic_armor_12",
                 ApexEffect.ApexTriggerType.PASSIVE_TICK,
                 ApexEffect.ApexCounterModel.EVERY_N,
                 0);
         ApexEffectRegistry.register(
-                ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_13"),
+                ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_5"),
                 new ApexEffect(
                         ApexEffect.ApexTriggerType.ACTIVE_USE,
                         ApexEffect.ApexCounterModel.COOLDOWN_TICKS,
@@ -105,11 +76,15 @@ public final class ApexEffectsBootstrap {
                         )
                 )
         );
-        registerTooltipOnly("mythic_armor_14",
-                ApexEffect.ApexTriggerType.PASSIVE_TICK,
-                ApexEffect.ApexCounterModel.EVERY_N,
-                0);
-        registerTooltipOnly("mythic_armor_15",
+        ApexEffectRegistry.register(
+                ResourceLocation.fromNamespaceAndPath(TierifyCommon.MODID, "mythic_armor_6"),
+                new ApexEffect(
+                        ApexEffect.ApexTriggerType.PASSIVE_TICK,
+                        ApexEffect.ApexCounterModel.EVERY_N,
+                        0,
+                        ctx -> ApexActiveEffects.setUnbreakableArmorActive(ctx.player(), true))
+        );
+        registerTooltipOnly("mythic_armor_7",
                 ApexEffect.ApexTriggerType.PASSIVE_TICK,
                 ApexEffect.ApexCounterModel.EVERY_N,
                 0);

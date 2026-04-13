@@ -72,9 +72,6 @@ public final class TierifyForge {
 
         ForgeNetwork.init();
         ApexEffectsBootstrap.init();
-        ApexActiveEffects.initSpellDamageCompat();
-        ApexActiveEffects.initArsSpellCompat();
-        ApexActiveEffects.initCombatRollCompat();
 
         modBus.addListener(TierifyForge::onConfigLoad);
         modBus.addListener(TierifyForge::onConfigReload);
