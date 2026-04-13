@@ -1,7 +1,5 @@
 package elocindev.tierify.forge.standalone;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -12,6 +10,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -33,11 +34,24 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 class StandaloneResourcePolicyTest {
 
-    private static final Gson GSON = new GsonBuilder().create();
     private static final Pattern REFORGE_ID_PATTERN = Pattern.compile(
             "^tiered:(common|uncommon|rare|epic|legendary|mythic)_(armor|tool|melee|ranged|fishing|shield|elytra)_(\\d+)$"
     );
     private static final Pattern MYTHIC_ARMOR_ID_PATTERN = Pattern.compile("mythic_armor_(\\d+)");
+    private static final Set<String> RECIPE_REFERENCE_KEYS = Set.of(
+            "item",
+            "tag",
+            "ingredient",
+            "ingredients",
+            "result",
+            "base",
+            "input",
+            "output",
+            "catalyst",
+            "addition",
+            "template",
+            "contents"
+    );
     private static final Set<String> STANDALONE_TOOLTIP_DECIDERS = Set.of(
             "tiered:limestone_chunk",
             "tiered:pyrite_chunk",
@@ -67,6 +81,11 @@ class StandaloneResourcePolicyTest {
             "software.bernie.geckolib",
             "geckolib.initialize",
             "infernalsovereignarmor"
+    );
+    private static final Set<String> FORBIDDEN_DOC_TOKENS = Set.of(
+            "linggango",
+            "pack-only",
+            "pack only"
     );
 
     @Test
@@ -212,7 +231,7 @@ class StandaloneResourcePolicyTest {
         Set<String> results = new HashSet<>();
         for (Path file : files) {
             JsonObject rootJson = readObject(file);
-            collectItemIds(rootJson, file, "root");
+            collectRecipeReferences(rootJson, file);
             collectRecipeResults(rootJson, results, file);
         }
 
@@ -253,22 +272,37 @@ class StandaloneResourcePolicyTest {
     @Test
     void geckolibAndInfernalSovereignContentAreRemoved() throws IOException {
         Path root = locateForgeProjectRoot();
-        List<Path> files = new java.util.ArrayList<>();
-        for (String subdir : List.of("src/main/java", "src/main/resources")) {
-            Path scanRoot = resolveProjectFile(root, subdir);
-            try (Stream<Path> stream = Files.walk(scanRoot)) {
-                files.addAll(stream.filter(Files::isRegularFile)
-                        .filter(StandaloneResourcePolicyTest::isTextishFile)
-                        .collect(Collectors.toList()));
+        Path resourcesRoot = resolveProjectFile(root, "src/main/resources");
+        try (Stream<Path> stream = Files.walk(resourcesRoot)) {
+            for (Path file : stream.filter(Files::isRegularFile).collect(Collectors.toList())) {
+                String pathLower = file.toString().toLowerCase(Locale.ROOT);
+                for (String token : FORBIDDEN_EXTERNAL_CONTENT_TOKENS) {
+                    assertFalse(pathLower.contains(token),
+                            "Forbidden content remains in resource path " + file + ": " + token);
+                }
+
+                if (!isTextishFile(file)) {
+                    continue;
+                }
+
+                String textLower = Files.readString(file, StandardCharsets.UTF_8).toLowerCase(Locale.ROOT);
+                for (String token : FORBIDDEN_EXTERNAL_CONTENT_TOKENS) {
+                    assertFalse(textLower.contains(token),
+                            "Forbidden content remains in " + file + ": " + token);
+                }
             }
         }
+    }
 
-        for (Path file : files) {
+    @Test
+    void documentationReferencesAreStandaloneSafe() throws IOException {
+        Path root = locateRepositoryRoot();
+        for (Path file : collectDocumentationFiles(root)) {
             String pathLower = file.toString().toLowerCase(Locale.ROOT);
             String textLower = Files.readString(file, StandardCharsets.UTF_8).toLowerCase(Locale.ROOT);
-            for (String token : FORBIDDEN_EXTERNAL_CONTENT_TOKENS) {
+            for (String token : FORBIDDEN_DOC_TOKENS) {
                 assertFalse(pathLower.contains(token) || textLower.contains(token),
-                        "Forbidden content remains in " + file + ": " + token);
+                        "Standalone documentation must not use forbidden wording in " + file + ": " + token);
             }
         }
     }
@@ -313,6 +347,21 @@ class StandaloneResourcePolicyTest {
             return cwd.resolve("forge");
         }
         fail("Could not locate Forge project root from " + cwd);
+        return cwd;
+    }
+
+    private static Path locateRepositoryRoot() {
+        Path cwd = Path.of("").toAbsolutePath().normalize();
+        if (Files.exists(cwd.resolve("README.md")) || Files.isDirectory(cwd.resolve("docs"))) {
+            return cwd;
+        }
+
+        Path parent = cwd.getParent();
+        if (parent != null && (Files.exists(parent.resolve("README.md")) || Files.isDirectory(parent.resolve("docs")))) {
+            return parent;
+        }
+
+        fail("Could not locate repository root from " + cwd);
         return cwd;
     }
 
@@ -368,6 +417,39 @@ class StandaloneResourcePolicyTest {
         return trimmed;
     }
 
+    private static List<Path> collectDocumentationFiles(Path root) throws IOException {
+        List<Path> files = new ArrayList<>();
+
+        try (Stream<Path> stream = Files.list(root)) {
+            files.addAll(stream.filter(Files::isRegularFile)
+                    .filter(StandaloneResourcePolicyTest::isDocumentationFile)
+                    .collect(Collectors.toList()));
+        }
+
+        Path docsDir = root.resolve("docs");
+        if (Files.isDirectory(docsDir)) {
+            try (Stream<Path> stream = Files.walk(docsDir)) {
+                files.addAll(stream.filter(Files::isRegularFile)
+                        .filter(StandaloneResourcePolicyTest::isDocumentationFile)
+                        .filter(path -> !path.toString().toLowerCase(Locale.ROOT).contains("docs\\superpowers\\")
+                                && !path.toString().toLowerCase(Locale.ROOT).contains("docs/superpowers/"))
+                        .collect(Collectors.toList()));
+            }
+        }
+
+        return files;
+    }
+
+    private static boolean isDocumentationFile(Path path) {
+        String lower = path.toString().toLowerCase(Locale.ROOT);
+        if (lower.contains("\\build\\") || lower.contains("/build/")
+                || lower.contains("\\generated\\") || lower.contains("/generated/")
+                || lower.contains("\\test\\") || lower.contains("/test/")) {
+            return false;
+        }
+        return lower.endsWith(".md") || lower.endsWith(".txt");
+    }
+
     private static Set<String> collectMandatoryDependencies(Path modsToml) throws IOException {
         Set<String> mandatoryDependencies = new LinkedHashSet<>();
         List<String> lines = Files.readAllLines(modsToml, StandardCharsets.UTF_8);
@@ -414,26 +496,47 @@ class StandaloneResourcePolicyTest {
         return ids;
     }
 
-    private static void collectItemIds(JsonElement element, Path file, String path) {
+    private static void collectRecipeReferences(JsonElement element, Path file) {
+        collectRecipeReferences(element, file, new ArrayDeque<>());
+    }
+
+    private static void collectRecipeReferences(JsonElement element, Path file, Deque<String> path) {
         if (element == null || element.isJsonNull()) {
             return;
         }
+
         if (element.isJsonObject()) {
             JsonObject object = element.getAsJsonObject();
             for (Map.Entry<String, JsonElement> entry : object.entrySet()) {
-                String childPath = path + "." + entry.getKey();
-                if ("item".equals(entry.getKey()) && entry.getValue().isJsonPrimitive()) {
-                    String itemId = entry.getValue().getAsString();
-                    assertNamespaceAllowed(itemId, file, childPath);
-                }
-                collectItemIds(entry.getValue(), file, childPath);
+                path.addLast(entry.getKey());
+                collectRecipeReferences(entry.getValue(), file, path);
+                path.removeLast();
             }
-        } else if (element.isJsonArray()) {
+            return;
+        }
+
+        if (element.isJsonArray()) {
             JsonArray array = element.getAsJsonArray();
             for (int i = 0; i < array.size(); i++) {
-                collectItemIds(array.get(i), file, path + "[" + i + "]");
+                path.addLast("[" + i + "]");
+                collectRecipeReferences(array.get(i), file, path);
+                path.removeLast();
             }
+            return;
         }
+
+        if (!element.isJsonPrimitive() || !element.getAsJsonPrimitive().isString()) {
+            return;
+        }
+
+        String value = element.getAsString();
+        if (!value.contains(":") || path.stream().noneMatch(RECIPE_REFERENCE_KEYS::contains)) {
+            return;
+        }
+
+        String namespace = value.substring(0, value.indexOf(':'));
+        assertTrue(namespace.equals("minecraft") || namespace.equals("tiered"),
+                "Forbidden recipe item namespace '" + namespace + "' in " + file + " at " + String.join(".", path) + " -> " + value);
     }
 
     private static void assertNamespaceAllowed(String itemId, Path file, String path) {
