@@ -466,6 +466,7 @@ class StandaloneResourcePolicyTest {
                 || lower.endsWith(".json")
                 || lower.endsWith(".txt")
                 || lower.endsWith(".toml")
+                || lower.endsWith(".md")
                 || lower.endsWith(".mcmeta")
                 || lower.endsWith(".gpl");
     }
