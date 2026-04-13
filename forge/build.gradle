@@ -92,6 +92,11 @@ dependencies {
     compileOnly "com.mojang:datafixerupper:6.0.8"
     compileOnly "com.mojang:brigadier:1.2.9"
     annotationProcessor "org.spongepowered:mixin:0.8.5:processor"
+    testImplementation "org.junit.jupiter:junit-jupiter:5.10.2"
+}
+
+tasks.named("test", Test).configure {
+    useJUnitPlatform()
 }
 
 tasks.named("jar", Jar).configure {
