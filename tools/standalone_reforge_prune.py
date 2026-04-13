@@ -138,9 +138,9 @@ def main():
             continue
         if key.startswith("tooltip.tiered.apex_effect.mythic_armor_"):
             parts = key.split(".")
-            mapped = id_map.get("tiered:" + parts[4])
+            mapped = id_map.get("tiered:" + parts[3])
             if mapped:
-                parts[4] = mapped.split(":", 1)[1]
+                parts[3] = mapped.split(":", 1)[1]
                 new_lang[".".join(parts)] = value
             continue
         new_lang[key] = value
