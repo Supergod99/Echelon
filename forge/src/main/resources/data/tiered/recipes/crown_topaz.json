@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [" E ", "GPG", " B "],
+  "key": {
+    "B": { "item": "minecraft:blaze_rod" },
+    "E": { "item": "minecraft:ender_eye" },
+    "G": { "item": "minecraft:gold_ingot" },
+    "P": { "item": "tiered:pyrite_chunk" }
+  },
+  "result": { "item": "tiered:crown_topaz", "count": 2 }
+}

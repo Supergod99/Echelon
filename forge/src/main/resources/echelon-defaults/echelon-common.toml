@@ -20,7 +20,7 @@
 	#Range: 0.0 ~ 1.0
 	lootContainerModifierChance = 0.1
 	# Give reforges to treasure bag gear.
-	treasureBagDropModifier = true
+	treasureBagDropModifier = false
 	# Treasure bag profile file path.
 	treasureBagProfilesFile = "echelon/echelon-treasure-bag-profiles.txt"
 	# Add reforge materials to chest loot.

@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [" D ", "NCE", " G "],
+  "key": {
+    "C": { "item": "tiered:crown_topaz" },
+    "D": { "item": "minecraft:dragon_breath" },
+    "E": { "item": "minecraft:echo_shard" },
+    "G": { "item": "tiered:galena_chunk" },
+    "N": { "item": "minecraft:netherite_scrap" }
+  },
+  "result": { "item": "tiered:painite", "count": 2 }
+}
