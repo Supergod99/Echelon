@@ -59,7 +59,7 @@
     },
     "attributes": [
         {
-            "type": "irons_spellbooks:lightning_spell_power",
+            "type": "attributeslib:arrow_damage",
             "modifier": {
                 "name": "tiered:common_armor_7",
                 "operation": "MULTIPLY_BASE",
@@ -73,25 +73,11 @@
             ]
         },
         {
-            "type": "irons_spellbooks:fire_spell_power",
+            "type": "generic.armor",
             "modifier": {
                 "name": "tiered:common_armor_7",
-                "operation": "MULTIPLY_BASE",
-                "amount": 0.05
-            },
-            "optional_equipment_slots": [
-                "FEET",
-                "LEGS",
-                "CHEST",
-                "HEAD"
-            ]
-        },
-        {
-            "type": "irons_spellbooks:spell_power",
-            "modifier": {
-                "name": "tiered:common_armor_7",
-                "operation": "MULTIPLY_BASE",
-                "amount": -0.01
+                "operation": "ADDITION",
+                "amount": -0.5
             },
             "optional_equipment_slots": [
                 "FEET",

@@ -4,13 +4,13 @@
         {
             "tag": "minecraft:pickaxes"
         },
-		{
+        {
             "tag": "c:shovels"
         },
-		{
+        {
             "tag": "c:hoes"
         },
-		{
+        {
             "tag": "forge:tools/paxels"
         }
     ],

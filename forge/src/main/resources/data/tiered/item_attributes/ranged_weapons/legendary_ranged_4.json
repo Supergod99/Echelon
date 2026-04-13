@@ -17,17 +17,6 @@
     },
     "attributes": [
         {
-            "type": "brutality:lethality",
-            "modifier": {
-                "name": "tiered:legendary_ranged_4",
-                "operation": "ADDITION",
-                "amount": 6.0
-            },
-            "optional_equipment_slots": [
-                "MAINHAND"
-            ]
-        },
-        {
             "type": "attributeslib:arrow_damage",
             "modifier": {
                 "name": "tiered:legendary_ranged_4",

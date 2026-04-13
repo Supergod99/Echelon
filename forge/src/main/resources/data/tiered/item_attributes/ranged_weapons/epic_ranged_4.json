@@ -17,17 +17,6 @@
     },
     "attributes": [
         {
-            "type": "brutality:lethality",
-            "modifier": {
-                "name": "tiered:epic_ranged_4",
-                "operation": "ADDITION",
-                "amount": 4.0
-            },
-            "optional_equipment_slots": [
-                "MAINHAND"
-            ]
-        },
-        {
             "type": "attributeslib:arrow_damage",
             "modifier": {
                 "name": "tiered:epic_ranged_4",

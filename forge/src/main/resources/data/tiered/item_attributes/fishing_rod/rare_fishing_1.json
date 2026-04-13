@@ -1,21 +1,21 @@
 {
-  "id": "tiered:rare_fishing_1",
-  "weight": 15,
-  "style": {
-    "color": "blue"
-  },
-  "attributes": [
-    {
-      "type": "generic.luck",
-      "modifier": {
-        "name": "tiered:rare_fishing_1",
-        "operation": "ADDITION",
-        "amount": 0.5
-      },
-      "optional_equipment_slots": [
-        "MAINHAND",
-        "OFFHAND"
-      ]
-    }
-  ]
+    "id": "tiered:rare_fishing_1",
+    "weight": 15,
+    "style": {
+        "color": "blue"
+    },
+    "attributes": [
+        {
+            "type": "generic.luck",
+            "modifier": {
+                "name": "tiered:rare_fishing_1",
+                "operation": "ADDITION",
+                "amount": 0.5
+            },
+            "optional_equipment_slots": [
+                "MAINHAND",
+                "OFFHAND"
+            ]
+        }
+    ]
 }

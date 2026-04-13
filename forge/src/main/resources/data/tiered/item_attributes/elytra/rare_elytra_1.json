@@ -1,7 +1,6 @@
 {
     "id": "tiered:rare_elytra_1",
-    "verifiers": [
-    ],
+    "verifiers": [],
     "weight": 15,
     "style": {
         "color": "blue"

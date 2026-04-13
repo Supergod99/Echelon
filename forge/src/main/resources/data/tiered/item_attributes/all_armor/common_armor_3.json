@@ -59,34 +59,6 @@
     },
     "attributes": [
         {
-            "type": "combatroll:distance",
-            "modifier": {
-                "name": "tiered:common_armor_3",
-                "operation": "ADDITION",
-                "amount": 0.25
-            },
-            "optional_equipment_slots": [
-                "FEET",
-                "LEGS",
-                "CHEST",
-                "HEAD"
-            ]
-        },
-        {
-            "type": "combatroll:recharge",
-            "modifier": {
-                "name": "tiered:common_armor_3",
-                "operation": "MULTIPLY_BASE",
-                "amount": 0.05
-            },
-            "optional_equipment_slots": [
-                "FEET",
-                "LEGS",
-                "CHEST",
-                "HEAD"
-            ]
-        },
-        {
             "type": "tiered:generic.durable",
             "modifier": {
                 "name": "tiered:common_armor_3",

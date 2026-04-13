@@ -7,7 +7,7 @@
         {
             "tag": "c:crossbows"
         },
-		{
+        {
             "tag": "too_many_bows:bows"
         }
     ],
@@ -25,7 +25,7 @@
             },
             "optional_equipment_slots": [
                 "MAINHAND",
-				"OFFHAND"
+                "OFFHAND"
             ]
         },
         {
@@ -37,7 +37,7 @@
             },
             "optional_equipment_slots": [
                 "MAINHAND",
-				"OFFHAND"
+                "OFFHAND"
             ]
         }
     ]

@@ -29,17 +29,6 @@
             "optional_equipment_slots": [
                 "MAINHAND"
             ]
-        },
-        {
-            "type": "reach-entity-attributes:reach",
-            "modifier": {
-                "name": "tiered:mythic_tool_1",
-                "operation": "ADDITION",
-                "amount": -3.0
-            },
-            "optional_equipment_slots": [
-                "MAINHAND"
-            ]
         }
     ]
 }

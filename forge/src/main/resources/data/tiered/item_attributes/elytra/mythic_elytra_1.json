@@ -1,7 +1,6 @@
 {
     "id": "tiered:mythic_elytra_1",
-    "verifiers": [
-    ],
+    "verifiers": [],
     "weight": 0,
     "style": {
         "color": "red"

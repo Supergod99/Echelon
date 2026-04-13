@@ -1,33 +1,33 @@
 {
-  "id": "tiered:legendary_fishing_2",
-  "weight": 3,
-  "style": {
-    "color": "gold"
-  },
-  "attributes": [
-    {
-      "type": "tiered:generic.durable",
-      "modifier": {
-        "name": "tiered:legendary_fishing_2",
-        "operation": "MULTIPLY_BASE",
-        "amount": 0.3
-      },
-      "optional_equipment_slots": [
-        "MAINHAND",
-        "OFFHAND"
-      ]
+    "id": "tiered:legendary_fishing_2",
+    "weight": 3,
+    "style": {
+        "color": "gold"
     },
-    {
-      "type": "generic.luck",
-      "modifier": {
-        "name": "tiered:legendary_fishing_2",
-        "operation": "ADDITION",
-        "amount": 1
-      },
-      "optional_equipment_slots": [
-        "MAINHAND",
-        "OFFHAND"
-      ]
-    }
-  ]
+    "attributes": [
+        {
+            "type": "tiered:generic.durable",
+            "modifier": {
+                "name": "tiered:legendary_fishing_2",
+                "operation": "MULTIPLY_BASE",
+                "amount": 0.3
+            },
+            "optional_equipment_slots": [
+                "MAINHAND",
+                "OFFHAND"
+            ]
+        },
+        {
+            "type": "generic.luck",
+            "modifier": {
+                "name": "tiered:legendary_fishing_2",
+                "operation": "ADDITION",
+                "amount": 1
+            },
+            "optional_equipment_slots": [
+                "MAINHAND",
+                "OFFHAND"
+            ]
+        }
+    ]
 }

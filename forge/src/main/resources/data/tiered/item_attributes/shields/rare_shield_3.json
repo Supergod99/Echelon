@@ -23,30 +23,6 @@
     },
     "attributes": [
         {
-            "type": "combatroll:distance",
-            "modifier": {
-                "name": "tiered:rare_shield_3",
-                "operation": "ADDITION",
-                "amount": 0.5
-            },
-            "optional_equipment_slots": [
-                "MAINHAND",
-                "OFFHAND"
-            ]
-        },
-        {
-            "type": "combatroll:recharge",
-            "modifier": {
-                "name": "tiered:rare_shield_3",
-                "operation": "MULTIPLY_BASE",
-                "amount": 0.08
-            },
-            "optional_equipment_slots": [
-                "MAINHAND",
-                "OFFHAND"
-            ]
-        },
-        {
             "type": "tiered:generic.durable",
             "modifier": {
                 "name": "tiered:rare_shield_3",

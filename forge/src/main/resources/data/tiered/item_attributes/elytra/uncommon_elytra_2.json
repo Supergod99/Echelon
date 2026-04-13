@@ -1,7 +1,6 @@
 {
     "id": "tiered:uncommon_elytra_2",
-    "verifiers": [
-    ],
+    "verifiers": [],
     "weight": 35,
     "style": {
         "color": "dark_green"

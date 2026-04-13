@@ -27,7 +27,7 @@
             "modifier": {
                 "name": "tiered:legendary_shield_4",
                 "operation": "ADDITION",
-                "amount": 0.010
+                "amount": 0.01
             },
             "optional_equipment_slots": [
                 "MAINHAND",

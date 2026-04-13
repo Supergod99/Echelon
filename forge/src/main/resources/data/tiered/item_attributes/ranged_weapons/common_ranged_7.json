@@ -7,7 +7,7 @@
         {
             "tag": "c:crossbows"
         },
-		{
+        {
             "tag": "too_many_bows:bows"
         }
     ],
@@ -21,7 +21,7 @@
             "modifier": {
                 "name": "tiered:common_ranged_7",
                 "operation": "MULTIPLY_BASE",
-                "amount": 0.10
+                "amount": 0.1
             },
             "optional_equipment_slots": [
                 "MAINHAND"

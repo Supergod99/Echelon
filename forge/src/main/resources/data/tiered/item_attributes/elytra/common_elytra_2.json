@@ -1,33 +1,32 @@
 {
-  "id": "tiered:common_elytra_2",
-  "verifiers": [
-  ],
-  "weight": 50,
-  "style": {
-    "color": "gray"
-  },
-  "attributes": [
-    {
-      "type": "tiered:generic.durable",
-      "modifier": {
-        "name": "tiered:common_elytra_2",
-        "operation": "MULTIPLY_BASE",
-        "amount": -0.05
-      },
-      "optional_equipment_slots": [
-        "CHEST"
-      ]
+    "id": "tiered:common_elytra_2",
+    "verifiers": [],
+    "weight": 50,
+    "style": {
+        "color": "gray"
     },
-    {
-      "type": "generic.movement_speed",
-      "modifier": {
-        "name": "tiered:common_elytra_2",
-        "operation": "MULTIPLY_BASE",
-        "amount": -0.035
-      },
-      "optional_equipment_slots": [
-        "CHEST"
-      ]
-    }
-  ]
+    "attributes": [
+        {
+            "type": "tiered:generic.durable",
+            "modifier": {
+                "name": "tiered:common_elytra_2",
+                "operation": "MULTIPLY_BASE",
+                "amount": -0.05
+            },
+            "optional_equipment_slots": [
+                "CHEST"
+            ]
+        },
+        {
+            "type": "generic.movement_speed",
+            "modifier": {
+                "name": "tiered:common_elytra_2",
+                "operation": "MULTIPLY_BASE",
+                "amount": -0.035
+            },
+            "optional_equipment_slots": [
+                "CHEST"
+            ]
+        }
+    ]
 }

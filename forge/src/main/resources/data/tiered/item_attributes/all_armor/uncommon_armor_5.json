@@ -59,11 +59,11 @@
     },
     "attributes": [
         {
-            "type": "irons_spellbooks:blood_spell_power",
+            "type": "generic.movement_speed",
             "modifier": {
                 "name": "tiered:uncommon_armor_5",
-                "operation": "MULTIPLY_BASE",
-                "amount": 0.1
+                "operation": "ADDITION",
+                "amount": 0.0045
             },
             "optional_equipment_slots": [
                 "FEET",
@@ -73,25 +73,11 @@
             ]
         },
         {
-            "type": "irons_spellbooks:eldritch_spell_power",
+            "type": "generic.armor",
             "modifier": {
                 "name": "tiered:uncommon_armor_5",
-                "operation": "MULTIPLY_BASE",
-                "amount": 0.1
-            },
-            "optional_equipment_slots": [
-                "FEET",
-                "LEGS",
-                "CHEST",
-                "HEAD"
-            ]
-        },
-        {
-            "type": "irons_spellbooks:spell_power",
-            "modifier": {
-                "name": "tiered:uncommon_armor_5",
-                "operation": "MULTIPLY_BASE",
-                "amount": -0.02
+                "operation": "ADDITION",
+                "amount": -1.0
             },
             "optional_equipment_slots": [
                 "FEET",

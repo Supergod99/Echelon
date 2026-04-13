@@ -23,30 +23,6 @@
     },
     "attributes": [
         {
-            "type": "combatroll:distance",
-            "modifier": {
-                "name": "tiered:legendary_shield_3",
-                "operation": "ADDITION",
-                "amount": 1.0
-            },
-            "optional_equipment_slots": [
-                "MAINHAND",
-                "OFFHAND"
-            ]
-        },
-        {
-            "type": "combatroll:recharge",
-            "modifier": {
-                "name": "tiered:legendary_shield_3",
-                "operation": "MULTIPLY_BASE",
-                "amount": 0.11
-            },
-            "optional_equipment_slots": [
-                "MAINHAND",
-                "OFFHAND"
-            ]
-        },
-        {
             "type": "tiered:generic.durable",
             "modifier": {
                 "name": "tiered:legendary_shield_3",
