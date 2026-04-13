@@ -125,6 +125,8 @@ README and related docs will describe this branch as the standalone Echelon edit
 
 The docs should mention that standalone bundled reforges are limited to vanilla, Echelon, and Apothic Attributes by default, while datapacks or optional mod mappings can extend behavior.
 
+The README should not describe Linggango as the only intended runtime target for this branch.
+
 ## Testing
 
 Verification should include:

@@ -1,6 +1,6 @@
 # Echelon
 
-**Echelon** is a fork of **Tierify**, by ElocinDev (MIT LICENSED), made originally for Linggango. This mod adds in unique features, mechanics, custom animated gradients, and more. This is my first project, so expect bugs and other inconstistencies. I will try my best to fix them all!
+**Echelon** is a standalone Forge 1.20.1 reforge and item-progression mod based on Tierify. It adds tiered reforges, perfect rolls, custom tooltip presentation, salvage progression, stars, Apex upgrades, and datapack-driven configuration.
 
 ### Differences
 Echelon expands upon Tierify's existing system with the following changes
@@ -12,7 +12,7 @@ Echelon expands upon Tierify's existing system with the following changes
     At mythic tier, this reforge would grant:
       +5 Armor, -8% Speed
 
-  A total of over 100 reforges have been added if you play with all the optional dependencies!
+  The bundled standalone reforges use vanilla, Echelon, and Apothic Attributes by default. Optional datapacks or compatibility mappings can extend which items participate in reforging when other mods are installed.
 
   **Perfect Mechanic**
   Some of the reforge downsides can really scale up hard, especially at the apex tiers. This is why a new mechanic has been added, the *Perfect Roll*. Everytime an item is reforged, it has a base 2% chance (configurable) to roll as "Perfect" - and you will notice the downside of the item has been removed, as well as a perfect label appended beneath the item and a custom border. 
@@ -48,7 +48,12 @@ Echelon expands upon Tierify's existing system with the following changes
   Additional config switches control loot-container rolls (`lootContainerModifier` + `lootContainerModifierChance`), crafting/merchant rolls, perfect roll chance, and whether damaged items can be reforged (`allowReforgingDamaged`). Reforge weight scaling can be adjusted with the reforge, LevelZ, and luck modifiers.
 
 ### Installation
-Echelon is a Forge mod for Minecraft 1.20.1. It requires Forge 47.4.10+ and AttributesLib (Apothic Attributes). Optional compat is detected at runtime for mods like Tooltip Overhaul, Obscure API, Curios, Armageddon Mod, Brutality, and others.
+Echelon is a Forge mod for Minecraft 1.20.1. It requires:
+
+- Forge 47.4.10+
+- Apothic Attributes / AttributesLib
+
+Tooltip Overhaul, JEI, EMI, Obscure API, Curios, and modded item mappings are optional compatibility paths. The mod loads and renders its own tooltip borders without Tooltip Overhaul installed.
 
 ### Customizations
 
@@ -91,7 +96,20 @@ Echelon is entirely data-driven, which means you can add, modify, and remove mod
 
 Echelon adds in one more custom attribute that can be utilized on top of the three tiered currently provides: Dig Speed, Crit chance, Durability, and our very own Fortune. Dig Speed increases the speed of your block breaking (think: haste), Crit Chance offers an additional random chance to crit when using a tool and Durability increases, who would have thought it, the durability of an item. Fortune is identical to vanilla fortune, but can be utilized on modifiers now.
 
-Types: `generic.armor`, `generic.armor_toughness`, `generic.dig_speed`, `tiered:generic.durable`, `generic.max_health`, `generic.movement_speed`, `reach-entity-attributes:reach`, `generic.luck`, `generic.attack_damage`, `tiered:generic.crit_chance`, `reach-entity-attributes:attack_range`, `tiered:generic.range_attack_damage`,`tiered:generic.fortune`
+Types:
+- `generic.armor`
+- `generic.armor_toughness`
+- `generic.dig_speed`
+- `generic.max_health`
+- `generic.movement_speed`
+- `generic.luck`
+- `generic.attack_damage`
+- `tiered:generic.durable`
+- `tiered:generic.crit_chance`
+- `tiered:generic.range_attack_damage`
+- `tiered:generic.fortune`
+- `attributeslib:draw_speed`
+- `attributeslib:arrow_velocity`
 
 #### Verifiers
 
