@@ -371,6 +371,25 @@ public class SalvageMenu extends AbstractContainerMenu {
         clearAllUpgradeProgress(player);
     }
 
+    public static void copySalvageData(Player original, Player clone) {
+        if (original == null || clone == null) return;
+
+        CompoundTag originalData = original.getPersistentData();
+        CompoundTag cloneData = clone.getPersistentData();
+
+        if (originalData.contains(SALVAGE_LEVEL_KEY, Tag.TAG_INT)) {
+            cloneData.putInt(SALVAGE_LEVEL_KEY, originalData.getInt(SALVAGE_LEVEL_KEY));
+        } else {
+            cloneData.remove(SALVAGE_LEVEL_KEY);
+        }
+
+        if (originalData.contains(SALVAGE_PROGRESS_KEY, Tag.TAG_COMPOUND)) {
+            cloneData.put(SALVAGE_PROGRESS_KEY, originalData.getCompound(SALVAGE_PROGRESS_KEY).copy());
+        } else {
+            cloneData.remove(SALVAGE_PROGRESS_KEY);
+        }
+    }
+
     public static int getConfigMaxTier() {
         int max = ForgeTierifyConfig.salvageMaxTier();
         if (max < 1) return 1;

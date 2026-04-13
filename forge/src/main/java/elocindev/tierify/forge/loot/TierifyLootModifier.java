@@ -15,7 +15,6 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.loot.LootContext;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 import net.minecraftforge.common.loot.IGlobalLootModifier;
 import net.minecraftforge.common.loot.LootModifier;
@@ -75,15 +74,16 @@ public class TierifyLootModifier extends LootModifier {
 
         RandomSource rng = context != null ? context.getRandom() : RandomSource.create();
         ResourceLocation dimensionId = context != null ? context.getLevel().dimension().location() : null;
+        boolean isLootContainerContext = isLootContainerContext(context);
 
-        if (ForgeTierifyConfig.lootContainerModifier()) {
+        if (isLootContainerContext && ForgeTierifyConfig.lootContainerModifier()) {
             for (ItemStack stack : generatedLoot) {
                 if (!rollLootContainerChance(rng)) continue;
                 ForgeTieredAttributeSubscriber.applyTierFromEntityWeights(stack, dimensionId, rng);
             }
         }
 
-        if (ForgeTierifyConfig.reforgeMaterialLootModifier()) {
+        if (isLootContainerContext && ForgeTierifyConfig.reforgeMaterialLootModifier()) {
             maybeAddReforgeMaterial(generatedLoot, context, rng, dimensionId);
         }
 
@@ -174,8 +174,7 @@ public class TierifyLootModifier extends LootModifier {
                 return true;
             }
         }
-        if (context.getParamOrNull(LootContextParams.THIS_ENTITY) != null) return false;
-        return context.getParamOrNull(LootContextParams.BLOCK_ENTITY) != null;
+        return false;
     }
 
     private static boolean isContainerLootPath(String path) {

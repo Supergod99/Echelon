@@ -4,6 +4,7 @@ import elocindev.tierify.TierifyCommon;
 import elocindev.tierify.forge.ForgeTieredAttributeSubscriber;
 import elocindev.tierify.forge.apex.ApexActiveEffects;
 import elocindev.tierify.forge.config.ForgeTierifyConfig;
+import elocindev.tierify.forge.screen.SalvageMenu;
 import elocindev.tierify.forge.util.ForgeAttributeHelper;
 import elocindev.tierify.server.SetBonusTickHandler;
 import net.minecraft.nbt.CompoundTag;
@@ -41,6 +42,12 @@ public final class ForgeGameplayEventSubscriber {
     private static final int SLOW_TIME_TICK_STRIDE = 5;
 
     private ForgeGameplayEventSubscriber() {}
+
+    @SubscribeEvent
+    public static void onPlayerClone(PlayerEvent.Clone event) {
+        if (event.getEntity().level().isClientSide()) return;
+        SalvageMenu.copySalvageData(event.getOriginal(), event.getEntity());
+    }
 
     @SubscribeEvent
     public static void onItemCrafted(PlayerEvent.ItemCraftedEvent event) {
