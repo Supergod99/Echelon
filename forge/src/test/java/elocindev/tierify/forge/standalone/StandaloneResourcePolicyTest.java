@@ -253,11 +253,14 @@ class StandaloneResourcePolicyTest {
     @Test
     void geckolibAndInfernalSovereignContentAreRemoved() throws IOException {
         Path root = locateForgeProjectRoot();
-        List<Path> files;
-        try (Stream<Path> stream = Files.walk(resolveProjectFile(root, "src"))) {
-            files = stream.filter(Files::isRegularFile)
-                    .filter(StandaloneResourcePolicyTest::isTextishFile)
-                    .collect(Collectors.toList());
+        List<Path> files = new java.util.ArrayList<>();
+        for (String subdir : List.of("src/main/java", "src/main/resources")) {
+            Path scanRoot = resolveProjectFile(root, subdir);
+            try (Stream<Path> stream = Files.walk(scanRoot)) {
+                files.addAll(stream.filter(Files::isRegularFile)
+                        .filter(StandaloneResourcePolicyTest::isTextishFile)
+                        .collect(Collectors.toList()));
+            }
         }
 
         for (Path file : files) {
