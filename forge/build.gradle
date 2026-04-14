@@ -49,10 +49,6 @@ dependencies {
     minecraft "net.minecraftforge:forge:${rootProject.minecraft_version}-${rootProject.forge_version}"
     implementation fg.deobf("curse.maven:placebo-283644:6274231")
     implementation fg.deobf("curse.maven:apothic-attributes-898963:5634071")
-    implementation fg.deobf("curse.maven:lionfishapi-1001614:5922047")
-    implementation fg.deobf("curse.maven:clothapi-348521:5729105")
-    implementation fg.deobf("curse.maven:bettercombat-639842:5625757")
-    implementation fg.deobf("curse.maven:citadel-331936:6702068")
     compileOnly fg.deobf("curse.maven:tooltipoverhaul-1327508:7096296")
     compileOnly fg.deobf("curse.maven:obscureAPI-638417:7171906")
     compileOnly fg.deobf("curse.maven:jei-238222:7391695")

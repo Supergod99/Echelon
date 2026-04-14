@@ -36,6 +36,13 @@ class StandaloneResourcePolicyTest {
             "^tiered:(common|uncommon|rare|epic|legendary|mythic)_(armor|tool|melee|ranged|fishing|shield|elytra)_(\\d+)$"
     );
     private static final Pattern MYTHIC_ARMOR_ID_PATTERN = Pattern.compile("mythic_armor_(\\d+)");
+    private static final Pattern RUNTIME_CURSE_MAVEN_DEPENDENCY = Pattern.compile(
+            "^(implementation|runtimeOnly)\\s+fg\\.deobf\\(\"curse\\.maven:([^:\"]+):[^\"\n]+\"\\)"
+    );
+    private static final Set<String> ALLOWED_RUNTIME_CURSE_MAVEN_ARTIFACTS = Set.of(
+            "apothic-attributes-898963",
+            "placebo-283644"
+    );
     private static final Set<String> STANDALONE_TOOLTIP_DECIDERS = Set.of(
             "tiered:limestone_chunk",
             "tiered:pyrite_chunk",
@@ -88,8 +95,12 @@ class StandaloneResourcePolicyTest {
 
         for (String line : lines) {
             String trimmed = line.trim();
-            assertFalse(trimmed.startsWith("runtimeOnly fg.deobf(\"curse.maven:"),
-                    "Found runtimeOnly CurseMaven dependency: " + trimmed);
+            Matcher runtimeDependency = RUNTIME_CURSE_MAVEN_DEPENDENCY.matcher(trimmed);
+            if (runtimeDependency.matches()) {
+                String artifact = runtimeDependency.group(2);
+                assertTrue(ALLOWED_RUNTIME_CURSE_MAVEN_ARTIFACTS.contains(artifact),
+                        "Found standalone-forbidden runtime CurseMaven dependency: " + trimmed);
+            }
             assertFalse(trimmed.contains("geckolib-388172"),
                     "Found Geckolib dependency: " + trimmed);
             assertFalse(trimmed.startsWith("runtimeOnly") && trimmed.contains("tooltipoverhaul-1327508"),
