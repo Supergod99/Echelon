@@ -4,6 +4,7 @@ import com.mojang.datafixers.util.Either;
 import elocindev.tierify.TierifyConstants;
 import elocindev.tierify.forge.compat.TooltipOverhaulCompatForge;
 import elocindev.tierify.forge.config.ForgeTierifyConfig;
+import elocindev.tierify.forge.item.ReforgeAddition;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.locale.Language;
@@ -107,6 +108,7 @@ public class ForgeHooksClientMixin {
         if (!ForgeTierifyConfig.tieredTooltip()) return false;
         if (TooltipOverhaulCompatForge.isLoaded()) return false;
         if (stack == null || stack.isEmpty()) return false;
+        if (stack.getItem() instanceof ReforgeAddition) return true;
 
         CompoundTag tiered = stack.getTagElement(TierifyConstants.NBT_SUBTAG_KEY);
         if (tiered == null) return false;

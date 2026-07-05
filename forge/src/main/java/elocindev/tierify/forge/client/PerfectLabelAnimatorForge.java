@@ -3,6 +3,7 @@ package elocindev.tierify.forge.client;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
 
 /**
  * Forge port of Fabric's PerfectLabelAnimator.
@@ -114,7 +115,7 @@ public final class PerfectLabelAnimatorForge {
             }
 
             Style style = Style.EMPTY
-                    .withColor(rgb)
+                    .withColor(TextColor.fromRgb(rgb))
                     .withBold(true)
                     .withItalic(false);
 

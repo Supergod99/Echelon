@@ -40,6 +40,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Forge tooltip hook:
@@ -60,8 +61,8 @@ public abstract class GuiGraphicsTooltipBorderMixin {
     @Unique private static final int TIERIFY_STAR_BAND_PX = 12;
     @Unique private static final int TIERIFY_SETBONUS_EXTRA_PX = 6; // Extra header band height for Set Bonus label
     @Unique private static final int TIERIFY_PERFECT_SPACER_PX = 6;
-    @Unique private static final int SET_BONUS_CREST_SIZE = 8;
-    @Unique private static final int SET_BONUS_CREST_TEX_SIZE = 8;
+    @Unique private static final int SET_BONUS_CREST_TEX_W = 10;
+    @Unique private static final int SET_BONUS_CREST_TEX_H = 14;
     @Unique private static final float SET_BONUS_CREST_SCALE = 0.6f;
     @Unique private static final int SET_BONUS_CREST_GAP = 4;
     @Unique private static final int STAR_RIBBON_GAP_PX = 2;
@@ -129,6 +130,8 @@ public abstract class GuiGraphicsTooltipBorderMixin {
             ResourceLocation.fromNamespaceAndPath("tiered", "textures/gui/star.png");
     @Unique private static final ResourceLocation PERFECT_STAR_ICON =
             ResourceLocation.fromNamespaceAndPath("tiered", "textures/gui/perfect_star.png");
+    @Unique private static final ResourceLocation SET_BONUS_CREST =
+            ResourceLocation.fromNamespaceAndPath("tiered", "textures/gui/setbonusicon2.png");
     @Unique private static final ResourceLocation SET_BONUS_CREST_ACTIVE =
             ResourceLocation.fromNamespaceAndPath("tiered", "textures/gui/setbonusicon_active.png");
     @Unique private static final ResourceLocation APEX_CREST =
@@ -255,9 +258,18 @@ public abstract class GuiGraphicsTooltipBorderMixin {
         if (stack == null || stack.isEmpty()) return components;
 
         CompoundTag tiered = stack.getTagElement(TierifyConstants.NBT_SUBTAG_KEY);
-        if (tiered == null) return components;
+        boolean isReforgeMaterial = stack.getItem() instanceof ReforgeAddition;
+        if (tiered == null && !isReforgeMaterial) return components;
 
-        boolean isPerfect = tiered.getBoolean("Perfect");
+        String tierId = "";
+        boolean isPerfect = false;
+        boolean hasTieredTooltip = isReforgeMaterial;
+        if (tiered != null) {
+            tierId = tiered.getString(TierifyConstants.NBT_SUBTAG_DATA_KEY);
+            isPerfect = tiered.getBoolean("Perfect");
+            hasTieredTooltip = isReforgeMaterial || isPerfect || (tierId != null && !tierId.isEmpty());
+        }
+        if (!hasTieredTooltip) return components;
 
         if (TooltipOverhaulCompatForge.isLoaded()) {
             if (!isPerfect) return components;
@@ -274,8 +286,6 @@ public abstract class GuiGraphicsTooltipBorderMixin {
             return copy;
         }
 
-        String tierId = tiered.getString(TierifyConstants.NBT_SUBTAG_DATA_KEY);
-
         Font font = Minecraft.getInstance().font;
         int maxWidth = 0;
         if (font != null) {
@@ -288,7 +298,7 @@ public abstract class GuiGraphicsTooltipBorderMixin {
         List<ClientTooltipComponent> copy = new ArrayList<>(components);
 
         // 1) Reserve Fabric-style top padding.
-        int topSpacerHeight = TIERIFY_BASE_SPACER_PX;
+        int topSpacerHeight = TIERIFY_BASE_SPACER_PX + tierify$getTopHeaderBandHeight(stack, tierId);
         if (topSpacerHeight > 0) {
             copy.add(0, new TierifySpacerComponent(topSpacerHeight));
         }
@@ -343,11 +353,14 @@ public abstract class GuiGraphicsTooltipBorderMixin {
         if (stack == null || stack.isEmpty()) return;
 
         CompoundTag tiered = stack.getTagElement(TierifyConstants.NBT_SUBTAG_KEY);
-        if (tiered == null) return;
-
-        String tierId = tiered.getString(TierifyConstants.NBT_SUBTAG_DATA_KEY);
-        boolean isPerfect = tiered.getBoolean("Perfect");
-        if ((tierId == null || tierId.isEmpty()) && !isPerfect) return;
+        boolean isReforgeMaterial = stack.getItem() instanceof ReforgeAddition;
+        String tierId = "";
+        boolean isPerfect = false;
+        if (tiered != null) {
+            tierId = tiered.getString(TierifyConstants.NBT_SUBTAG_DATA_KEY);
+            isPerfect = tiered.getBoolean("Perfect");
+        }
+        if ((tierId == null || tierId.isEmpty()) && !isPerfect && !isReforgeMaterial) return;
 
         int titleIndex = (components.get(0) instanceof TierifySpacerComponent) ? 1 : 0;
         if (titleIndex >= components.size()) return;
@@ -545,6 +558,14 @@ public abstract class GuiGraphicsTooltipBorderMixin {
         return y;
     }
 
+    @Unique
+    private static int tierify$getTopHeaderBandHeight(ItemStack stack, String tierId) {
+        if (stack == null || stack.isEmpty()) return 0;
+        if (StarApexUtils.isApex(stack)) return TIERIFY_STAR_BAND_PX;
+        if (tierId == null || !tierId.startsWith("tiered:mythic")) return 0;
+        return StarApexUtils.getStars(stack) > 0 ? TIERIFY_STAR_BAND_PX : 0;
+    }
+
 
     private static void renderSetBonusLabel(GuiGraphics gg, Font font, int x, int y, int w, List<ClientTooltipComponent> components, ItemStack stack, String tierId, int titleTextY) {
         Component label = buildSetBonusLabel(stack, tierId);
@@ -656,17 +677,18 @@ public abstract class GuiGraphicsTooltipBorderMixin {
         if (header == null) return;
 
         int textWidth = font.width(header);
-        int iconSize = SET_BONUS_CREST_SIZE;
+        int iconW = SET_BONUS_CREST_TEX_W;
+        int iconH = SET_BONUS_CREST_TEX_H;
 
         int iconX = x + textWidth + SET_BONUS_CREST_GAP - 2;
-        int maxX = x + w - iconSize - 2;
+        int maxX = x + w - iconW - 2;
         if (iconX > maxX) iconX = Math.max(x + 2, maxX);
 
         int lineY = Math.round(textTopYForIndex(y, components, headerIndex));
-        int iconY = lineY + (font.lineHeight - iconSize) / 2 - 2;
+        int iconY = lineY + (font.lineHeight - iconH) / 2 - 2;
 
         boolean active = isSetBonusActive(stack, tierId);
-        drawSetBonusCrest(gg, iconX, iconY, iconSize, active);
+        drawSetBonusCrest(gg, iconX, iconY, iconW, iconH, active);
     }
 
     private void renderStarsRibbon(GuiGraphics gg,
@@ -882,7 +904,7 @@ public abstract class GuiGraphicsTooltipBorderMixin {
         if (player == null) return false;
 
         EquipmentSlot slot = armor.getEquipmentSlot();
-        return player.getItemBySlot(slot) == stack;
+        return isEquippedArmorStack(player, slot, stack);
     }
 
     private static boolean isSetBonusActive(ItemStack stack, String tierId) {
@@ -962,25 +984,32 @@ public abstract class GuiGraphicsTooltipBorderMixin {
         font.drawInBatch(prefix, prefixX, y, overlayColor, false, matrix, buffer, Font.DisplayMode.NORMAL, 0, 15728880);
     }
 
-    private static void drawSetBonusCrest(GuiGraphics gg, int x, int y, int size, boolean active) {
-        int renderSize = Math.max(1, Math.round(size * SET_BONUS_CREST_SCALE));
-        int offset = (size - renderSize) / 2;
-        int drawX = x + offset;
-        int drawY = y + offset;
+    private static void drawSetBonusCrest(GuiGraphics gg, int x, int y, int width, int height, boolean active) {
+        int renderW = Math.max(1, Math.round(width * SET_BONUS_CREST_SCALE));
+        int renderH = Math.max(1, Math.round(height * SET_BONUS_CREST_SCALE));
+        int offsetX = (width - renderW) / 2;
+        int offsetY = (height - renderH) / 2;
+        int drawX = x + offsetX;
+        int drawY = y + offsetY;
+
+        RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.enableDepthTest();
 
         gg.pose().pushPose();
-        gg.pose().translate(drawX + (renderSize / 2.0f), drawY + (renderSize / 2.0f), 0.0f);
+        gg.pose().translate(drawX + (renderW / 2.0f), drawY + (renderH / 2.0f), baseZ());
         gg.pose().scale(SET_BONUS_CREST_SCALE, SET_BONUS_CREST_SCALE, 1.0f);
-        gg.pose().translate(-(SET_BONUS_CREST_TEX_SIZE / 2.0f), -(SET_BONUS_CREST_TEX_SIZE / 2.0f), 0.0f);
-        if (active) {
-            gg.blit(SET_BONUS_CREST_ACTIVE, 0, 0, 0, 0, SET_BONUS_CREST_TEX_SIZE, SET_BONUS_CREST_TEX_SIZE, SET_BONUS_CREST_TEX_SIZE, SET_BONUS_CREST_TEX_SIZE);
-        } else {
-            gg.fill(0, 0, SET_BONUS_CREST_TEX_SIZE, SET_BONUS_CREST_TEX_SIZE, 0xFF4A4A4A);
-            gg.fill(1, 1, SET_BONUS_CREST_TEX_SIZE - 1, SET_BONUS_CREST_TEX_SIZE - 1, 0xFF8A8A8A);
-            gg.fill(1, 1, SET_BONUS_CREST_TEX_SIZE - 1, 2, 0xFFB0B0B0);
-            gg.fill(1, 1, 2, SET_BONUS_CREST_TEX_SIZE - 1, 0xFFB0B0B0);
-        }
+        gg.pose().translate(-(SET_BONUS_CREST_TEX_W / 2.0f), -(SET_BONUS_CREST_TEX_H / 2.0f), 0.0f);
+        gg.blit(active ? SET_BONUS_CREST_ACTIVE : SET_BONUS_CREST,
+                0, 0,
+                0, 0,
+                SET_BONUS_CREST_TEX_W,
+                SET_BONUS_CREST_TEX_H,
+                SET_BONUS_CREST_TEX_W,
+                SET_BONUS_CREST_TEX_H);
         gg.pose().popPose();
+        RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
     }
 
     @Nullable
@@ -992,9 +1021,9 @@ public abstract class GuiGraphicsTooltipBorderMixin {
         Player player = Minecraft.getInstance().player;
         if (player == null) return null;
 
-        // Only show if the hovered stack IS the equipped stack instance.
+        // Forge often builds tooltip components from a stack copy, so fall back to the tier UUID.
         EquipmentSlot slot = armor.getEquipmentSlot();
-        if (player.getItemBySlot(slot) != stack) return null;
+        if (!isEquippedArmorStack(player, slot, stack)) return null;
 
         if (hasPerfectSetBonus(player, tierId)) {
             int pct = Math.round(ForgeTierifyConfig.armorSetPerfectBonusPercent() * 100.0f);
@@ -1025,6 +1054,27 @@ public abstract class GuiGraphicsTooltipBorderMixin {
             if (!tierId.equals(id)) return false;
         }
         return true;
+    }
+
+    private static boolean isEquippedArmorStack(Player player, EquipmentSlot slot, ItemStack stack) {
+        if (player == null || slot == null || stack == null || stack.isEmpty()) return false;
+        ItemStack equipped = player.getItemBySlot(slot);
+        if (equipped.isEmpty()) return false;
+        if (equipped == stack) return true;
+
+        UUID equippedTierUuid = getTierUuid(equipped);
+        UUID stackTierUuid = getTierUuid(stack);
+        if (equippedTierUuid != null && equippedTierUuid.equals(stackTierUuid)) return true;
+
+        return ItemStack.isSameItemSameTags(equipped, stack);
+    }
+
+    @Nullable
+    private static UUID getTierUuid(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return null;
+        CompoundTag tiered = stack.getTagElement(TierifyConstants.NBT_SUBTAG_KEY);
+        if (tiered == null || !tiered.hasUUID("TierUUID")) return null;
+        return tiered.getUUID("TierUUID");
     }
 
     private static boolean hasPerfectSetBonus(Player player, String tierId) {

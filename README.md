@@ -55,6 +55,20 @@ Echelon is a Forge mod for Minecraft 1.20.1. It requires:
 
 Tooltip Overhaul, JEI, EMI, Obscure API, Curios, and modded item mappings are optional compatibility paths. The mod loads and renders its own tooltip borders without Tooltip Overhaul installed.
 
+### Documentation
+
+Durable project documentation now lives under `docs/`:
+
+- `docs/CODEX_GUIDE.md` - project rules, commands, and entry points for future Codex work.
+- `docs/BLUEPRINT.md` - active architecture and gameplay surface.
+- `docs/TASKS.md` - durable follow-up tasks and validation backlog.
+- `docs/TEST_PLAN.md` - build, policy, client, and compat verification.
+- `docs/DECISIONS.md` - decisions that should survive task logs.
+- `docs/UPSTREAM_REFERENCE.md` - summarized upstream and historical migration context.
+- `docs/COMPAT_NOTES.md` - optional integration notes.
+- `docs/MIXIN_NOTES.md` - active mixin inventory and cautions.
+- `docs/FILE_TREE.md` - generated repository file tree.
+
 ### Customizations
 
 Echelon is entirely data-driven, which means you can add, modify, and remove modifiers as you see fit. The base path for modifiers is `data/modid/item_attributes`, and tiered modifiers are stored under the modid of tiered. Here's an example modifier called "Hasteful," which grants additional dig speed when any of the valid tools are held:

@@ -3,6 +3,7 @@ package elocindev.tierify.forge.client;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
 
 /**
  * Forge port of Fabric's TierGradientAnimator (palette + math parity).
@@ -112,7 +113,7 @@ public final class TierGradientAnimatorForge {
 
             int rgb = getColorFromGradient((int) animatedPos, palette);
 
-            Style style = Style.EMPTY.withColor(rgb);
+            Style style = Style.EMPTY.withColor(TextColor.fromRgb(rgb));
             if (bold) {
                 style = style.withBold(true);
             }
