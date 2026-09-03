@@ -30,6 +30,7 @@ import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TieredItem;
+import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.registries.ForgeRegistries;
 
@@ -100,6 +101,11 @@ public class ReforgeMenu extends AbstractContainerMenu {
             public boolean mayPlace(ItemStack stack) {
                 return !stack.isEmpty();
             }
+
+            @Override
+            public int getMaxStackSize() {
+                return 1;
+            }
         });
 
         addSlot(new Slot(inputs, 2, 115, 47) {
@@ -137,6 +143,8 @@ public class ReforgeMenu extends AbstractContainerMenu {
         ItemStack base = inputs.getItem(0);
         ItemStack target = inputs.getItem(1);
         ItemStack add = inputs.getItem(2);
+
+        if (target.getCount() != 1) return false;
 
         if (isStarCore(add)) {
             if (target.isEmpty()) return false;
@@ -187,20 +195,28 @@ public class ReforgeMenu extends AbstractContainerMenu {
             return required.contains(baseStack.getItem());
         }
 
-        if (matchesRepairIngredient(target, baseStack)) return true;
+        Ingredient repairIngredient = getRepairIngredient(target);
+        if (repairIngredient != null && repairIngredient.getItems().length > 0) {
+            return repairIngredient.test(baseStack);
+        }
 
         return baseStack.is(TAG_REFORGE_BASE_ITEM);
     }
 
     private static boolean matchesRepairIngredient(ItemStack target, ItemStack baseStack) {
+        Ingredient repairIngredient = getRepairIngredient(target);
+        return repairIngredient != null && repairIngredient.test(baseStack);
+    }
+
+    private static Ingredient getRepairIngredient(ItemStack target) {
         Item item = target.getItem();
         if (item instanceof TieredItem tool) {
-            return tool.getTier().getRepairIngredient().test(baseStack);
+            return tool.getTier().getRepairIngredient();
         }
         if (item instanceof ArmorItem armor) {
-            return armor.getMaterial().getRepairIngredient().test(baseStack);
+            return armor.getMaterial().getRepairIngredient();
         }
-        return false;
+        return null;
     }
 
     private static boolean isCleansing(ItemStack stack) {

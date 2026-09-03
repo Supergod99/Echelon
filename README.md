@@ -2,6 +2,19 @@
 
 **Echelon** is a fork of **Tierify**, by ElocinDev (MIT LICENSED), made originally for Linggango. This mod adds in unique features, mechanics, custom animated gradients, and more. This is my first project, so expect bugs and other inconstistencies. I will try my best to fix them all!
 
+### Documentation
+Developer and Codex-facing project docs live in [`docs/`](docs/):
+
+- [`CODEX_GUIDE.md`](docs/CODEX_GUIDE.md) - contributor guardrails and workflow.
+- [`BLUEPRINT.md`](docs/BLUEPRINT.md) - active architecture and gameplay surface.
+- [`TASKS.md`](docs/TASKS.md) - current durable task list.
+- [`TEST_PLAN.md`](docs/TEST_PLAN.md) - build, smoke, and manual validation.
+- [`DECISIONS.md`](docs/DECISIONS.md) - standing project decisions.
+- [`UPSTREAM_REFERENCE.md`](docs/UPSTREAM_REFERENCE.md) - Tiered, Tierify, and Fabric snapshot context.
+- [`COMPAT_NOTES.md`](docs/COMPAT_NOTES.md) - dependency and compatibility notes.
+- [`MIXIN_NOTES.md`](docs/MIXIN_NOTES.md) - active mixin inventory and rules.
+- [`FILE_TREE.md`](docs/FILE_TREE.md) - generated source tree inventory.
+
 ### Differences
 Echelon expands upon Tierify's existing system with the following changes
 
@@ -154,7 +167,8 @@ Example:
 #### Reforge
 
 Reforging items to get other tiers can be done at the anvil. There is a slot which is called "base" on the left and a slot called "addition" on the right.
-The addition slot can only contain items which are stated in each tier item tag (`tiered:reforge_tier_1`, `tiered:reforge_tier_2`, `tiered:reforge_tier_3`, `tiered:reforge_tier_4`, `tiered:reforge_tier_5`, `tiered:reforge_tier_6`). The base slot can contain the reforging item material item if existent, otherwise it can only contain `tiered:reforge_base_item` tag items. The base slot item can get changed via datapack, an example can be found below and has to get put in the `tiered:reforge_items` folder.
+The center target slot accepts exactly one item, including for stackable items added by other mods, so each reforge operation affects and charges for only one item.
+The addition slot can only contain items which are stated in each tier item tag (`tiered:reforge_tier_1`, `tiered:reforge_tier_2`, `tiered:reforge_tier_3`, `tiered:reforge_tier_4`, `tiered:reforge_tier_5`, `tiered:reforge_tier_6`). The base slot uses an explicit `tiered:reforge_items` mapping when one exists, otherwise it requires the target item's repair ingredient. Items in the `tiered:reforge_base_item` tag are accepted only when the target defines neither. The base slot item can get changed via datapack, an example can be found below and has to get put in the `tiered:reforge_items` folder.
 
 ```json
 {

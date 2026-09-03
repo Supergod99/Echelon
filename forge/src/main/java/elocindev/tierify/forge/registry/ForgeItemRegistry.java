@@ -5,8 +5,6 @@ import elocindev.tierify.forge.item.DescribedItem;
 import elocindev.tierify.forge.item.ReforgeAddition;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.item.SwordItem;
-import net.minecraft.world.item.Tiers;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -51,14 +49,6 @@ public final class ForgeItemRegistry {
                     "tooltip.tiered.apex_crux.title",
                     "tooltip.tiered.apex_crux.desc"
             ));
-    public static final RegistryObject<Item> PYREKINGS_EDICT =
-            ITEMS.register("pyrekings_edict", () -> new SwordItem(
-                    Tiers.NETHERITE,
-                    3,
-                    -2.4F,
-                    new Item.Properties().stacksTo(1).fireResistant()
-            ));
-
     // Optional: put them into a creative tab for testing (safe, removable later)
     @SubscribeEvent
     public static void onBuildCreativeTab(BuildCreativeModeTabContentsEvent e) {
