@@ -2,19 +2,6 @@
 
 **Echelon** is a fork of **Tierify**, by ElocinDev (MIT LICENSED), made originally for Linggango. This mod adds in unique features, mechanics, custom animated gradients, and more. This is my first project, so expect bugs and other inconstistencies. I will try my best to fix them all!
 
-### Documentation
-Developer and Codex-facing project docs live in [`docs/`](docs/):
-
-- [`CODEX_GUIDE.md`](docs/CODEX_GUIDE.md) - contributor guardrails and workflow.
-- [`BLUEPRINT.md`](docs/BLUEPRINT.md) - active architecture and gameplay surface.
-- [`TASKS.md`](docs/TASKS.md) - current durable task list.
-- [`TEST_PLAN.md`](docs/TEST_PLAN.md) - build, smoke, and manual validation.
-- [`DECISIONS.md`](docs/DECISIONS.md) - standing project decisions.
-- [`UPSTREAM_REFERENCE.md`](docs/UPSTREAM_REFERENCE.md) - Tiered, Tierify, and Fabric snapshot context.
-- [`COMPAT_NOTES.md`](docs/COMPAT_NOTES.md) - dependency and compatibility notes.
-- [`MIXIN_NOTES.md`](docs/MIXIN_NOTES.md) - active mixin inventory and rules.
-- [`FILE_TREE.md`](docs/FILE_TREE.md) - generated source tree inventory.
-
 ### Differences
 Echelon expands upon Tierify's existing system with the following changes
 
