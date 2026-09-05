@@ -55,20 +55,6 @@ Echelon is a Forge mod for Minecraft 1.20.1. It requires:
 
 Tooltip Overhaul, JEI, EMI, Obscure API, Curios, and modded item mappings are optional compatibility paths. The mod loads and renders its own tooltip borders without Tooltip Overhaul installed.
 
-### Documentation
-
-Durable project documentation now lives under `docs/`:
-
-- `docs/CODEX_GUIDE.md` - project rules, commands, and entry points for future Codex work.
-- `docs/BLUEPRINT.md` - active architecture and gameplay surface.
-- `docs/TASKS.md` - durable follow-up tasks and validation backlog.
-- `docs/TEST_PLAN.md` - build, policy, client, and compat verification.
-- `docs/DECISIONS.md` - decisions that should survive task logs.
-- `docs/UPSTREAM_REFERENCE.md` - summarized upstream and historical migration context.
-- `docs/COMPAT_NOTES.md` - optional integration notes.
-- `docs/MIXIN_NOTES.md` - active mixin inventory and cautions.
-- `docs/FILE_TREE.md` - generated repository file tree.
-
 ### Customizations
 
 Echelon is entirely data-driven, which means you can add, modify, and remove modifiers as you see fit. The base path for modifiers is `data/modid/item_attributes`, and tiered modifiers are stored under the modid of tiered. Here's an example modifier called "Hasteful," which grants additional dig speed when any of the valid tools are held:
@@ -186,7 +172,8 @@ Example:
 #### Reforge
 
 Reforging items to get other tiers can be done at the anvil. There is a slot which is called "base" on the left and a slot called "addition" on the right.
-The addition slot can only contain items which are stated in each tier item tag (`tiered:reforge_tier_1`, `tiered:reforge_tier_2`, `tiered:reforge_tier_3`, `tiered:reforge_tier_4`, `tiered:reforge_tier_5`, `tiered:reforge_tier_6`). The base slot can contain the reforging item material item if existent, otherwise it can only contain `tiered:reforge_base_item` tag items. The base slot item can get changed via datapack, an example can be found below and has to get put in the `tiered:reforge_items` folder.
+The center target slot accepts exactly one item, including for stackable items added by other mods, so each reforge operation affects and charges for only one item.
+The addition slot can only contain items which are stated in each tier item tag (`tiered:reforge_tier_1`, `tiered:reforge_tier_2`, `tiered:reforge_tier_3`, `tiered:reforge_tier_4`, `tiered:reforge_tier_5`, `tiered:reforge_tier_6`). The base slot uses an explicit `tiered:reforge_items` mapping when one exists, otherwise it requires the target item's repair ingredient. Items in the `tiered:reforge_base_item` tag are accepted only when the target defines neither. The base slot item can get changed via datapack, an example can be found below and has to get put in the `tiered:reforge_items` folder.
 
 ```json
 {

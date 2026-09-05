@@ -47,6 +47,7 @@ FABRIC_SNAPSHOT_BACKLOG.md
 bundle_echelon_context.py
 
 # local dev notes / scratch
+/docs/
 apex_todo.md
 SALVAGING_PLAN.md
 stars_javap*.txt

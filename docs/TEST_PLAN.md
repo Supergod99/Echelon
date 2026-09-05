@@ -40,6 +40,10 @@ Run `./gradlew compileJava --rerun-tasks --warning-mode all` when touching mixin
 
 - Reforge each tier material: Limestone, Pyrite, Galena, Charoite, Crown Topaz, and Painite.
 - Cleanse tiered gear with Cleansing Stone.
+- Confirm an explicit reforge mapping takes precedence over the target's repair ingredient.
+- Confirm a target with a non-empty repair ingredient accepts that ingredient and rejects generic `tiered:reforge_base_item` entries.
+- Confirm a target without an explicit mapping or repair ingredient accepts `tiered:reforge_base_item` entries.
+- With a stackable reforgeable item, confirm normal clicks and shift-clicks place only one target item and server validation rejects injected stacks.
 - Confirm damaged-item reforge behavior follows `allowReforgingDamaged`.
 - Confirm preview text matches applied modifiers, including Perfect negative suppression.
 - Salvage tiered gear into expected material tiers.

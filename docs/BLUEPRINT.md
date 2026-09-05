@@ -4,7 +4,7 @@ Echelon is a Forge-only item progression mod for Minecraft 1.20.1. It inherits T
 
 ## Architecture Overview
 
-- Reforge system: datapack-driven tier definitions are loaded from `data/tiered/item_attributes`, synced to clients, and applied through `ForgeTieredAttributeSubscriber`. Reforge materials gate tiers 1-6: Limestone, Pyrite, Galena, Charoite, Crown Topaz, and Painite. Cleansing Stone removes tier data through the reforge flow.
+- Reforge system: datapack-driven tier definitions are loaded from `data/tiered/item_attributes`, synced to clients, and applied through `ForgeTieredAttributeSubscriber`. Reforge materials gate tiers 1-6: Limestone, Pyrite, Galena, Charoite, Crown Topaz, and Painite. Cleansing Stone removes tier data through the reforge flow. The target slot and server validation require exactly one item. Base-item validation prefers an explicit reforge mapping, otherwise enforces a defined repair ingredient, and uses the generic reforge-base tag only when neither exists.
 - Salvage and salvage-upgrade system: `SalvageMenu`, `SalvageUpgradeMenu`, and their client screens support salvaging tiered gear into reforge materials, config-driven odds, persisted player salvage level, partial upgrade deposits, and upgrade costs.
 - Stars and Apex system: `StarApexUtils` stores star count and Apex state in `TierifyExtra`. Stars are limited to Mythic gear, run from 0-5, and scale reforge strength by +5% per star. Apex requires Mythic, 5 stars, and Apex Crux, then uses +50% total scaling and can attach Apex effects.
 - Perfect Roll mechanic: a configurable chance marks reforged items as `Perfect`. Perfect reforges keep the upside and suppress negative attribute entries in attribute application and preview display.
