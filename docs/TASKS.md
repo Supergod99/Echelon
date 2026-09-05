@@ -21,6 +21,8 @@ This is the active durable backlog. Keep it limited to unfinished or future-rele
 
 ## Compatibility Work
 
+- Finalize the standalone release using the revision-specific comparison and release gates in [STANDALONE_COMPARISON.md](STANDALONE_COMPARISON.md). Recommended base: `standalone-apothic`; carry over the current branch's repair-ingredient and single-target reforge validation, then verify a clean minimal client/server and native tooltips before release.
+
 - Tooltip Overhaul: keep vanilla and Tooltip Overhaul tooltip paths visually aligned and guarded.
 - Obscure API: verify guarded icon/line mixins when the optional dependency updates.
 - JEI and EMI: verify reserved screen areas for Reforge, Salvage, and Salvage Upgrade screens.

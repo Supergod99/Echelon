@@ -13,6 +13,7 @@ docs/COMPAT_NOTES.md
 docs/DECISIONS.md
 docs/FILE_TREE.md
 docs/MIXIN_NOTES.md
+docs/STANDALONE_COMPARISON.md
 docs/TASKS.md
 docs/TEST_PLAN.md
 docs/UPSTREAM_REFERENCE.md
